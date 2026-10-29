@@ -1,8 +1,8 @@
 {
     "name": "basic",
     "label": "默认主题",
-    "version": "1.2.1",
-    "description": "Basic 是 ZAP CMS 内置的默认主题，蓝色科技风格，适合企业官网、产品展示等场景。",
+    "version": "1.3.0",
+    "description": "Basic 是 ZAP CMS 内置的默认主题，蓝色科技风格，基于 Bootstrap 5 构建，适合企业官网、产品展示等场景。",
     "author": "ZAP CMS",
     "settings": {
         "basic_home.slide": "[{\"img_path\":\"/themes/basic/img/banner1.png\",\"link\":\"https://zap.cn\",\"target\":\"_blank\"},{\"img_path\":\"/themes/basic/img/banner2.png\",\"link\":\"https://zap.cn\",\"target\":\"_blank\"}]",

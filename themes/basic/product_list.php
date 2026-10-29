@@ -21,7 +21,7 @@ $this->beginBlock('content');
                         <div class="col-sm-4">
                             <div class="post-content">
                                 <a href="<?php echo node_url($node['id'],$node['node_type']); ?>">
-                                    <img class="img-responsive product-thumb" src="<?php echo \zapcms\helpers\ThumbHelper::thumb($node['image'], $imgW, $imgH); ?>" alt="<?php echo htmlspecialchars($node['title']); ?>" />
+                                    <img class="img-fluid product-thumb" src="<?php echo \zapcms\helpers\ThumbHelper::thumb($node['image'], $imgW, $imgH); ?>" alt="<?php echo htmlspecialchars($node['title']); ?>" />
                                 </a>
                                 <div class="content-wrap">
                                     <h5><a href="<?php echo node_url($node['id'],$node['node_type']); ?>"><?php echo htmlspecialchars($node['title']); ?></a></h5>

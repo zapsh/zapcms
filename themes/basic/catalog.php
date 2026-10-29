@@ -18,7 +18,7 @@ $this->beginBlock('content');
                         <div class="col-sm-4">
                             <div class="post-content">
                                 <a href="<?php echo smart_node_url($node); ?>">
-                                    <img class="img-responsive" src="<?php echo \zapcms\helpers\ThumbHelper::thumb($node['image'], $imgW, $imgH); ?>" alt="<?php echo htmlspecialchars($node['title']); ?>" />
+                                    <img class="img-fluid" src="<?php echo \zapcms\helpers\ThumbHelper::thumb($node['image'], $imgW, $imgH); ?>" alt="<?php echo htmlspecialchars($node['title']); ?>" />
                                 </a>
                                 <div class="content-wrap">
                                     <h4><a href="<?php echo smart_node_url($node); ?>"><?php echo htmlspecialchars($node['title']); ?></a></h4>

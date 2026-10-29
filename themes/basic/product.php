@@ -22,7 +22,7 @@ $imageUrl = \zapcms\helpers\ThumbHelper::thumb($node['image'] ?? '', $detailW, $
                         <div class="row">
                             <div class="col-sm-6">
                                 <div class="product-gallery text-center">
-                                    <img src="<?php echo $imageUrl; ?>" class="product-detail-img img-responsive" alt="<?php echo htmlspecialchars($node['title'] ?? ''); ?>">
+                                    <img src="<?php echo $imageUrl; ?>" class="product-detail-img img-fluid" alt="<?php echo htmlspecialchars($node['title'] ?? ''); ?>">
                                 </div>
                             </div>
                             <div class="col-sm-6">

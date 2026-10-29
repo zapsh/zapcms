@@ -35,6 +35,7 @@ h1, h2, h3, h4, h5, h6 {
 
 a {
     color: #333;
+    text-decoration: none;
     transition: all 0.3s ease;
 }
 
@@ -68,10 +69,26 @@ a.none:hover {
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
-/* pagination */
-.pagination>.active>a, .pagination>.active>a:focus, .pagination>.active>a:hover, .pagination>.active>span, .pagination>.active>span:focus, .pagination>.active>span:hover {
+/* pagination（兼容 BS5 的 page-item / page-link 结构） */
+.pagination > .active > a,
+.pagination > .active > a:focus,
+.pagination > .active > a:hover,
+.pagination > .active > .page-link,
+.pagination > .active > .page-link:focus,
+.pagination > .active > .page-link:hover,
+.pagination > .active > span {
     background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
+    border-color: transparent;
     color: #fff !important;
+}
+
+.pagination .page-link {
+    color: #44506b;
+}
+
+.pagination .page-link:hover {
+    color: #1e6bff;
+    background-color: #eef5ff;
 }
 
 /* Header */
@@ -143,6 +160,7 @@ a.none:hover {
     -webkit-border-radius: 0;
     border-radius: 0;
     margin-bottom: 0;
+    padding: 0;
     box-shadow: 0 2px 20px rgba(0,0,0,0.08);
 }
 
@@ -168,9 +186,12 @@ a.none:hover {
     color: #1e6bff;
 }
 
-.navbar-default .navbar-nav > .open > a, 
-.navbar-default .navbar-nav > .open > a:hover, 
-.navbar-default .navbar-nav > .open > a:focus {
+.navbar-default .navbar-nav > .open > a,
+.navbar-default .navbar-nav > .open > a:hover,
+.navbar-default .navbar-nav > .open > a:focus,
+.navbar-default .navbar-nav > .show > a,
+.navbar-default .navbar-nav > .show > a:hover,
+.navbar-default .navbar-nav > .show > a:focus {
     background-color: transparent;
     color: #1e6bff;
 }
@@ -200,7 +221,9 @@ a.none:hover {
 }
 
 .navbar-default .navbar-collapse {
-    float: right;
+    margin-left: auto;
+    flex-grow: 0;
+    align-items: center;
     border-top: none;
     padding-left: 0;
     padding-right: 0;
@@ -227,13 +250,13 @@ a.none:hover {
 
 /* Navbar hover effect */
 .main-navbar-nav > li > a {
-    padding-top: 25px;
-    padding-bottom: 25px;
+    padding: 25px 16px;
     line-height: 1;
     position: relative;
 }
 
-.main-navbar-nav > li > a::after {
+/* 下划线用 ::before，避免与 BS5 .dropdown-toggle::after 的箭头冲突 */
+.main-navbar-nav > li > a::before {
     content: '';
     position: absolute;
     bottom: 15px;
@@ -245,9 +268,18 @@ a.none:hover {
     transition: width 0.3s;
 }
 
-.main-navbar-nav > li:hover > a::after,
-.main-navbar-nav > .active > a::after {
+.main-navbar-nav > li:hover > a::before,
+.main-navbar-nav > .active > a::before {
     width: 80%;
+}
+
+.main-navbar-nav > li > a {
+    white-space: nowrap;
+}
+
+.main-navbar-nav > li > a.dropdown-toggle::after {
+    vertical-align: 0.12em;
+    margin-left: 5px;
 }
 
 @media screen and (max-width: 768px) {
@@ -268,7 +300,7 @@ a.none:hover {
         text-align: right;
     }
     
-    .main-navbar-nav > li > a::after {
+    .main-navbar-nav > li > a::before {
         display: none;
     }
     
@@ -309,6 +341,10 @@ a.none:hover {
     -o-transition: all 0.3s ease-out;
     -webkit-transition: all 0.3s ease-out;
     transition: all 0.3s ease-out;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
     min-width: 225px;
     border: none;
     border-top: 3px solid #1e6bff;
@@ -323,6 +359,7 @@ a.none:hover {
     color: #333;
     line-height: 1.42857143;
     font-size: 14px;
+    white-space: normal;
     transition: all 0.2s;
 }
 
@@ -380,22 +417,35 @@ a.none:hover {
     }
 }
 
-@media screen and (max-width: 992px) {
+@media screen and (max-width: 991.98px) {
     .navbar-toggle {
         display: block;
     }
 
-    .navbar-collapse.collapse {
+    .navbar-collapse.collapse:not(.show) {
         display: none !important;
     }
 
-    .main-navbar-nav.navbar-nav, .main-navbar-nav.navbar-nav > li {
-        float: none !important;
-    }
-
-    .navbar-collapse.collapse.in {
+    .navbar-collapse.collapse.show {
         display: block !important;
         overflow-y: auto !important;
+    }
+
+    /* 折叠态下多级菜单改为静态展开 */
+    .main-navbar-nav li > .dropdown-menu {
+        position: static;
+        float: none;
+        min-width: 100%;
+        margin: 0;
+        padding: 4px 0 8px 14px;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+        background: #f7f9fc;
+    }
+
+    .main-navbar-nav .dropdown.show > .dropdown-menu {
+        display: block;
     }
 }
 
@@ -829,7 +879,7 @@ footer.site-footer p a:hover {
     color: #fff;
 }
 
-footer.site-footer .glyphicon {
+footer.site-footer .fa {
     margin-right: 8px;
     color: #1e6bff;
 }
@@ -1290,6 +1340,10 @@ p.text {
 .faq-answer {
     display: none;
     overflow: hidden;
+}
+
+.faq-item.open .faq-answer {
+    display: block;
 }
 
 .faq-answer-inner {
@@ -1786,7 +1840,7 @@ p.text {
         font-size: 13px;
     }
 
-    footer.site-footer .glyphicon {
+    footer.site-footer .fa {
         margin-right: 5px;
     }
 
@@ -2410,7 +2464,7 @@ textarea:focus,
 }
 
 /* 导航：青色渐变指示条 + 下拉面板描边 */
-.main-navbar-nav > li > a::after {
+.main-navbar-nav > li > a::before {
     height: 2px;
     background: var(--zap-gradient-line);
     box-shadow: 0 0 10px rgba(36, 212, 255, 0.85);
@@ -2418,6 +2472,7 @@ textarea:focus,
 
 .navbar-default .navbar-nav > li > a:hover,
 .navbar-default .navbar-nav > .open > a,
+.navbar-default .navbar-nav > .show > a,
 .navbar-default .navbar-nav .active > a {
     color: var(--zap-blue);
 }
@@ -2486,6 +2541,8 @@ h2.section-title::after {
 /* 分页当前页：蓝色渐变 + 光晕 */
 .pagination > .active > a,
 .pagination > .active > a:hover,
+.pagination > .active > .page-link,
+.pagination > .active > .page-link:hover,
 .pagination > .active > span,
 .pagination > .active > span:hover {
     border-color: transparent;
@@ -2524,4 +2581,181 @@ footer.site-footer h4::after {
     border-radius: 1px;
     background: var(--zap-gradient-line);
     opacity: 0.85;
+}
+
+/* ============================================================
+   移动端导航优化（<= 991.98px）
+   汉堡按钮 + 全宽菜单面板 + 大点击区域 + 右侧箭头
+   ============================================================ */
+@media (max-width: 991.98px) {
+    /* 汉堡按钮：更大的点击区域与展开态反馈 */
+    .navbar-default .navbar-toggler,
+    .navbar-default .navbar-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        margin: 0;
+        border: none;
+        border-radius: 10px;
+        background: #f4f7fb;
+        color: #253449;
+        box-shadow: none;
+        line-height: 1;
+    }
+
+    .navbar-default .navbar-toggler:focus,
+    .navbar-default .navbar-toggle:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(30, 107, 255, 0.18);
+    }
+
+    .navbar-default .navbar-toggler[aria-expanded="true"],
+    .navbar-default .navbar-toggle[aria-expanded="true"] {
+        background: var(--zap-blue);
+        color: #fff;
+    }
+
+    .navbar-default .navbar-toggler i,
+    .navbar-default .navbar-toggle i {
+        font-size: 18px;
+        color: inherit;
+    }
+
+    /* 展开后的菜单面板：绝对定位悬浮，不撑高页面，避免页面滚动条闪现造成抖动 */
+    .navbar-default .navbar-collapse {
+        position: absolute;
+        top: 100%;
+        left: calc(50% - 50vw);
+        width: 100vw;
+        max-width: 100vw;
+        margin: 0;
+        /* 上下内边距交给内部 ul，保证收起动画把这段高度一起算进去，结尾不跳 */
+        padding: 0 16px;
+        background: #fff;
+        border-top: 1px solid #eef1f5;
+        border-radius: 0 0 14px 14px;
+        box-shadow: 0 16px 30px rgba(10, 35, 66, 0.10);
+        max-height: calc(100vh - 72px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        /* 始终预留滚动条槽位，避免菜单展开/收起时出现或消失导致内容左右抖动 */
+        scrollbar-gutter: stable;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(30, 107, 255, 0.35) transparent;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        z-index: 1030;
+    }
+
+    /* 面板内滚动条：细窄、浅蓝，与主题一致 */
+    .navbar-default .navbar-collapse::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .navbar-default .navbar-collapse::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .navbar-default .navbar-collapse::-webkit-scrollbar-thumb {
+        background: rgba(30, 107, 255, 0.35);
+        border-radius: 3px;
+    }
+
+    .navbar-default .navbar-collapse::-webkit-scrollbar-thumb:hover {
+        background: rgba(30, 107, 255, 0.6);
+    }
+
+    .main-navbar-nav {
+        flex-direction: column;
+        width: 100%;
+        margin: 0;
+        padding: 8px 0 10px;
+    }
+
+    /* 收起动画期间强制裁剪，避免内部滚动条/内容溢出造成结尾卡顿 */
+    .navbar-default .navbar-collapse.collapsing {
+        overflow: hidden !important;
+        overflow-y: hidden !important;
+    }
+
+    .main-navbar-nav > li {
+        width: 100%;
+        border-bottom: 1px solid #f2f4f8;
+    }
+
+    .main-navbar-nav > li:last-child {
+        border-bottom: none;
+    }
+
+    /* 一级菜单：整行可点，文字与 logo 对齐 */
+    .main-navbar-nav > li > a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 6px;
+        font-size: 15px;
+        font-weight: 500;
+        color: #253449;
+        border-radius: 8px;
+    }
+
+    /* 移动端不用下划线指示条，避免与箭头/分行冲突 */
+    .main-navbar-nav > li > a::before {
+        display: none;
+    }
+
+    .main-navbar-nav > li > a:hover,
+    .main-navbar-nav > li > a:focus {
+        background: #f2f7ff;
+        color: var(--zap-blue);
+    }
+
+    .main-navbar-nav > li.active > a,
+    .main-navbar-nav > .show > a {
+        background: #eef4ff;
+        color: var(--zap-blue);
+    }
+
+    /* 下拉箭头靠右，展开时翻转 */
+    .main-navbar-nav > li > a.dropdown-toggle::after {
+        margin-left: auto;
+        vertical-align: 0;
+        transition: transform 0.25s ease;
+    }
+
+    .main-navbar-nav > li.show > a.dropdown-toggle::after {
+        transform: rotate(180deg);
+    }
+
+    /* 子菜单：左侧引导线 + 透明底，层次更清晰 */
+    .main-navbar-nav li > .dropdown-menu {
+        position: static;
+        float: none;
+        width: 100%;
+        min-width: 0;
+        margin: 0 0 8px 6px;
+        padding: 2px 0 4px 14px;
+        background: transparent;
+        border: none;
+        border-left: 2px solid #e3ebf7;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .main-navbar-nav li > .dropdown-menu > li > a {
+        padding: 10px 8px;
+        font-size: 14px;
+        color: #56657a;
+        border-radius: 8px;
+    }
+
+    .main-navbar-nav li > .dropdown-menu > li > a:hover,
+    .main-navbar-nav li > .dropdown-menu > li > a:focus,
+    .main-navbar-nav li > .dropdown-menu > li > a.active {
+        background: #f2f7ff;
+        color: var(--zap-blue);
+    }
 }

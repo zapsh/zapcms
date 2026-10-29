@@ -79,119 +79,181 @@ $this->beginBlock('content');
 
     <script>
     (function() {
-        var $list = $('#faqList');
-        var $search = $('#faqSearch');
-        var $clear = $('#faqSearchClear');
-        var $noResult = $('#faqNoResult');
-        var $toggleAll = $('#faqToggleAll');
-        var allExpanded = false;
+        var DUR = 300;
+        var list = document.getElementById('faqList');
+        if (!list) return;
+
+        var search = document.getElementById('faqSearch');
+        var clearBtn = document.getElementById('faqSearchClear');
+        var noResult = document.getElementById('faqNoResult');
+        var toggleAll = document.getElementById('faqToggleAll');
+
+        function each(root, selector, fn) {
+            Array.prototype.forEach.call(root.querySelectorAll(selector), fn);
+        }
+
+        function isVisible(el) {
+            return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+        }
+
+        // ---- 高度过渡动画（原生 JS，无 jQuery 依赖）----
+        function finish(answer) {
+            var handler = function(e) {
+                if (e && e.target !== answer) return;
+                answer.removeEventListener('transitionend', handler);
+                clearTimeout(answer._faqTimer);
+                answer.style.display = '';
+                answer.style.height = '';
+                answer.style.overflow = '';
+                answer.style.transition = '';
+            };
+            answer.addEventListener('transitionend', handler);
+            clearTimeout(answer._faqTimer);
+            answer._faqTimer = setTimeout(handler, DUR + 60);
+        }
+
+        function setOpen(item, open, animate) {
+            var answer = item.querySelector('.faq-answer');
+            if (!answer) return;
+
+            if (!animate) {
+                item.classList.toggle('open', open);
+                answer.style.display = '';
+                answer.style.height = '';
+                answer.style.overflow = '';
+                answer.style.transition = '';
+                return;
+            }
+
+            clearTimeout(answer._faqTimer);
+            if (open) {
+                item.classList.add('open');
+                answer.style.display = 'block';
+                answer.style.overflow = 'hidden';
+                answer.style.height = '0px';
+                var target = answer.scrollHeight;
+                void answer.offsetHeight;
+                answer.style.transition = 'height ' + DUR + 'ms ease';
+                answer.style.height = target + 'px';
+            } else {
+                // 先保持可见再收拢，避免 display:none 打断动画
+                answer.style.display = 'block';
+                answer.style.overflow = 'hidden';
+                answer.style.height = answer.scrollHeight + 'px';
+                void answer.offsetHeight;
+                item.classList.remove('open');
+                answer.style.transition = 'height ' + DUR + 'ms ease';
+                answer.style.height = '0px';
+            }
+            finish(answer);
+        }
+
+        function updateToggleBtn() {
+            if (!toggleAll) return;
+            var total = 0;
+            var opened = 0;
+            each(list, '.faq-item', function(item) {
+                if (!isVisible(item)) return;
+                total++;
+                if (item.classList.contains('open')) opened++;
+            });
+            var expanded = total > 0 && opened === total;
+            toggleAll.innerHTML = expanded
+                ? '<i class="fa fa-minus-square-o"></i> 收起全部'
+                : '<i class="fa fa-plus-square-o"></i> 展开全部';
+        }
 
         // ---- 折叠 / 展开单个 ----
-        $list.on('click', '.faq-question', function() {
-            var $item = $(this).closest('.faq-item');
-            var $answer = $item.find('.faq-answer');
-            var isOpen = $item.hasClass('open');
-            if (isOpen) {
-                $item.removeClass('open');
-                $answer.stop(true, false).slideUp(300);
-            } else {
-                $item.addClass('open');
-                $answer.stop(true, false).slideDown(300);
-            }
+        list.addEventListener('click', function(e) {
+            var q = e.target.closest('.faq-question');
+            if (!q || !list.contains(q)) return;
+            var item = q.closest('.faq-item');
+            if (!item) return;
+            setOpen(item, !item.classList.contains('open'), true);
             updateToggleBtn();
         });
 
         // ---- 展开 / 收起全部 ----
-        $toggleAll.on('click', function() {
-            allExpanded = !allExpanded;
-            var $items = $list.find('.faq-item:visible');
-            if (allExpanded) {
-                $items.addClass('open').find('.faq-answer').stop(true, false).slideDown(300);
-                $toggleAll.html('<i class="fa fa-minus-square-o"></i> 收起全部');
-            } else {
-                $items.removeClass('open').find('.faq-answer').stop(true, false).slideUp(300);
-                $toggleAll.html('<i class="fa fa-plus-square-o"></i> 展开全部');
-            }
-        });
-
-        function updateToggleBtn() {
-            var totalVisible = $list.find('.faq-item:visible').length;
-            var openVisible = $list.find('.faq-item.open:visible').length;
-            allExpanded = totalVisible > 0 && openVisible === totalVisible;
-            if (allExpanded) {
-                $toggleAll.html('<i class="fa fa-minus-square-o"></i> 收起全部');
-            } else {
-                $toggleAll.html('<i class="fa fa-plus-square-o"></i> 展开全部');
-            }
+        if (toggleAll) {
+            toggleAll.addEventListener('click', function() {
+                var expanded = 0;
+                var total = 0;
+                each(list, '.faq-item', function(item) {
+                    if (!isVisible(item)) return;
+                    total++;
+                    if (item.classList.contains('open')) expanded++;
+                });
+                var open = !(total > 0 && expanded === total);
+                each(list, '.faq-item', function(item) {
+                    if (!isVisible(item)) return;
+                    setOpen(item, open, true);
+                });
+                updateToggleBtn();
+            });
         }
 
         // ---- 搜索过滤 ----
-        $search.on('input', function() {
-            var val = $.trim(this.value).toLowerCase();
-            if (val.length > 0) {
-                $clear.show();
-            } else {
-                $clear.hide();
-            }
-            var hasResult = false;
-            $list.find('.faq-item').each(function() {
-                var $item = $(this);
-                var kw = $item.data('keywords') || '';
-                var matched = kw.toLowerCase().indexOf(val) !== -1;
-                $item.toggle(matched);
-                if (matched) hasResult = true;
-            });
+        if (search) {
+            search.addEventListener('input', function() {
+                var val = this.value.trim().toLowerCase();
+                if (clearBtn) clearBtn.style.display = val.length > 0 ? '' : 'none';
 
-            // 隐藏 / 显示空分类
-            $list.find('.faq-category').each(function() {
-                var $cat = $(this);
-                var visibleItems = $cat.find('.faq-item:visible').length;
-                $cat.toggle(visibleItems > 0);
-            });
-
-            $noResult.toggle(!hasResult);
-            // 搜索完成自动展开匹配项
-            if (val.length > 0) {
-                $list.find('.faq-item:visible').each(function() {
-                    var $item = $(this);
-                    if (!$item.hasClass('open')) {
-                        $item.addClass('open');
-                        $item.find('.faq-answer').stop(true, false).show();
-                    }
+                var hasResult = false;
+                each(list, '.faq-item', function(item) {
+                    var kw = (item.getAttribute('data-keywords') || '').toLowerCase();
+                    var matched = kw.indexOf(val) !== -1;
+                    item.style.display = matched ? '' : 'none';
+                    if (!matched) return;
+                    hasResult = true;
+                    // 搜索命中时自动展开
+                    if (val.length > 0) setOpen(item, true, false);
                 });
-            }
-            updateToggleBtn();
-        });
 
-        $clear.on('click', function() {
-            $search.val('').trigger('input').focus();
-        });
+                // 隐藏 / 显示空分类
+                each(list, '.faq-category', function(cat) {
+                    var visible = false;
+                    each(cat, '.faq-item', function(item) {
+                        if (isVisible(item)) visible = true;
+                    });
+                    cat.style.display = visible ? '' : 'none';
+                });
+
+                if (noResult) noResult.style.display = hasResult ? 'none' : '';
+                updateToggleBtn();
+            });
+        }
+
+        if (clearBtn && search) {
+            clearBtn.addEventListener('click', function() {
+                search.value = '';
+                search.dispatchEvent(new Event('input', { bubbles: true }));
+                search.focus();
+            });
+        }
 
         // ---- URL hash 直接定位到某个 FAQ ----
         function openByHash() {
             var hash = window.location.hash;
-            if (hash && hash.indexOf('#faq-') === 0) {
-                var $target = $(hash);
-                if ($target.length) {
-                    var $item = $target.closest('.faq-item');
-                    if (!$item.hasClass('open')) {
-                        $item.addClass('open');
-                        $item.find('.faq-answer').show();
-                    }
-                    // 滚动到目标位置
-                    $('html, body').animate({ scrollTop: $target.offset().top - 100 }, 400);
-                    updateToggleBtn();
-                }
-            }
+            if (!hash || hash.indexOf('#faq-') !== 0) return;
+            var target = document.getElementById(hash.slice(1));
+            if (!target) return;
+            var item = target.closest('.faq-item');
+            if (!item) return;
+            if (!item.classList.contains('open')) setOpen(item, true, false);
+            var top = target.getBoundingClientRect().top + window.pageYOffset - 100;
+            window.scrollTo({ top: top, behavior: 'smooth' });
+            updateToggleBtn();
         }
         openByHash();
-        $(window).on('hashchange', openByHash);
+        window.addEventListener('hashchange', openByHash);
 
         // ---- 键盘支持 ----
-        $list.on('keydown', '.faq-question', function(e) {
-            if (e.which === 13 || e.which === 32) { // Enter / Space
+        list.addEventListener('keydown', function(e) {
+            var q = e.target.closest('.faq-question');
+            if (!q) return;
+            if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
                 e.preventDefault();
-                $(this).click();
+                q.click();
             }
         });
     })();

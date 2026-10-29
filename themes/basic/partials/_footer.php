@@ -15,7 +15,7 @@
                     continue;
                 }
             ?>
-            <div class="col-md-3 col-sm-6 col-xs-12 fbox">
+            <div class="col-md-3 col-sm-6 col-12 fbox">
                 <h4><?php echo htmlspecialchars($menu['title']); ?></h4>
                 <ul class="big">
                     <?php foreach ($menu['children'] as $child):
@@ -30,12 +30,12 @@
             </div>
             <?php endforeach; ?>
 
-            <div class="col-md-3 col-sm-6 col-xs-12 fbox">
+            <div class="col-md-3 col-sm-6 col-12 fbox">
                 <h4><?php echo htmlspecialchars(option('website.title')); ?></h4>
                 <p class="text"></p>
-                <p><a href="tel:<?php echo htmlspecialchars(option('website.tel')); ?>"><span class="glyphicon glyphicon-earphone" aria-hidden="true"></span> <?php echo htmlspecialchars(option('website.tel')); ?></a></p>
-                <p><a href="mailto:<?php echo htmlspecialchars(option('website.email')); ?>"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span> <?php echo htmlspecialchars(option('website.email')); ?></a></p>
-                <p><span class="glyphicon glyphicon-map-marker" aria-hidden="true"></span><?php echo htmlspecialchars(option('website.address')); ?></p>
+                <p><a href="tel:<?php echo htmlspecialchars(option('website.tel')); ?>"><i class="fa fa-phone" aria-hidden="true"></i> <?php echo htmlspecialchars(option('website.tel')); ?></a></p>
+                <p><a href="mailto:<?php echo htmlspecialchars(option('website.email')); ?>"><i class="fa fa-envelope-o" aria-hidden="true"></i> <?php echo htmlspecialchars(option('website.email')); ?></a></p>
+                <p><i class="fa fa-map-marker" aria-hidden="true"></i> <?php echo htmlspecialchars(option('website.address')); ?></p>
             </div>
         </div>
     </div>

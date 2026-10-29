@@ -25,7 +25,7 @@ $nodeType = $node['node_type'] ?? 'article';
                                 </header><!-- /.entry-header -->
                                 <?php if (!empty($node['image'])): ?>
                                 <div class="post-thumbnail">
-                                    <img src="<?php echo \zapcms\helpers\ThumbHelper::thumb($node['image'], (int)\zapcms\services\NodeType::getConfig($nodeType, 'detail_image_width', 750), (int)\zapcms\services\NodeType::getConfig($nodeType, 'detail_image_height', 480)); ?>" class="img-responsive" alt="<?php echo htmlspecialchars($node['title']); ?>">
+                                    <img src="<?php echo \zapcms\helpers\ThumbHelper::thumb($node['image'], (int)\zapcms\services\NodeType::getConfig($nodeType, 'detail_image_width', 750), (int)\zapcms\services\NodeType::getConfig($nodeType, 'detail_image_height', 480)); ?>" class="img-fluid" alt="<?php echo htmlspecialchars($node['title']); ?>">
                                 </div><!-- /.post-thumbnail -->
                                 <?php endif; ?>
                                 <div class="entry-content">

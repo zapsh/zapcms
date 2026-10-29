@@ -99,15 +99,13 @@ $catalogMenu = pageState()->getCatalogList();
             <form class="error-404-search" action="<?php echo append_url_suffix(site_url('/search')); ?>" method="get">
                 <div class="input-group">
                     <input autocomplete="off" type="text" name="q" class="form-control" placeholder="搜索您想找的内容…">
-                    <span class="input-group-btn">
-                        <button class="btn btn-default" type="submit"><i class="fa fa-search"></i></button>
-                    </span>
+                    <button class="btn btn-outline-secondary" type="submit"><i class="fa fa-search"></i></button>
                 </div>
             </form>
 
             <div class="error-404-actions">
                 <a href="<?php echo home_url(); ?>" class="btn btn-back"><i class="fa fa-home"></i> 返回首页</a>
-                <button type="button" class="btn btn-default" onclick="history.back()">
+                <button type="button" class="btn btn-outline-secondary" onclick="history.back()">
                     <i class="fa fa-arrow-left"></i> 返回上一页
                 </button>
             </div>
