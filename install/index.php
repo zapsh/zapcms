@@ -247,9 +247,20 @@ function importBaseDataAction()
             'password' => \zap\util\Password::hash($websitePassword),
         ], ['id' => 1]);
 
-        $lockDir = var_path('');
-        if (!is_dir($lockDir)) {
-            @mkdir($lockDir, 0755, true);
+        // 安装包不包含 var/（运行时目录），这里一次性建好所需子目录
+        $runtimeDirs = [
+            var_path(''),
+            var_path('cache'),
+            var_path('logs'),
+            var_path('tmp'),
+            var_path('data'),
+            var_path('backups/sql'),
+            var_path('storage/avatar'),
+        ];
+        foreach ($runtimeDirs as $runtimeDir) {
+            if (!is_dir($runtimeDir)) {
+                @mkdir($runtimeDir, 0755, true);
+            }
         }
         file_put_contents(var_path('install.lock'), date('Y-m-d H:i:s'));
 
@@ -333,8 +344,13 @@ function buildEnvChecks(): array
         || in_array('pgsql', $allDrivers)
         || in_array('sqlite', $allDrivers);
 
+    // 运行时目录（如 var/）不在安装包内，缺失时先尝试自动创建再判断可写，
+    // 避免环境检测因“目录不存在”而误判为不可写。
     $checkWritable = function (string $path): bool {
         $full = base_path($path);
+        if (!is_dir($full)) {
+            @mkdir($full, 0755, true);
+        }
         return is_dir($full) && is_writable($full);
     };
 
