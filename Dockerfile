@@ -1,6 +1,6 @@
 # 写在最前面：强烈建议先阅读官方教程[Dockerfile最佳实践]（https://docs.docker.com/develop/develop-images/dockerfile_best-practices/）
 # 选择构建用基础镜像（选择原则：在包含所有用到的依赖前提下尽可能提及小）。如需更换，请到[dockerhub官方仓库](https://hub.docker.com/_/php?tab=tags)自行选择后替换。
-FROM alpine:3.13
+FROM alpine:3.18
 
 # 容器默认时区为UTC，如需使用上海时间请启用以下时区设置命令
 # RUN apk add tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo Asia/Shanghai > /etc/timezone
@@ -8,19 +8,26 @@ FROM alpine:3.13
 # 使用 HTTPS 协议访问容器云调用证书安装
 RUN apk add ca-certificates
 
-# 安装依赖包，如需其他依赖包，请到alpine依赖包管理(https://pkgs.alpinelinux.org/packages?name=php8*imagick*&branch=v3.13)查找。
+# 安装依赖包，如需其他依赖包，请到alpine依赖包管理(https://pkgs.alpinelinux.org/packages?name=php82*)查找。
 # 选用国内镜像源以提高下载速度
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tencent.com/g' /etc/apk/repositories \
     && apk add --update --no-cache \
-    php7 \
-    php7-json \
-    php7-ctype \
-	php7-exif \
-    php7-fpm \
-    php7-session \
-    php7-pdo_mysql \
-    php7-tokenizer \
-    php7-curl \
+    php82 \
+    php82-ctype \
+	php82-exif \
+    php82-fpm \
+    php82-session \
+    php82-pdo_mysql \
+    php82-tokenizer \
+    php82-curl \
+    php82-dom \
+    php82-gd \
+    php82-mbstring \
+    php82-openssl \
+    php82-pdo_sqlite \
+    php82-simplexml \
+    php82-xml \
+    php82-zip \
     nginx \
     && rm -f /var/cache/apk/*
 
@@ -61,7 +68,7 @@ server {
 NGINX_EOF
 
 # 生成 php-fpm 配置
-RUN cat > /etc/php7/php-fpm.d/www.conf << 'FPM_EOF'
+RUN cat > /etc/php82/php-fpm.d/www.conf << 'FPM_EOF'
 [www]
 user = nobody
 group = nobody
@@ -75,7 +82,7 @@ clear_env = no
 FPM_EOF
 
 # 生成 php.ini（基于 php.ini-production，仅包含非默认项）
-RUN cat > /etc/php7/php.ini << 'PHP_EOF'
+RUN cat > /etc/php82/php.ini << 'PHP_EOF'
 [PHP]
 engine = On
 short_open_tag = Off
@@ -89,13 +96,13 @@ disable_functions =
 disable_classes =
 zend.enable_gc = On
 zend.exception_ignore_args = On
-expose_php = On
+expose_php = Off
 
 max_execution_time = 30
 max_input_time = 60
 memory_limit = 128M
 
-error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT
+error_reporting = E_ALL & ~E_DEPRECATED
 display_errors = Off
 display_startup_errors = Off
 log_errors = On
@@ -112,7 +119,7 @@ post_max_size = 8M
 default_mimetype = "text/html"
 default_charset = "UTF-8"
 
-include_path = ".:/usr/share/php7"
+include_path = ".:/usr/share/php82"
 doc_root =
 user_dir =
 enable_dl = Off
@@ -214,7 +221,7 @@ PHP_EOF
 RUN cat > /run.sh << 'RUN_EOF'
 #!/bin/sh
 # 启动php-fpm
-php-fpm7 -D
+php-fpm -D
 # 启动nginx
 nginx -g "daemon off;"
 RUN_EOF
@@ -222,7 +229,8 @@ RUN_EOF
 RUN mkdir -p /run/nginx \
     && chmod -R 777 /app/storage \
     && chmod +x /run.sh \
-    && mv /usr/sbin/php-fpm7 /usr/sbin/php-fpm
+    && mv /usr/sbin/php-fpm82 /usr/sbin/php-fpm \
+    && ln -sf /usr/bin/php82 /usr/bin/php
 
 # 暴露端口
 EXPOSE 80

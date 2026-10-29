@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "baa4405be94917c84bcf5a60aec0f319",
+    "content-hash": "020942d428adcbdb72348bf255b58f2e",
     "packages": [
         {
             "name": "ezyang/htmlpurifier",
-            "version": "v4.19.0",
+            "version": "v4.19.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ezyang/htmlpurifier.git",
-                "reference": "b287d2a16aceffbf6e0295559b39662612b77fcf"
+                "reference": "5e0539132d934f936fbae2c88b55d58f9438623f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ezyang/htmlpurifier/zipball/b287d2a16aceffbf6e0295559b39662612b77fcf",
-                "reference": "b287d2a16aceffbf6e0295559b39662612b77fcf",
+                "url": "https://api.github.com/repos/ezyang/htmlpurifier/zipball/5e0539132d934f936fbae2c88b55d58f9438623f",
+                "reference": "5e0539132d934f936fbae2c88b55d58f9438623f",
                 "shasum": ""
             },
             "require": {
@@ -63,9 +63,9 @@
             ],
             "support": {
                 "issues": "https://github.com/ezyang/htmlpurifier/issues",
-                "source": "https://github.com/ezyang/htmlpurifier/tree/v4.19.0"
+                "source": "https://github.com/ezyang/htmlpurifier/tree/v4.19.1"
             },
-            "time": "2025-10-17T16:34:55+00:00"
+            "time": "2026-09-15T15:42:51+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -73,12 +73,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Seldaek/monolog.git",
-                "reference": "9be1aad8c38a87377402a215261e26e0b5dab9ca"
+                "reference": "e0b1d955b079e806618d08ee15ef731643ad61ca"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/9be1aad8c38a87377402a215261e26e0b5dab9ca",
-                "reference": "9be1aad8c38a87377402a215261e26e0b5dab9ca",
+                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/e0b1d955b079e806618d08ee15ef731643ad61ca",
+                "reference": "e0b1d955b079e806618d08ee15ef731643ad61ca",
                 "shasum": ""
             },
             "require": {
@@ -167,7 +167,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-07-02T08:15:24+00:00"
+            "time": "2026-10-05T21:03:44+00:00"
         },
         {
             "name": "overtrue/pinyin",
@@ -352,12 +352,12 @@
             "time": "2024-09-11T13:17:53+00:00"
         },
         {
-            "name": "zapj/zap-php-framework",
+            "name": "zapsh/zap-php-framework",
             "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "../zap-php-framework",
-                "reference": "485d7a0fd8e637a67c815488e89566227acaaf66"
+                "reference": "8603271f3a8b5be7fd56c721591ff3e1410f0b6d"
             },
             "require": {
                 "ext-curl": "*",
@@ -367,10 +367,10 @@
                 "ext-openssl": "*",
                 "ext-pdo": "*",
                 "ext-simplexml": "*",
-                "php": ">=7.4.0"
+                "php": ">=8.2.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "9.6.x-dev"
+                "phpunit/phpunit": "^11.5"
             },
             "suggest": {
                 "monolog/monolog": "Allows more advanced logging with multiple handlers"
@@ -378,7 +378,6 @@
             "type": "library",
             "autoload": {
                 "files": [
-                    "src/compat.php",
                     "src/functions.php"
                 ],
                 "psr-4": {
@@ -404,12 +403,12 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
-        "zapj/zap-php-framework": 20
+        "zapsh/zap-php-framework": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=7.4",
+        "php": ">=8.2",
         "ext-pdo": "*",
         "ext-gd": "*",
         "ext-json": "*"

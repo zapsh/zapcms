@@ -1,7 +1,7 @@
 # ZAP CMS
 
 ##  环境要求
-- PHP 7.4+
+- PHP 8.2+
 - MYSQL5.5+
 - Sqlite3 可选
 - PDO Driver (MySQL、Sqlite3)

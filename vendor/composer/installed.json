@@ -2,17 +2,17 @@
     "packages": [
         {
             "name": "ezyang/htmlpurifier",
-            "version": "v4.19.0",
-            "version_normalized": "4.19.0.0",
+            "version": "v4.19.1",
+            "version_normalized": "4.19.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ezyang/htmlpurifier.git",
-                "reference": "b287d2a16aceffbf6e0295559b39662612b77fcf"
+                "reference": "5e0539132d934f936fbae2c88b55d58f9438623f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ezyang/htmlpurifier/zipball/b287d2a16aceffbf6e0295559b39662612b77fcf",
-                "reference": "b287d2a16aceffbf6e0295559b39662612b77fcf",
+                "url": "https://api.github.com/repos/ezyang/htmlpurifier/zipball/5e0539132d934f936fbae2c88b55d58f9438623f",
+                "reference": "5e0539132d934f936fbae2c88b55d58f9438623f",
                 "shasum": ""
             },
             "require": {
@@ -28,7 +28,7 @@
                 "ext-iconv": "Converts text to and from non-UTF-8 encodings",
                 "ext-tidy": "Used for pretty-printing HTML"
             },
-            "time": "2025-10-17T16:34:55+00:00",
+            "time": "2026-09-15T15:42:51+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -60,7 +60,7 @@
             ],
             "support": {
                 "issues": "https://github.com/ezyang/htmlpurifier/issues",
-                "source": "https://github.com/ezyang/htmlpurifier/tree/v4.19.0"
+                "source": "https://github.com/ezyang/htmlpurifier/tree/v4.19.1"
             },
             "install-path": "../ezyang/htmlpurifier"
         },
@@ -71,12 +71,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Seldaek/monolog.git",
-                "reference": "9be1aad8c38a87377402a215261e26e0b5dab9ca"
+                "reference": "e0b1d955b079e806618d08ee15ef731643ad61ca"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/9be1aad8c38a87377402a215261e26e0b5dab9ca",
-                "reference": "9be1aad8c38a87377402a215261e26e0b5dab9ca",
+                "url": "https://api.github.com/repos/Seldaek/monolog/zipball/e0b1d955b079e806618d08ee15ef731643ad61ca",
+                "reference": "e0b1d955b079e806618d08ee15ef731643ad61ca",
                 "shasum": ""
             },
             "require": {
@@ -122,7 +122,7 @@
                 "rollbar/rollbar": "Allow sending log messages to Rollbar",
                 "ruflin/elastica": "Allow sending log messages to an Elastic Search server"
             },
-            "time": "2026-07-02T08:15:24+00:00",
+            "time": "2026-10-05T21:03:44+00:00",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -361,13 +361,13 @@
             "install-path": "../psr/log"
         },
         {
-            "name": "zapj/zap-php-framework",
+            "name": "zapsh/zap-php-framework",
             "version": "dev-main",
             "version_normalized": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "../zap-php-framework",
-                "reference": "485d7a0fd8e637a67c815488e89566227acaaf66"
+                "reference": "8603271f3a8b5be7fd56c721591ff3e1410f0b6d"
             },
             "require": {
                 "ext-curl": "*",
@@ -377,10 +377,10 @@
                 "ext-openssl": "*",
                 "ext-pdo": "*",
                 "ext-simplexml": "*",
-                "php": ">=7.4.0"
+                "php": ">=8.2.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "9.6.x-dev"
+                "phpunit/phpunit": "^11.5"
             },
             "suggest": {
                 "monolog/monolog": "Allows more advanced logging with multiple handlers"
@@ -389,7 +389,6 @@
             "installation-source": "dist",
             "autoload": {
                 "files": [
-                    "src/compat.php",
                     "src/functions.php"
                 ],
                 "psr-4": {
@@ -409,7 +408,7 @@
             "transport-options": {
                 "relative": true
             },
-            "install-path": "../zapj/zap-php-framework"
+            "install-path": "../zapsh/zap-php-framework"
         }
     ],
     "dev": true,

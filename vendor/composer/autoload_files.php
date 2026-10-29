@@ -7,7 +7,6 @@ $baseDir = dirname($vendorDir);
 
 return array(
     '2cffec82183ee1cea088009cef9a6fc3' => $vendorDir . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
-    '2a9d6d763e243d8f9e496986c262a927' => $vendorDir . '/zapj/zap-php-framework/src/compat.php',
-    'ed7610ef029ae6b6d5177039e3fb3277' => $vendorDir . '/zapj/zap-php-framework/src/functions.php',
+    'e736afc608f44970f34b798a0d749435' => $vendorDir . '/zapsh/zap-php-framework/src/functions.php',
     'a71b1f879fe07566898e0083485932c3' => $baseDir . '/app/zapcms/functions.php',
 );

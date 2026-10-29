@@ -8,8 +8,7 @@ class ComposerStaticInit501184272d4d7ed612cf428f1bb86753
 {
     public static $files = array (
         '2cffec82183ee1cea088009cef9a6fc3' => __DIR__ . '/..' . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
-        '2a9d6d763e243d8f9e496986c262a927' => __DIR__ . '/..' . '/zapj/zap-php-framework/src/compat.php',
-        'ed7610ef029ae6b6d5177039e3fb3277' => __DIR__ . '/..' . '/zapj/zap-php-framework/src/functions.php',
+        'e736afc608f44970f34b798a0d749435' => __DIR__ . '/..' . '/zapsh/zap-php-framework/src/functions.php',
         'a71b1f879fe07566898e0083485932c3' => __DIR__ . '/../..' . '/app/zapcms/functions.php',
     );
 
@@ -49,7 +48,7 @@ class ComposerStaticInit501184272d4d7ed612cf428f1bb86753
         ),
         'zap\\' =>
         array (
-            0 => __DIR__ . '/..' . '/zapj/zap-php-framework/src',
+            0 => __DIR__ . '/..' . '/zapsh/zap-php-framework/src',
         ),
         'mods\\' =>
         array (

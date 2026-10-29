@@ -7,7 +7,7 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'zapcms\\' => array($baseDir . '/app/zapcms'),
-    'zap\\' => array($vendorDir . '/zapj/zap-php-framework/src'),
+    'zap\\' => array($vendorDir . '/zapsh/zap-php-framework/src'),
     'mods\\' => array($baseDir . '/mods'),
     'app\\' => array($baseDir . '/app'),
     'Psr\\Log\\' => array($vendorDir . '/psr/log/src'),

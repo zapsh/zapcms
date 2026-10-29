@@ -345,10 +345,10 @@ function buildEnvChecks(): array
 
     $items = [
         [
-            'label'   => 'PHP 版本 ≥ 7.4',
+            'label'   => 'PHP 版本 ≥ 8.2',
             'value'   => PHP_VERSION,
-            'pass'    => version_compare(PHP_VERSION, '7.4.0') >= 0,
-            'failMsg' => '需要 PHP 7.4 或更高版本',
+            'pass'    => version_compare(PHP_VERSION, '8.2.0') >= 0,
+            'failMsg' => '需要 PHP 8.2 或更高版本',
         ],
         [
             'label'   => 'PDO 扩展',

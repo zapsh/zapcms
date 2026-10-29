@@ -13,8 +13,8 @@
     "docs": "https://zap.cn/docs/zapcms-docs"
   },
   "require": {
-    "php": ">=7.4",
-    "zapj/zap-php-framework": "dev-main",
+    "php": ">=8.2",
+    "zapsh/zap-php-framework": "dev-main",
     "ext-pdo": "*",
     "ext-gd": "*",
     "monolog/monolog": "^2.9",
