@@ -134,7 +134,6 @@ class ZapPackageManager
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error    = curl_error($ch);
-        curl_close($ch);
 
         if ($error) {
             error_log("ZapPackageManager HTTP GET error: {$error}");
@@ -175,7 +174,6 @@ class ZapPackageManager
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error    = curl_error($ch);
-        curl_close($ch);
 
         if ($error) {
             error_log("ZapPackageManager HTTP POST error: {$error}");
@@ -226,7 +224,6 @@ class ZapPackageManager
         $success  = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $error    = curl_error($ch);
-        curl_close($ch);
         fclose($fp);
 
         if (!$success || $httpCode >= 400 || $error) {

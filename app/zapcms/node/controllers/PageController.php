@@ -43,7 +43,7 @@ class PageController extends AbstractNodeType
         return $query->count('id');
     }
 
-    public function getPages(Pagination $page = null){
+    public function getPages(?Pagination $page = null){
         $query = Node::where('node_type','page');
         $query->orWhere(function(Query $query){
             $query->where('node_type','catalog')->where('mime_type','page');

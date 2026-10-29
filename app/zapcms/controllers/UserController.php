@@ -331,7 +331,6 @@ class UserController extends AdminController
         $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime  = finfo_file($finfo, $uploads['tmp_name']);
-        finfo_close($finfo);
 
         if (!in_array($mime, $allowedTypes, true)) {
             Response::redirect(Url::action('User@profile', ['tab' => 'account']))->with('error', '仅支持 JPG / PNG / GIF / WebP 格式');
