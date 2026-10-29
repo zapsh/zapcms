@@ -11,14 +11,14 @@ $this->beginBlock('content');
         <div class="row">
             <?php echo $this->partial('partials/_sidebar'); ?>
             <div class="col-sm-9">
-                <div class="content-wrap">
+                <div class="content-wrap detail-wrap">
                     <div class="row">
                         <div class="col-sm-12">
                             <article class="single-post">
-                                <div class="entry-header">
+                                <header class="entry-header">
                                     <h1 class="entry-title"><?php echo htmlspecialchars($node['title']); ?></h1>
-                                </div>
-                                <div class="post-content">
+                                </header>
+                                <div class="entry-content">
                                     <?php echo $node['content']; ?>
                                 </div>
                             </article>

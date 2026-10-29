@@ -88,7 +88,7 @@ $latestNews = pageState()->getLatestNews();
             <div class="home_list">
                 <div class="row">
                     <?php foreach ($latestNews as $news){ ?>
-                    <div class="col-lg-3 col-md-6 col-sm-12">
+                    <div class="col-lg-6 col-md-6 col-sm-12">
                         <div class="news-card">
                             <a href="<?php echo smart_node_url($news); ?>" class="news-link">
                                 <div class="news-image">

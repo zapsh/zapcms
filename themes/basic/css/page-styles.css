@@ -70,10 +70,10 @@
 .service-card:hover .service-icon { transform: scale(1.1); }
 .service-icon i { font-size: 36px; color: #fff; }
 .service-title {
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 600;
-    color: #333;
-    margin-bottom: 15px;
+    color: #0f2947;
+    margin-bottom: 12px;
 }
 .service-desc {
     font-size: 14px;
@@ -88,9 +88,9 @@
     margin-bottom: 50px;
 }
 .section-header .sub_title {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 600;
-    color: #333;
+    color: #0f2947;
     margin-bottom: 10px;
 }
 .section-header .section-desc {
@@ -124,7 +124,8 @@
 .news-image {
     position: relative;
     overflow: hidden;
-    height: 220px;
+    height: 260px;
+    border-radius: 14px;
 }
 .news-image img,
 .post-content > a > img {
@@ -177,11 +178,11 @@ ul.post-meta li i {
 }
 .news-title,
 .post-content .content-wrap h4 {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
-    color: #333;
-    margin-bottom: 12px;
-    line-height: 1.4;
+    color: #0f2947;
+    margin-bottom: 10px;
+    line-height: 1.5;
 }
 .news-title,
 .post-content .content-wrap h4 a {
@@ -226,17 +227,17 @@ ul.list-inline.post-meta li i { color: #1e6bff; }
 .sidebar .widget {
     background: #fff;
     border-radius: 12px;
-    padding: 10px;
+    padding: 14px 12px 10px;
     margin-bottom: 30px;
     /* box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05); */
 }
 .sidebar .widget h4 {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 600;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #1e6bff;
-    color: #333;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eef1f7;
+    color: #0f2947;
 }
 .sidebar .widget ul { list-style: none; padding: 0; margin: 0; }
 .sidebar .widget ul li {
@@ -244,9 +245,9 @@ ul.list-inline.post-meta li i { color: #1e6bff; }
 }
 .sidebar .widget ul li a {
     display: block;
-    padding: 12px 15px;
+    padding: 10px 14px;
     color: #555;
-    font-size: 15px;
+    font-size: 14px;
     border-radius: 8px;
     transition: all 0.3s;
     text-decoration: none;
@@ -310,4 +311,183 @@ ul.list-inline.post-meta li i { color: #1e6bff; }
     .news-content,
     .post-content .content-wrap { padding: 12px; }
     .news-title { font-size: 14px; margin-bottom: 8px; }
+}
+
+/* ─── 文章详情 ─── */
+/* 详情页容器：与左侧栏顶端对齐（抵消 .content-wrap 的 10px 上边距） */
+.content-wrap.detail-wrap { margin-top: 0; }
+
+.single-post {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px 36px 36px;
+    margin: 0 0 30px;
+    box-shadow: 0 5px 30px rgba(10, 35, 66, 0.06);
+}
+
+.single-post .entry-header {
+    padding-bottom: 16px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid #eef1f7;
+}
+
+.single-post .entry-title {
+    font-size: 22px;
+    line-height: 1.6;
+    font-weight: 600;
+    color: #0f2947;
+    margin: 0 0 10px;
+}
+
+.single-post .entry-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-size: 12px;
+    color: #98a2b3;
+}
+
+.single-post .entry-meta li i {
+    color: #1e6bff;
+    margin-right: 6px;
+}
+
+/* 封面图 */
+.single-post .post-thumbnail {
+    margin: 0 0 30px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #f2f7fd;
+}
+
+.single-post .post-thumbnail img {
+    display: block;
+    width: 100%;
+    max-height: 460px;
+    object-fit: cover;
+    border-radius: 16px;
+}
+
+/* 正文排版 */
+.single-post .entry-content {
+    font-size: 15px;
+    line-height: 1.85;
+    color: #4a5568;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.single-post .entry-content > *:first-child { margin-top: 0; }
+.single-post .entry-content > *:last-child { margin-bottom: 0; }
+
+.single-post .entry-content p { margin: 0 0 14px; }
+
+.single-post .entry-content h2,
+.single-post .entry-content h3,
+.single-post .entry-content h4 {
+    color: #0f2947;
+    line-height: 1.5;
+    font-weight: 600;
+}
+
+.single-post .entry-content h2 { font-size: 19px; margin: 26px 0 12px; }
+.single-post .entry-content h3 { font-size: 17px; margin: 22px 0 10px; }
+.single-post .entry-content h4 { font-size: 15px; margin: 20px 0 10px; }
+
+.single-post .entry-content a { color: #1e6bff; }
+.single-post .entry-content a:hover { color: #0a3fa8; }
+
+.single-post .entry-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 12px;
+    margin: 6px 0;
+}
+
+.single-post .entry-content ul,
+.single-post .entry-content ol {
+    margin: 0 0 14px;
+    padding-left: 22px;
+}
+
+.single-post .entry-content li { margin-bottom: 8px; }
+
+.single-post .entry-content blockquote {
+    margin: 0 0 22px;
+    padding: 16px 20px;
+    border-left: 3px solid #1e6bff;
+    border-radius: 0 10px 10px 0;
+    background: #f2f7fd;
+    color: #55617a;
+}
+
+.single-post .entry-content pre {
+    margin: 0 0 22px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    background: #06182f;
+    color: #d7e3f5;
+    font-size: 14px;
+    line-height: 1.7;
+    overflow: auto;
+}
+
+.single-post .entry-content code {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #f2f7fd;
+    color: #0a3fa8;
+    font-size: 14px;
+}
+
+.single-post .entry-content pre code {
+    padding: 0;
+    background: transparent;
+    color: inherit;
+}
+
+.single-post .entry-content table {
+    width: 100%;
+    margin-bottom: 20px;
+    border-collapse: collapse;
+}
+
+.single-post .entry-content th,
+.single-post .entry-content td {
+    padding: 10px 14px;
+    border: 1px solid #e6ecf5;
+    text-align: left;
+}
+
+.single-post .entry-content th {
+    background: #f2f7fd;
+    color: #0f2947;
+}
+
+.single-post .entry-content hr {
+    height: 1px;
+    border: 0;
+    margin: 30px 0;
+    background: #eef1f7;
+}
+
+@media (max-width: 991px) {
+    .single-post {
+        padding: 26px 22px 30px;
+        border-radius: 16px;
+        margin: 0 0 20px;
+    }
+
+    .single-post .entry-title { font-size: 19px; }
+
+    .single-post .entry-content {
+        font-size: 14px;
+        line-height: 1.8;
+    }
+
+    .single-post .entry-meta { gap: 14px; }
 }
