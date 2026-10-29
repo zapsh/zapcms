@@ -53,13 +53,13 @@
 }
 .service-card:hover {
     transform: translateY(-10px);
-    box-shadow: 0 20px 60px rgba(102, 126, 234, 0.15);
-    border-color: rgba(102, 126, 234, 0.2);
+    box-shadow: 0 20px 60px rgba(30, 107, 255, 0.15);
+    border-color: rgba(30, 107, 255, 0.2);
 }
 .service-icon {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -143,7 +143,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(102, 126, 234, 0.85);
+    background: rgba(30, 107, 255, 0.85);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -190,7 +190,7 @@ ul.post-meta li i {
 }
 .news-title:hover,
 .post-content .content-wrap h4 a:hover {
-    color: #667eea;
+    color: #1e6bff;
 }
 .news-excerpt {
     font-size: 14px;
@@ -210,7 +210,7 @@ ul.list-inline.post-meta {
     color: #aaa;
     margin-bottom: 12px;
 }
-ul.list-inline.post-meta li i { color: #667eea; }
+ul.list-inline.post-meta li i { color: #1e6bff; }
 
 /* ─── 文章列表页：产品卡片适配 article_list ─── */
 .content-wrap { margin-top: 10px; }
@@ -235,7 +235,7 @@ ul.list-inline.post-meta li i { color: #667eea; }
     font-weight: 600;
     margin-bottom: 20px;
     padding-bottom: 15px;
-    border-bottom: 2px solid #667eea;
+    border-bottom: 2px solid #1e6bff;
     color: #333;
 }
 .sidebar .widget ul { list-style: none; padding: 0; margin: 0; }
@@ -253,7 +253,7 @@ ul.list-inline.post-meta li i { color: #667eea; }
 }
 .sidebar .widget ul li a:hover,
 .sidebar .widget ul li.current a {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     color: #fff;
 }
 

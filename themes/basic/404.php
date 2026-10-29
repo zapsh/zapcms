@@ -14,7 +14,7 @@ $catalogMenu = pageState()->getCatalogList();
         line-height: 1;
         font-weight: 700;
         letter-spacing: 8px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1e6bff 0%, #24d4ff 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -22,7 +22,7 @@ $catalogMenu = pageState()->getCatalogList();
     }
     .error-404-icon {
         font-size: 40px;
-        color: #667eea;
+        color: #1e6bff;
         margin-bottom: 20px;
     }
     .error-404-title {
@@ -50,7 +50,7 @@ $catalogMenu = pageState()->getCatalogList();
         font-size: 15px;
     }
     .error-404-actions .btn-back {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
         border-color: transparent;
         color: #fff;
     }
@@ -71,16 +71,16 @@ $catalogMenu = pageState()->getCatalogList();
         display: inline-block;
         margin: 4px 6px;
         padding: 6px 18px;
-        border: 1px solid #e8e8e8;
+        border: 1px solid rgba(30, 107, 255, 0.18);
         border-radius: 20px;
-        color: #667eea;
+        color: #1e6bff;
         font-size: 14px;
         background: #fff;
     }
     .error-404-links a:hover {
-        border-color: #667eea;
-        color: #764ba2;
-        background: #f8f9ff;
+        border-color: #1e6bff;
+        color: #0a3fa8;
+        background: #eef5ff;
         text-decoration: none;
     }
     @media (max-width: 768px) {

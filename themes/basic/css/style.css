@@ -39,7 +39,7 @@ a {
 }
 
 a:hover {
-    color: #0d6efd;
+    color: #1e6bff;
     text-decoration: none;
 }
 
@@ -70,13 +70,13 @@ a.none:hover {
 }
 /* pagination */
 .pagination>.active>a, .pagination>.active>a:focus, .pagination>.active>a:hover, .pagination>.active>span, .pagination>.active>span:focus, .pagination>.active>span:hover {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     color: #fff !important;
 }
 
 /* Header */
 .top {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     padding: 8px 0;
     color: #fff;
     border-bottom: none;
@@ -165,20 +165,20 @@ a.none:hover {
 
 .navbar-default .navbar-nav > li > a:hover {
     background-color: transparent;
-    color: #0d6efd;
+    color: #1e6bff;
 }
 
 .navbar-default .navbar-nav > .open > a, 
 .navbar-default .navbar-nav > .open > a:hover, 
 .navbar-default .navbar-nav > .open > a:focus {
     background-color: transparent;
-    color: #0d6efd;
+    color: #1e6bff;
 }
 
 .navbar-default .navbar-nav .active > a, 
 .navbar-default .navbar-nav .active > a:hover, 
 .navbar-default .navbar-nav .active > a:focus {
-    color: #0d6efd;
+    color: #1e6bff;
     background-color: transparent;
 }
 
@@ -241,7 +241,7 @@ a.none:hover {
     transform: translateX(-50%);
     width: 0;
     height: 2px;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: linear-gradient(90deg, #1e6bff, #0a3fa8);
     transition: width 0.3s;
 }
 
@@ -311,7 +311,7 @@ a.none:hover {
     transition: all 0.3s ease-out;
     min-width: 225px;
     border: none;
-    border-top: 3px solid #0d6efd;
+    border-top: 3px solid #1e6bff;
     border-radius: 0 0 12px 12px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.15);
     padding: 10px 0;
@@ -328,7 +328,7 @@ a.none:hover {
 
 .main-navbar-nav li > .dropdown-menu > li > a:hover, 
 .main-navbar-nav li > .dropdown-menu > li > a:focus {
-    color: #0d6efd;
+    color: #1e6bff;
     background-color: #f8f9fa;
     padding-left: 25px;
 }
@@ -415,7 +415,7 @@ a.none:hover {
 
 .hero_content h1 {
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.75);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -489,7 +489,7 @@ a.none:hover {
     content: '';
     position: absolute;
     width: 40px;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: linear-gradient(90deg, #1e6bff, #0a3fa8);
     height: 3px;
     left: 0;
     bottom: 0;
@@ -501,7 +501,7 @@ a.none:hover {
     right: 20px;
     top: 20px;
     margin: 0;
-    color: #0d6efd;
+    color: #1e6bff;
     font-size: 40px;
     opacity: 0.3;
 }
@@ -561,8 +561,8 @@ h2.section-title {
 
 .services .media i {
     font-size: 48px;
-    color: #0d6efd;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #1e6bff;
+    background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -602,7 +602,7 @@ h2.section-title {
     position: absolute;
     width: 60px;
     height: 3px;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: linear-gradient(90deg, #1e6bff, #0a3fa8);
     bottom: 0;
     left: 0;
     border-radius: 2px;
@@ -655,7 +655,7 @@ h2.section-title {
 }
 
 .home_list h3 a:hover {
-    color: #0d6efd;
+    color: #1e6bff;
 }
 
 .home_list p {
@@ -678,12 +678,12 @@ h2.section-title {
 .home_list a.btn {
     font-size: 13px;
     padding: 0;
-    color: #0d6efd;
+    color: #1e6bff;
     font-weight: 500;
 }
 
 .home_list a.btn:hover {
-    color: #0a58ca;
+    color: #0a4fc4;
 }
 
 .home_bottom .row {
@@ -771,7 +771,7 @@ h2.section-title {
 
 /* Footer */
 footer.site-footer {
-    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    background: linear-gradient(180deg, #06182f 0%, #0a2342 100%);
     padding: 60px 0 0;
     float: left;
     width: 100%;
@@ -794,7 +794,7 @@ footer.site-footer h4::after {
     left: 0;
     width: 30px;
     height: 2px;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: linear-gradient(90deg, #1e6bff, #0a3fa8);
 }
 
 footer.site-footer ul {
@@ -831,7 +831,7 @@ footer.site-footer p a:hover {
 
 footer.site-footer .glyphicon {
     margin-right: 8px;
-    color: #667eea;
+    color: #1e6bff;
 }
 
 p.text {
@@ -862,7 +862,7 @@ p.text {
 }
 
 .site-footer li a:hover {
-    color: #667eea;
+    color: #1e6bff;
 }
 
 @media (max-width: 462px) {
@@ -880,7 +880,7 @@ p.text {
     right: 30px;
     width: 50px;
     height: 50px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     color: #fff;
     border-radius: 50%;
     display: flex;
@@ -891,7 +891,7 @@ p.text {
     visibility: hidden;
     transition: all 0.3s;
     z-index: 1000;
-    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 5px 20px rgba(30, 107, 255, 0.4);
 }
 
 .back-to-top.show {
@@ -901,7 +901,7 @@ p.text {
 
 .back-to-top:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+    box-shadow: 0 10px 30px rgba(30, 107, 255, 0.5);
 }
 
 .back-to-top i {
@@ -930,7 +930,7 @@ p.text {
 }
 
 .breadcrumb li a:hover {
-    color: #0d6efd;
+    color: #1e6bff;
 }
 
 .breadcrumb .active {
@@ -1025,7 +1025,7 @@ p.text {
 
 .category-main .meta .arc-comment a:hover, .archive ul.arc-share li a:hover {
     text-decoration: none;
-    color: #0d6efd;
+    color: #1e6bff;
 }
 
 .category-main .meta .arc-date {
@@ -1048,11 +1048,11 @@ p.text {
 }
 
 .category-main .archive-cat a {
-    color: #0d6efd;
+    color: #1e6bff;
 }
 
 .category-main .archive-cat a:hover {
-    color: #0a58ca;
+    color: #0a4fc4;
     text-decoration: none;
 }
 
@@ -1142,8 +1142,8 @@ p.text {
 }
 
 .faq-search-input:focus {
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102,126,234,0.12);
+    border-color: #1e6bff;
+    box-shadow: 0 0 0 3px rgba(30,107,255,0.14);
     outline: none;
 }
 
@@ -1180,9 +1180,9 @@ p.text {
 }
 
 .faq-toggle-all:hover {
-    border-color: #667eea;
-    color: #667eea;
-    background: #f8f9ff;
+    border-color: #1e6bff;
+    color: #1e6bff;
+    background: #eef5ff;
 }
 
 /* No Result */
@@ -1216,7 +1216,7 @@ p.text {
 }
 
 .faq-category-header i {
-    color: #667eea;
+    color: #1e6bff;
     font-size: 18px;
 }
 
@@ -1241,7 +1241,7 @@ p.text {
 }
 
 .faq-question:hover {
-    background: #f8f9ff;
+    background: #eef5ff;
 }
 
 .faq-item.open .faq-question {
@@ -1255,7 +1255,7 @@ p.text {
     width: 32px;
     height: 32px;
     border-radius: 8px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     color: #fff;
     font-size: 14px;
     font-weight: 700;
@@ -1284,7 +1284,7 @@ p.text {
 
 .faq-item.open .faq-chevron {
     transform: rotate(180deg);
-    color: #667eea;
+    color: #1e6bff;
 }
 
 .faq-answer {
@@ -1366,7 +1366,7 @@ p.text {
     position: absolute;
     width: 40px;
     height: 3px;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: linear-gradient(90deg, #1e6bff, #0a3fa8);
     left: 0;
     bottom: 0;
     border-radius: 2px;
@@ -1397,12 +1397,12 @@ p.text {
 
 .sidebar li.current a,
 .sidebar li.current a:hover {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     color: #FFFFFF;
 }
 
 .sidebar ul li a:hover {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     color: #FFFFFF;
     text-decoration: none;
     padding-left: 20px;
@@ -1941,7 +1941,7 @@ p.text {
 }
 
 .swiper-wrapper .swiper-pagination-bullet-active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     width: 30px;
     border-radius: 5px;
 }
@@ -2002,16 +2002,16 @@ p.text {
     padding: 0 26px;
     border: none;
     border-radius: 12px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     color: #fff;
     font-size: 15px;
     cursor: pointer;
-    box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35);
+    box-shadow: 0 4px 14px rgba(30, 107, 255, 0.35);
     transition: all 0.3s;
 }
 
 .search-btn:hover {
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+    box-shadow: 0 6px 20px rgba(30, 107, 255, 0.5);
     transform: translateY(-1px);
 }
 
@@ -2020,13 +2020,13 @@ p.text {
     color: #888;
     padding: 10px 16px;
     margin-bottom: 20px;
-    background: #f8f9ff;
-    border-left: 3px solid #667eea;
+    background: #eef5ff;
+    border-left: 3px solid #1e6bff;
     border-radius: 6px;
 }
 
 .search-stats strong {
-    color: #667eea;
+    color: #1e6bff;
 }
 
 .search-result-item {
@@ -2051,7 +2051,7 @@ p.text {
 }
 
 .search-result-title a:hover {
-    color: #667eea;
+    color: #1e6bff;
     text-decoration: none;
 }
 
@@ -2073,8 +2073,8 @@ p.text {
     color: #fff;
 }
 
-.search-tag--article { background: #667eea; }
-.search-tag--product { background: #764ba2; }
+.search-tag--article { background: #1e6bff; }
+.search-tag--product { background: #0a3fa8; }
 .search-tag--faq     { background: #27ae60; }
 .search-tag--catalog { background: #f39c12; }
 .search-tag--page    { background: #95a5a6; }
@@ -2088,7 +2088,7 @@ p.text {
 }
 
 .search-hit {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     color: #fff;
     padding: 0 4px;
     border-radius: 3px;
@@ -2113,7 +2113,7 @@ p.text {
 }
 
 .search-empty p strong {
-    color: #667eea;
+    color: #1e6bff;
 }
 
 .search-suggest {
@@ -2142,14 +2142,14 @@ p.text {
     object-fit: cover;
     border-radius: 10px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    background: #f5f6fa;
+    background: #f2f7fd;
 }
 
 .product-title {
     margin: 0 0 14px;
     font-size: 24px;
     font-weight: 700;
-    color: #2c3e50;
+    color: #0f2947;
     line-height: 1.4;
 }
 
@@ -2198,7 +2198,7 @@ p.text {
     position: relative;
     padding-left: 12px;
     font-size: 20px;
-    color: #2c3e50;
+    color: #0f2947;
 }
 
 .section-title::before {
@@ -2209,7 +2209,7 @@ p.text {
     bottom: 4px;
     width: 4px;
     border-radius: 2px;
-    background: linear-gradient(180deg, #667eea, #764ba2);
+    background: linear-gradient(180deg, #1e6bff, #0a3fa8);
 }
 
 @media (max-width: 767px) {
@@ -2311,7 +2311,7 @@ p.text {
     height: 30px;
     margin: -15px 0 0 -15px;
     border: 3px solid #f3f3f3;
-    border-top: 3px solid #667eea;
+    border-top: 3px solid #1e6bff;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -2319,4 +2319,209 @@ p.text {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+ * 蓝色科技风视觉层（Blue Tech）
+ * 主色 #1e6bff，辅以青色 #24d4ff 点缀，叠加网格 / 光晕等科技感细节
+ * ========================================================================== */
+
+:root {
+    --zap-blue: #1e6bff;
+    --zap-blue-deep: #0a3fa8;
+    --zap-blue-dark: #06182f;
+    --zap-cyan: #24d4ff;
+    --zap-gradient: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
+    --zap-gradient-line: linear-gradient(90deg, #1e6bff 0%, #24d4ff 100%);
+    --zap-glow: 0 14px 34px rgba(30, 107, 255, 0.16);
+}
+
+::selection {
+    background: rgba(30, 107, 255, 0.18);
+    color: #0a2342;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--zap-blue), var(--zap-blue-deep));
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--zap-blue-deep);
+}
+
+/* 焦点样式：保持主题扁平风格，避免点击链接 / 按钮时出现浏览器默认焦点框 */
+a:focus,
+a:active,
+button:focus,
+input:focus,
+select:focus,
+textarea:focus,
+.btn:focus,
+*:focus-visible {
+    outline: none;
+}
+
+/* 顶部工具栏：蓝色渐变 + 科技网格 + 青色光晕 */
+.top {
+    position: relative;
+    overflow: hidden;
+    background: var(--zap-gradient);
+}
+
+.top::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 22px 22px;
+    pointer-events: none;
+}
+
+.top::after {
+    content: '';
+    position: absolute;
+    top: -70%;
+    right: -8%;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(36, 212, 255, 0.45) 0%, rgba(36, 212, 255, 0) 70%);
+    pointer-events: none;
+}
+
+.top .container {
+    position: relative;
+    z-index: 1;
+}
+
+.top input[type="text"] {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.32);
+}
+
+.top input[type="text"]:focus {
+    background: rgba(255, 255, 255, 0.28);
+    border-color: rgba(36, 212, 255, 0.9);
+}
+
+.top input[type="submit"]:hover {
+    background: rgba(255, 255, 255, 0.45);
+}
+
+/* 导航：青色渐变指示条 + 下拉面板描边 */
+.main-navbar-nav > li > a::after {
+    height: 2px;
+    background: var(--zap-gradient-line);
+    box-shadow: 0 0 10px rgba(36, 212, 255, 0.85);
+}
+
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > .open > a,
+.navbar-default .navbar-nav .active > a {
+    color: var(--zap-blue);
+}
+
+.dropdown-menu {
+    border: 1px solid rgba(30, 107, 255, 0.12);
+    border-top: 2px solid var(--zap-blue);
+    box-shadow: var(--zap-glow);
+}
+
+.dropdown-menu > li > a:hover,
+.dropdown-menu > li > a:focus {
+    background: rgba(30, 107, 255, 0.08);
+    color: var(--zap-blue);
+}
+
+/* 卡片：悬停上浮 + 蓝色光晕 */
+.box,
+.home_list .thumbnail,
+.sidebar {
+    box-shadow: 0 6px 24px rgba(10, 35, 66, 0.06);
+}
+
+.box:hover,
+.home_list .thumbnail:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--zap-glow);
+}
+
+/* 区块背景：淡蓝渐变 */
+.boxes_area {
+    background: linear-gradient(180deg, #eef5ff 0%, #ffffff 100%);
+}
+
+/* 居中区块标题：青色渐变短横线 */
+h2.section-title::after {
+    content: '';
+    display: block;
+    width: 48px;
+    height: 3px;
+    margin: 14px auto 0;
+    border-radius: 2px;
+    background: var(--zap-gradient-line);
+}
+
+/* 主按钮：蓝色渐变胶囊 */
+.btn.btn-primary {
+    background: var(--zap-gradient);
+    border-color: transparent;
+    border-radius: 999px;
+    padding-left: 22px;
+    padding-right: 22px;
+    box-shadow: 0 8px 20px rgba(30, 107, 255, 0.22);
+}
+
+.btn.btn-primary:hover,
+.btn.btn-primary:focus,
+.btn.btn-primary:active,
+.btn.btn-primary:active:focus {
+    background: var(--zap-gradient);
+    border-color: transparent;
+    filter: brightness(1.08);
+    box-shadow: 0 10px 26px rgba(30, 107, 255, 0.3);
+}
+
+/* 分页当前页：蓝色渐变 + 光晕 */
+.pagination > .active > a,
+.pagination > .active > a:hover,
+.pagination > .active > span,
+.pagination > .active > span:hover {
+    border-color: transparent;
+    box-shadow: 0 6px 16px rgba(30, 107, 255, 0.28);
+}
+
+/* 页脚：深蓝渐变 + 顶部青色光带 */
+footer.site-footer {
+    position: relative;
+    background: linear-gradient(180deg, var(--zap-blue-dark) 0%, #0a2342 100%);
+}
+
+footer.site-footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--zap-gradient-line);
+    opacity: 0.9;
+}
+
+footer.site-footer h4 {
+    position: relative;
+    padding-bottom: 14px;
+}
+
+footer.site-footer h4::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 32px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--zap-gradient-line);
+    opacity: 0.85;
 }
