@@ -8,3 +8,4 @@ storage/backups/*
 storage/cache/*
 storage/thumbs/*
 .vscode
+node_modules/

@@ -1,0 +1,228 @@
+// ===========================================================================
+// ZAP CMS 后台组件定制
+// ---------------------------------------------------------------------------
+// 原 assets/admin/css/zap-admin-custom.css 的内容已并入本文件。
+// 这里可以安全使用 Bootstrap 变量（$primary、$border-color、$gray-* …）。
+// ===========================================================================
+
+// ---- 内容区标题栏 --------------------------------------------------------
+.app-content-header {
+  padding: $zap-content-padding-y $zap-content-padding-x;
+  border-bottom: 1px solid $zap-content-header-border-color;
+  background-color: $zap-content-header-bg;
+
+  h1 {
+    line-height: 1.5;
+  }
+
+  // 面包屑与标题在同一行右对齐
+  .breadcrumb {
+    padding: 0;
+    margin-bottom: 0;
+
+    @include media-breakpoint-up(sm) {
+      justify-content: flex-end;
+    }
+  }
+}
+
+// ---- 面包屑 --------------------------------------------------------------
+.breadcrumb-item {
+  &.active {
+    color: $secondary;
+  }
+
+  + .breadcrumb-item::before {
+    float: left;
+    padding-right: .5rem;
+    color: $secondary;
+    content: var(--#{$prefix}breadcrumb-divider, "/");
+  }
+
+  a {
+    color: $primary;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+// ---- 仪表盘小卡片 --------------------------------------------------------
+.small-box {
+  @include border-radius($border-radius);
+  display: block;
+  position: relative;
+  min-height: 120px;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 0 1px rgba($black, .125), 0 1px 3px rgba($black, .2);
+
+  > .inner {
+    padding: .75rem 1rem;
+  }
+
+  h3 {
+    margin: 0 0 4px;
+    padding: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    white-space: nowrap;
+
+    small {
+      font-size: .75rem;
+    }
+  }
+
+  p {
+    margin-bottom: 0;
+    font-size: .9rem;
+    opacity: .8;
+  }
+
+  .small-box-icon {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 64px;
+    height: 64px;
+    opacity: .2;
+    pointer-events: none;
+    transition: opacity .3s ease, width .3s ease;
+  }
+
+  &:hover .small-box-icon {
+    width: 72px;
+    opacity: .35;
+  }
+}
+
+.small-box-footer {
+  display: block;
+  padding: .5rem 1rem;
+  font-size: .8rem;
+  text-align: center;
+  background-color: rgba($black, .1);
+  @include border-bottom-radius($border-radius);
+
+  &:hover {
+    background-color: rgba($black, .2);
+  }
+}
+
+// ---- 卡片头部图标 --------------------------------------------------------
+.card-header-icon {
+  margin-right: .35rem;
+  font-size: 1.1rem;
+}
+
+// ---- 页脚 ----------------------------------------------------------------
+.app-footer {
+  padding: 1rem;
+  font-size: .875rem;
+  color: $secondary;
+  background-color: $gray-100;
+  border-top: 1px solid $border-color;
+}
+
+// ---- 通用工具类 ----------------------------------------------------------
+// 两行文本截断
+.text-truncate-2 {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+}
+
+// 圆形头像
+.avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+// ===========================================================================
+// FontAwesome 图标选择器（ZapFaIcons 弹窗）
+// ===========================================================================
+#faIcons {
+  .modal-body {
+    padding-top: 0;
+  }
+
+  // 顶部工具栏（搜索 + 分类 + 预览），滚动时吸顶
+  .fa-icons-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    margin: 0 -1rem .5rem;
+    padding: .75rem 1rem;
+    background: rgba($white, .97);
+    border-bottom: 1px solid $border-color;
+    box-shadow: 0 2px 6px rgba($black, .06);
+  }
+
+  // 实时结果统计
+  .fa-icons-count {
+    min-width: 92px;
+    font-size: .8rem;
+    color: $secondary;
+  }
+
+  // 悬停/选中预览
+  .fa-icons-preview {
+    min-width: 200px;
+    background: $gray-100;
+
+    i {
+      width: 30px;
+      color: $primary;
+      text-align: center;
+    }
+
+    code {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+  }
+
+  // 图标网格：加大点击区域
+  .row [class*="col-"] {
+    padding: 4px !important;
+  }
+
+  .row button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 52px;
+    border-color: $gray-200;
+    border-radius: 8px;
+    transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+
+    i {
+      font-size: 1.15rem;
+      transition: transform .15s ease, color .15s ease;
+    }
+
+    &:hover {
+      background: #e9f5ff;
+      border-color: #86b7fe;
+      box-shadow: 0 0 0 3px rgba($primary, .15);
+
+      i {
+        color: $primary;
+        transform: scale(1.3);
+      }
+    }
+  }
+
+  // 无结果提示
+  .fa-icons-empty {
+    padding: 3rem 1rem;
+    color: $secondary;
+  }
+}

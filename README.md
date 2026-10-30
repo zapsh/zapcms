@@ -1,9 +1,9 @@
 # ZAP CMS
 
-##  环境要求
+##  Requirements
 - PHP 8.2+
 - MYSQL5.5+
-- Sqlite3 可选
+- Sqlite3 
 - PDO Driver (MySQL、Sqlite3)
 
 
@@ -23,10 +23,27 @@ RewriteRule ^ index.php [QSA,PT,L]
 ````
 
 
-#### Nginx
+#### Nginx Rewrite
 ````text
 location / {
-    try_files $uri $uri/ /index.php?$query_string;
+    try_files $uri $uri/ /index.php$is_args$query_string;
 }
 ````
+
+## Backend Theme
+
+- 源码目录：`resources/admin/`
+  - `scss/zap-admin.scss` —— 后台主题入口（Bootstrap + AdminLTE + ZAP 定制）
+  - `scss/_variables.scss` —— 主题变量（覆盖 Bootstrap / AdminLTE 默认值）
+  - `scss/_components.scss` —— ZAP 组件与页面定制样式
+  - `scss/bootstrap.scss` —— 安装向导使用的最小 Bootstrap 样式
+  - `js/bootstrap.js` —— Bootstrap JS（暴露 `window.bootstrap`）
+- 依赖：`bootstrap` 5.3.x、`admin-lte` 4.x、`vite`、`sass-embedded`（见 `package.json`）
+
+````bash
+npm install     # 首次安装
+npm run dev     # 监听编译（开发）
+npm run build   # 生产构建（压缩）
+````
+
 

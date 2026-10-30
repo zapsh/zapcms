@@ -168,6 +168,6 @@
     </footer>
 </div>
 
-<script src="../assets/admin/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/admin/js/bootstrap.bundle.js"></script>
 </body>
 </html>

@@ -5,10 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ZAP CMS - 登录</title>
 
-    <link rel="stylesheet" href="<?php echo base_url();?>/assets/admin/css/overlayscrollbars.css">
-
     <link rel="stylesheet" href="<?php echo base_url();?>/assets/admin/css/zap-admin.css">
-    <link rel="stylesheet" href="<?php echo base_url();?>/assets/admin/css/zap-admin-custom.css">
 <script src="<?php echo base_url();?>/assets/jquery/jquery-3.6.4.min.js"></script>
     <link href="<?php echo base_url();?>/assets/fontawesome/6.4.2/css/all.css" rel="stylesheet">
     <!-- 动态样式 -->
@@ -122,11 +119,8 @@
         </div>
     </div>
 
-    <!-- Bootstrap 5 Bundle JS -->
-    <script src="<?php echo base_url();?>/assets/admin/js/bootstrap.bundle.min.js"></script>
-
-    <!-- OverlayScrollbars -->
-    <script src="<?php echo base_url();?>/assets/admin/js/overlayscrollbars.browser.es6.js"></script>
+    <!-- Bootstrap 5 Bundle JS（Vite 构建产物） -->
+    <script src="<?php echo base_url();?>/assets/admin/js/bootstrap.bundle.js"></script>
 
     <!-- ZAP Admin JS -->
     <script src="<?php echo base_url();?>/assets/admin/js/admin.js"></script>

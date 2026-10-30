@@ -1,0 +1,17 @@
+/*!
+ * ZAP CMS Admin Theme
+ * 构建产物：assets/admin/css/zap-admin.css —— 请勿直接修改，改动请编辑 resources/admin/scss/
+ * 依赖：bootstrap 5.3.8 + admin-lte 4.10
+ */
+
+// ---- Bootstrap 函数（供下面的变量文件使用）----
+@import "bootstrap/scss/functions";
+
+// ---- ZAP 主题变量（必须早于 Bootstrap / AdminLTE 变量）----
+@import "variables";
+
+// ---- AdminLTE 4（内含完整 Bootstrap 5.3 源码编译）----
+@import "admin-lte/src/scss/adminlte";
+
+// ---- ZAP CMS 组件与页面定制 ----
+@import "components";

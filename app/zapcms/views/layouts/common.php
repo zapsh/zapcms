@@ -7,9 +7,7 @@ use \zap\facades\Url;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php echo $this->e($title ?? 'ZAP CMS');?></title>
-    <link href="<?php echo base_url();?>/assets/admin/css/overlayscrollbars.css" rel="stylesheet">
     <link href="<?php echo base_url();?>/assets/admin/css/zap-admin.css" rel="stylesheet">
-    <link href="<?php echo base_url();?>/assets/admin/css/zap-admin-custom.css" rel="stylesheet">
     
     <script src="<?php echo base_url();?>/assets/sweetalert2.all.min.js"></script>
     <script src="<?php echo base_url();?>/assets/jquery/jquery-3.6.4.min.js"></script>
@@ -144,8 +142,7 @@ use \zap\facades\Url;
     <div class="toast-container p-3 bottom-0 end-0" id="bottomRightToast" data-original-class="toast-container p-3"></div>
  
     
-    <script src="<?php echo base_url();?>/assets/admin/js/bootstrap.bundle.min.js"></script>
-    <script src="<?php echo base_url();?>/assets/admin/js/overlayscrollbars.browser.es6.js"></script>
+    <script src="<?php echo base_url();?>/assets/admin/js/bootstrap.bundle.js"></script>
     <script src="<?php echo base_url();?>/assets/admin/js/zap-admin.js"></script>
     
 

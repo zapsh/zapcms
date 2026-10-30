@@ -1,0 +1,19 @@
+{
+  "name": "zapcms",
+  "version": "1.0.6",
+  "private": true,
+  "type": "module",
+  "description": "ZAP CMS 前端资源构建（Vite + SCSS）",
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "vite build",
+    "build:debug": "vite build --minify false"
+  },
+  "devDependencies": {
+    "@popperjs/core": "^2.11.8",
+    "admin-lte": "^4.10.0",
+    "bootstrap": "5.3.8",
+    "sass-embedded": "^1.80.0",
+    "vite": "^7.0.0"
+  }
+}
