@@ -1,0 +1,29 @@
+parameters:
+    # 起步等级：3（含类型检查与部分泛型检查）。
+    # 存量问题已记录在 phpstan-baseline.neon，新代码不允许新增错误。
+    level: 3
+
+    paths:
+        - app
+        - mods
+        - config
+        - install
+        - console
+
+    excludePaths:
+        analyseAndScan:
+            - vendor
+            - node_modules
+            - assets
+            - storage
+            - var
+            # 框架经 composer path repository 以符号链接进入 vendor，
+            # 真实路径不在 vendor/ 下，需要显式排除（框架由其自身仓库单独分析）
+            - ../zap-php-framework
+
+    tmpDir: var/tmp/phpstan
+
+    treatPhpDocTypesAsCertain: false
+
+includes:
+    - phpstan-baseline.neon

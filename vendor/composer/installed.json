@@ -310,6 +310,73 @@
             "install-path": "../phpmailer/phpmailer"
         },
         {
+            "name": "phpstan/phpstan",
+            "version": "2.3.4",
+            "version_normalized": "2.3.4.0",
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/f20ce6f3c82556cfcfc086b152445a12d1d64fff",
+                "reference": "f20ce6f3c82556cfcfc086b152445a12d1d64fff",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.4|^8.0"
+            },
+            "conflict": {
+                "phpstan/phpstan-shim": "*"
+            },
+            "time": "2026-10-28T22:38:53+00:00",
+            "bin": [
+                "phpstan",
+                "phpstan.phar"
+            ],
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ondřej Mirtes"
+                },
+                {
+                    "name": "Markus Staab"
+                },
+                {
+                    "name": "Vincent Langlet"
+                }
+            ],
+            "description": "PHPStan - PHP Static Analysis Tool",
+            "keywords": [
+                "dev",
+                "static analysis"
+            ],
+            "support": {
+                "docs": "https://phpstan.org/user-guide/getting-started",
+                "forum": "https://github.com/phpstan/phpstan/discussions",
+                "issues": "https://github.com/phpstan/phpstan/issues",
+                "security": "https://github.com/phpstan/phpstan/security/policy",
+                "source": "https://github.com/phpstan/phpstan-src"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/ondrejmirtes",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/phpstan",
+                    "type": "github"
+                }
+            ],
+            "install-path": "../phpstan/phpstan"
+        },
+        {
             "name": "psr/log",
             "version": "3.0.2",
             "version_normalized": "3.0.2.0",
@@ -700,7 +767,7 @@
             "dist": {
                 "type": "path",
                 "url": "../zap-php-framework",
-                "reference": "a2099ed073852cc50ba0e51cf306e3cad2960cc8"
+                "reference": "09e906f2e33622cacf4b53a689c30ab6e208b799"
             },
             "require": {
                 "ext-curl": "*",
@@ -745,5 +812,7 @@
         }
     ],
     "dev": true,
-    "dev-package-names": []
+    "dev-package-names": [
+        "phpstan/phpstan"
+    ]
 }

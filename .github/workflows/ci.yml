@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+
+jobs:
+  analyse:
+    name: PHPStan & Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      # 项目通过 composer path repository 依赖同级的框架仓库，因此两者都要 checkout
+      - name: Checkout zapcms
+        uses: actions/checkout@v4
+        with:
+          path: zapcms
+
+      - name: Checkout zap-php-framework
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/zap-php-framework
+          path: zap-php-framework
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo, pdo_sqlite, pdo_mysql, gd, mbstring, json, curl, dom, simplexml, openssl, zip
+          coverage: none
+
+      - name: Install dependencies
+        working-directory: zapcms
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: PHP syntax check
+        working-directory: zapcms
+        run: find app mods config install console -name '*.php' -print0 | xargs -0 -n1 -P4 php -l
+
+      - name: PHPStan
+        working-directory: zapcms
+        run: composer analyse

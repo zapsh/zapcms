@@ -3,7 +3,7 @@
         'name' => 'zapsh/zapcms',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'ab74dbe2e0dd2f44ac6c1c5bfa380a901d42e54a',
+        'reference' => '6fef4f837664cada1611a8139e05aa649e6d4f25',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -45,6 +45,15 @@
             'install_path' => __DIR__ . '/../phpmailer/phpmailer',
             'aliases' => array(),
             'dev_requirement' => false,
+        ),
+        'phpstan/phpstan' => array(
+            'pretty_version' => '2.3.4',
+            'version' => '2.3.4.0',
+            'reference' => 'f20ce6f3c82556cfcfc086b152445a12d1d64fff',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../phpstan/phpstan',
+            'aliases' => array(),
+            'dev_requirement' => true,
         ),
         'psr/log' => array(
             'pretty_version' => '3.0.2',
@@ -100,7 +109,7 @@
         'zapsh/zap-php-framework' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'a2099ed073852cc50ba0e51cf306e3cad2960cc8',
+            'reference' => '09e906f2e33622cacf4b53a689c30ab6e208b799',
             'type' => 'library',
             'install_path' => __DIR__ . '/../zapsh/zap-php-framework',
             'aliases' => array(),
@@ -109,7 +118,7 @@
         'zapsh/zapcms' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'ab74dbe2e0dd2f44ac6c1c5bfa380a901d42e54a',
+            'reference' => '6fef4f837664cada1611a8139e05aa649e6d4f25',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

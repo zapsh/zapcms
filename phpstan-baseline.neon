@@ -1,0 +1,1633 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$image\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\PageState.php
+
+		-
+			message: '#^Call to an undefined static method zapcms\\models\\Node\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\PageState.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$catalog\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\Startup.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$isCatalog\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\Startup.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$isHome\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\Startup.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$isNode\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\Startup.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$node\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\Startup.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$nodeId\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\Startup.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$nodeMimeType\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\Startup.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$nodeType\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\Startup.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$tag\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\Startup.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$tags\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\Startup.php
+
+		-
+			message: '#^Call to an undefined static method zapcms\\models\\Node\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\Startup.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$catalog\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\controllers\CatalogController.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$catalogPaths\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\controllers\CatalogController.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$node\.$#'
+			identifier: property.notFound
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\controllers\CatalogController.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$nodeId\.$#'
+			identifier: property.notFound
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\controllers\CatalogController.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$nodeMimeType\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\controllers\CatalogController.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$nodeType\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\controllers\CatalogController.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$subCatalogList\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\controllers\CatalogController.php
+
+		-
+			message: '#^Access to an undefined property zap\\view\\View\:\:\$nodes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\controllers\CatalogController.php
+
+		-
+			message: '#^Access to an undefined property zap\\view\\View\:\:\$page\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\controllers\CatalogController.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$isHome\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\controllers\IndexController.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$catalogPaths\.$#'
+			identifier: property.notFound
+			count: 4
+			path: d:\apps\zapdev\www\zapcms\app\controllers\NodeController.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$node\.$#'
+			identifier: property.notFound
+			count: 12
+			path: d:\apps\zapdev\www\zapcms\app\controllers\NodeController.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$nodeId\.$#'
+			identifier: property.notFound
+			count: 4
+			path: d:\apps\zapdev\www\zapcms\app\controllers\NodeController.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$subCatalogList\.$#'
+			identifier: property.notFound
+			count: 4
+			path: d:\apps\zapdev\www\zapcms\app\controllers\NodeController.php
+
+		-
+			message: '#^Call to an undefined static method zapcms\\models\\NodeRelation\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\controllers\NodeController.php
+
+		-
+			message: '#^Access to an undefined property app\\PageState\:\:\$subCatalogList\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\controllers\SearchController.php
+
+		-
+			message: '#^Call to an undefined static method zapcms\\models\\Node\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\controllers\SearchController.php
+
+		-
+			message: '#^Argument of an invalid type callable supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\AdminHook.php
+
+		-
+			message: '#^Constant APP_ROOT not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\Bootstrap.php
+
+		-
+			message: '#^Constant Z_ADMIN_PREFIX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\Bootstrap.php
+
+		-
+			message: '#^Call to an undefined static method zap\\facades\\Cache\:\:increment\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\auth\RBAC.php
+
+		-
+			message: '#^Call to an undefined static method zapcms\\auth\\RolesPermissions\:\:find\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\auth\RolesPermissions.php
+
+		-
+			message: '#^Class zapcms\\support\\CreateTables does not have a constructor and must be instantiated without any parameters\.$#'
+			identifier: new.noConstructor
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\commands\CreateSchema.php
+
+		-
+			message: '#^Constant ROOT_PATH not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\commands\UpdateBaseData.php
+
+		-
+			message: '#^Call to an undefined static method zap\\http\\Request\:\:get\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\controllers\AdminMenuController.php
+
+		-
+			message: '#^Method zapcms\\services\\AdminMenu\:\:add\(\) invoked with 2 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\controllers\AdminMenuController.php
+
+		-
+			message: '#^Call to an undefined static method zap\\http\\Request\:\:get\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 4
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\controllers\CatalogController.php
+
+		-
+			message: '#^Call to an undefined static method zap\\http\\Request\:\:get\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 6
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\controllers\CommentController.php
+
+		-
+			message: '#^Result of static method zap\\http\\Response\:\:json\(\) \(void\) is used\.$#'
+			identifier: staticMethod.void
+			count: 9
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\controllers\CommentController.php
+
+		-
+			message: '#^Call to an undefined method zapcms\\support\\SortingFilesystemIterator\:\:sortByType\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\controllers\FinderController.php
+
+		-
+			message: '#^Call to an undefined static method zap\\http\\Request\:\:get\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\controllers\MediaController.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\controllers\NodeController.php
+
+		-
+			message: '#^Constant APP_ROOT not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\controllers\PluginController.php
+
+		-
+			message: '#^Call to an undefined static method zap\\http\\Request\:\:get\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\controllers\SystemController.php
+
+		-
+			message: '#^Call to an undefined static method zap\\http\\Request\:\:get\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 12
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\controllers\UserController.php
+
+		-
+			message: '#^Result of static method zap\\http\\Response\:\:json\(\) \(void\) is used\.$#'
+			identifier: staticMethod.void
+			count: 29
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\controllers\UserController.php
+
+		-
+			message: '#^Variable \$batch in empty\(\) always exists and is always falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\helpers\Database.php
+
+		-
+			message: '#^PHPDoc tag @method has invalid value \(boolean is\[\.\.\.\]\(\)\)\: Unexpected token "\[", expected ''\('' at offset 72 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\helpers\MobileDetect.php
+
+		-
+			message: '#^Call to an undefined static method zapcms\\models\\Comment\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\models\Comment.php
+
+		-
+			message: '#^Call to an undefined static method zapcms\\models\\Node\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\models\Node.php
+
+		-
+			message: '#^Call to an undefined static method zap\\http\\Request\:\:get\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\AbstractNodeType.php
+
+		-
+			message: '#^Call to an undefined static method zapcms\\models\\Node\:\:updateAll\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\AbstractNodeType.php
+
+		-
+			message: '#^Call to an undefined static method zapcms\\models\\NodeRelation\:\:find\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\AbstractNodeType.php
+
+		-
+			message: '#^Call to an undefined static method zapcms\\models\\Node\:\:where\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\controllers\PageController.php
+
+		-
+			message: '#^Variable \$node might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\_meta_fields.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$content\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\article\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\article\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\article\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$keywords\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\article\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$pub_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\article\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\article\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\article\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\article\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$update_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\article\form.php
+
+		-
+			message: '#^Call to an undefined static method zap\\facades\\Url\:\:currentFull\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\article\form.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\article\form.php
+
+		-
+			message: '#^Variable \$catalogId might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\article\form.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\article\form.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\article\index.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$content\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$keywords\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$pub_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$update_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\form.php
+
+		-
+			message: '#^Call to an undefined static method zap\\facades\\Url\:\:currentFull\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\form.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\form.php
+
+		-
+			message: '#^Variable \$_controller might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\form.php
+
+		-
+			message: '#^Variable \$catalogList might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\form.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\form.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\default\index.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$content\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\faq\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\faq\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\faq\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$keywords\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\faq\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$pub_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\faq\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\faq\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\faq\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\faq\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$update_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\faq\form.php
+
+		-
+			message: '#^Call to an undefined static method zap\\facades\\Url\:\:currentFull\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\faq\form.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\faq\form.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 4
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\faq\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$content\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\page\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\page\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\page\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$keywords\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\page\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$pub_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\page\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\page\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\page\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\page\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$update_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\page\form.php
+
+		-
+			message: '#^Call to an undefined static method zap\\facades\\Url\:\:currentFull\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\page\form.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\page\form.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 4
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\page\form.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\page\index.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$content\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$excerpt\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$keywords\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$pub_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\form.php
+
+		-
+			message: '#^Access to an undefined property zapcms\\models\\Node\:\:\$update_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\form.php
+
+		-
+			message: '#^Call to an undefined static method zap\\facades\\Url\:\:currentFull\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\form.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\form.php
+
+		-
+			message: '#^Variable \$catalogId might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\form.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 4
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\form.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\node\views\product\index.php
+
+		-
+			message: '#^Call to an undefined static method zapcms\\models\\Node\:\:updateAll\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\services\Catalog.php
+
+		-
+			message: '#^Property PHPMailer\\PHPMailer\\PHPMailer\:\:\$SMTPSecure \(string\) does not accept false\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\services\Mailer.php
+
+		-
+			message: '#^Unsafe access to private constant zapcms\\services\\NodeType\:\:CONFIG_OPTION_PREFIX through static\:\:\.$#'
+			identifier: staticClassAccess.privateConstant
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\services\NodeType.php
+
+		-
+			message: '#^Unsafe access to private constant zapcms\\services\\NodeType\:\:GROUP_OPTION_PREFIX through static\:\:\.$#'
+			identifier: staticClassAccess.privateConstant
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\services\NodeType.php
+
+		-
+			message: '#^Unsafe call to private method zapcms\\services\\Sitemap\:\:catalogTable\(\) through static\:\:\.$#'
+			identifier: staticClassAccess.privateMethod
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\services\Sitemap.php
+
+		-
+			message: '#^Unsafe call to private method zapcms\\services\\Sitemap\:\:nodeTable\(\) through static\:\:\.$#'
+			identifier: staticClassAccess.privateMethod
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\services\Sitemap.php
+
+		-
+			message: '#^Call to an undefined static method zap\\http\\Request\:\:get\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\support\Csrf.php
+
+		-
+			message: '#^Constant APP_ROOT not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\support\ModMenu.php
+
+		-
+			message: '#^Result of method ArrayIterator\<\(int\|string\),mixed\>\:\:__construct\(\) \(void\) is used\.$#'
+			identifier: staticMethod.void
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\support\SortingFilesystemIterator.php
+
+		-
+			message: '#^Constant APP_ROOT not found\.$#'
+			identifier: constant.notFound
+			count: 14
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\support\ZapPackageManager.php
+
+		-
+			message: '#^Constant APP_ROOT not found\.$#'
+			identifier: constant.notFound
+			count: 9
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\support\ZapUpdate.php
+
+		-
+			message: '#^Variable \$menu might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\admin_menu\form.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\admin_menu\index.php
+
+		-
+			message: '#^Variable \$menu might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\admin_menu\index.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\admin_menu\index.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\catalog\index.php
+
+		-
+			message: '#^Variable \$catalog_count might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\catalog\index.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\catalog\index.php
+
+		-
+			message: '#^Variable \$keyword might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\comment\index.php
+
+		-
+			message: '#^Variable \$objectType might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\comment\index.php
+
+		-
+			message: '#^Variable \$objectTypes might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\comment\index.php
+
+		-
+			message: '#^Variable \$pageHelper might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\comment\index.php
+
+		-
+			message: '#^Variable \$status might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\comment\index.php
+
+		-
+			message: '#^Variable \$statusOptions might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\comment\index.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\comment\index.php
+
+		-
+			message: '#^Variable \$total might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\comment\index.php
+
+		-
+			message: '#^Call to an undefined static method zap\\http\\Request\:\:server\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\dashboard\index.php
+
+		-
+			message: '#^Variable \$node_types_statistics might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\dashboard\index.php
+
+		-
+			message: '#^Variable \$pages might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\dashboard\index.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\dashboard\index.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\development\index.php
+
+		-
+			message: '#^Variable \$current_url might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\finder\index.php
+
+		-
+			message: '#^Variable \$data might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\finder\index.php
+
+		-
+			message: '#^Variable \$parent_url might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\finder\index.php
+
+		-
+			message: '#^Variable \$data might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\finder\list.php
+
+		-
+			message: '#^Variable \$initialize might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\finder\list.php
+
+		-
+			message: '#^Variable \$pagination might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\finder\list.php
+
+		-
+			message: '#^Variable \$parent_path might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\finder\list.php
+
+		-
+			message: '#^Variable \$path might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\finder\list.php
+
+		-
+			message: '#^Variable \$size might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\finder\list.php
+
+		-
+			message: '#^Variable \$target might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\finder\list.php
+
+		-
+			message: '#^Constant Z_ADMIN_PREFIX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\layouts\common.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 5
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\layouts\common.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\media\index.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\media\index.php
+
+		-
+			message: '#^Variable \$error might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\mod\notfound.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\mod\notfound.php
+
+		-
+			message: '#^Variable \$i might not be defined\.$#'
+			identifier: variable.undefined
+			count: 9
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\node\_field_row.php
+
+		-
+			message: '#^Variable \$error might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\node\notfound.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\node\notfound.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\node\types.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\node\types_config.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\node\types_form.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\plugin\index.php
+
+		-
+			message: '#^Variable \$loaded_mods might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\plugin\index.php
+
+		-
+			message: '#^Variable \$plugins might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\plugin\index.php
+
+		-
+			message: '#^Variable \$registered_names might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\plugin\index.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\plugin\index.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\plugin\market.php
+
+		-
+			message: '#^Variable \$installed might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\plugin\market.php
+
+		-
+			message: '#^Variable \$page might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\plugin\market.php
+
+		-
+			message: '#^Variable \$search might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\plugin\market.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\plugin\market.php
+
+		-
+			message: '#^Variable \$files might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\backup-list.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\backup-list.php
+
+		-
+			message: '#^Variable \$cache_driver might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\cache.php
+
+		-
+			message: '#^Variable \$cache_enabled might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\cache.php
+
+		-
+			message: '#^Variable \$cache_stats might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\cache.php
+
+		-
+			message: '#^Variable \$cache_targets might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\cache.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\cache.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\database.php
+
+		-
+			message: '#^Variable \$log_dir might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\logs.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\logs.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\permalink.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\settings.php
+
+		-
+			message: '#^Variable \$sitemap_index_url might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\sitemap.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\sitemap.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\slug-settings.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\system\sysinfo.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\theme\custom_page.php
+
+		-
+			message: '#^Variable \$page might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\theme\custom_page.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\theme\custom_page.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\theme\index.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\theme\index.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\theme\settings.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\theme\settings.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\update\index.php
+
+		-
+			message: '#^Variable \$disk_space_ok might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\update\index.php
+
+		-
+			message: '#^Variable \$file_permissions_ok might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\update\index.php
+
+		-
+			message: '#^Variable \$system_info might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\update\index.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 4
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\update\index.php
+
+		-
+			message: '#^Variable \$update_info might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\update\index.php
+
+		-
+			message: '#^Variable \$user might not be defined\.$#'
+			identifier: variable.undefined
+			count: 5
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\form.php
+
+		-
+			message: '#^Variable \$user_roles might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\form.php
+
+		-
+			message: '#^Variable \$pageHelper might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\index.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\index.php
+
+		-
+			message: '#^Variable \$users might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\index.php
+
+		-
+			message: '#^Variable \$data might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\permissions.php
+
+		-
+			message: '#^Variable \$pageHelper might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\permissions.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\permissions.php
+
+		-
+			message: '#^Variable \$data might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\permissions_form.php
+
+		-
+			message: '#^Variable \$extras might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\permissions_form.php
+
+		-
+			message: '#^Variable \$user might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\profile.php
+
+		-
+			message: '#^Variable \$data might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\roles.php
+
+		-
+			message: '#^Variable \$pageHelper might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\roles.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\roles.php
+
+		-
+			message: '#^Variable \$admin_menus might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\roles_form.php
+
+		-
+			message: '#^Variable \$data might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\roles_form.php
+
+		-
+			message: '#^Variable \$permissions might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\roles_form.php
+
+		-
+			message: '#^Variable \$active_tab might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\settings.php
+
+		-
+			message: '#^Variable \$log_page might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\settings.php
+
+		-
+			message: '#^Variable \$log_total might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\settings.php
+
+		-
+			message: '#^Variable \$log_total_pages might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\settings.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\settings.php
+
+		-
+			message: '#^Variable \$user might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\app\zapcms\views\user\settings.php
+
+		-
+			message: '#^Variable \$checks might not be defined\.$#'
+			identifier: variable.undefined
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\install\views\check.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\install\views\check.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\install\views\database.php
+
+		-
+			message: '#^Variable \$token might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\install\views\database.php
+
+		-
+			message: '#^Constant Z_ADMIN_PREFIX not found\.$#'
+			identifier: constant.notFound
+			count: 2
+			path: d:\apps\zapdev\www\zapcms\install\views\done.php
+
+		-
+			message: '#^Variable \$adminUrl might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\install\views\done.php
+
+		-
+			message: '#^Variable \$password might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\install\views\done.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\install\views\done.php
+
+		-
+			message: '#^Variable \$username might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\install\views\done.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\install\views\index.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\install\views\layout.php
+
+		-
+			message: '#^Method zap\\db\\Query\:\:limit\(\) invoked with 2 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\controllers\ProductController.php
+
+		-
+			message: '#^Call to an undefined static method mods\\shop\\models\\Product\:\:creteQuery\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\models\Cart.php
+
+		-
+			message: '#^Method zap\\db\\Query\:\:limit\(\) invoked with 2 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\models\Product.php
+
+		-
+			message: '#^Variable \$count might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\cart\index.php
+
+		-
+			message: '#^Variable \$total might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\cart\index.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\index\admin.php
+
+		-
+			message: '#^Variable \$onlineCount might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\index\admin.php
+
+		-
+			message: '#^Variable \$productCount might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\index\admin.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\index\admin.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\product\admin_form.php
+
+		-
+			message: '#^Variable \$product might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\product\admin_form.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\product\admin_form.php
+
+		-
+			message: '#^Constant IS_AJAX not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\product\admin_list.php
+
+		-
+			message: '#^Variable \$page might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\product\admin_list.php
+
+		-
+			message: '#^Variable \$this might not be defined\.$#'
+			identifier: variable.undefined
+			count: 3
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\product\admin_list.php
+
+		-
+			message: '#^Variable \$totalPages might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\product\admin_list.php
+
+		-
+			message: '#^Variable \$product might not be defined\.$#'
+			identifier: variable.undefined
+			count: 6
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\product\detail.php
+
+		-
+			message: '#^Variable \$page might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\product\list.php
+
+		-
+			message: '#^Variable \$pages might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: d:\apps\zapdev\www\zapcms\mods\shop\views\product\list.php

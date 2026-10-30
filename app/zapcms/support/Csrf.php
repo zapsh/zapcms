@@ -86,15 +86,71 @@ class Csrf
 
     /**
      * 校验当前请求的 Token
+     *
+     * 双层策略：
+     *  1. 请求携带有效 token 时直接放行；
+     *  2. token 缺失或失效时退化为「同源 Origin/Referer 校验」。
+     *     浏览器对同源 POST 会自动附带 Origin/Referer，而跨站伪造请求的
+     *     Origin 必然是第三方站点 —— 因此该回退依然能阻断 CSRF。
+     *     回退主要兜住两类误伤：动态表单/iframe 上传器漏发 token，
+     *     以及 session 重建后（如登录）旧页面上残留的过期 token。
      */
-    public static function verify(): bool
+    public static function verify(string $route = ''): bool
     {
         $token = self::requestToken();
-        if ($token === '') {
+
+        if ($token !== '' && session()->validateToken($token)) {
+            return true;
+        }
+
+        $sameOrigin = self::isSameOriginRequest();
+        if ($sameOrigin) {
+            // 记录下来便于发现尚未注入 token 的页面/组件，或需要重新加载的旧标签页
+            error_log(sprintf(
+                '[CSRF] token %s，已按同源放行 route=%s ip=%s',
+                $token === '' ? '未携带' : '不匹配',
+                $route,
+                (string)Request::ip()
+            ));
+        }
+
+        return $sameOrigin;
+    }
+
+    /**
+     * 判断当前请求是否来自同源页面（依据 Origin / Referer）
+     */
+    protected static function isSameOriginRequest(): bool
+    {
+        $host = strtolower((string)($_SERVER['HTTP_HOST'] ?? ''));
+        if ($host === '') {
             return false;
         }
 
-        return session()->validateToken($token);
+        foreach (['HTTP_ORIGIN', 'HTTP_REFERER'] as $key) {
+            $value = (string)($_SERVER[$key] ?? '');
+            if ($value === '') {
+                continue;
+            }
+
+            // sandboxed iframe 等场景 Origin 可能为字符串 "null"
+            if (strtolower($value) === 'null') {
+                return false;
+            }
+
+            $originHost = parse_url($value, PHP_URL_HOST);
+            if ($originHost === null || $originHost === false || $originHost === '') {
+                return false;
+            }
+
+            // HTTP_HOST 在非默认端口时包含端口，Origin 比较时也需要拼上
+            $originPort = parse_url($value, PHP_URL_PORT);
+            $fullHost = strtolower($originHost . ($originPort ? ':' . $originPort : ''));
+
+            return $fullHost === $host;
+        }
+
+        return false;
     }
 
     /**
@@ -122,7 +178,7 @@ class Csrf
             return;
         }
 
-        if (self::verify()) {
+        if (self::verify($route)) {
             return;
         }
 

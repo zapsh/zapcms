@@ -35,5 +35,11 @@
     }
   },
   "minimum-stability": "dev",
-  "prefer-stable": true
+  "prefer-stable": true,
+  "require-dev": {
+    "phpstan/phpstan": "^2.3"
+  },
+  "scripts": {
+    "analyse": "phpstan analyse --memory-limit=1G"
+  }
 }
