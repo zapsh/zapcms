@@ -292,20 +292,75 @@ class ZapUpdate
      * 手动上传更新包进行更新
      *
      * @param string $zipFilePath 上传的ZIP文件路径
-     * @param string $newVersion  新版本号
+     * @param string $newVersion  新版本号，留空则自动从包内 app/bootstrap.php 识别
      * @return array
      */
-    public function doManualUpdate(string $zipFilePath, string $newVersion): array
+    public function doManualUpdate(string $zipFilePath, string $newVersion = ''): array
     {
         if (!file_exists($zipFilePath)) {
             return ['success' => false, 'message' => '更新包文件不存在'];
+        }
+
+        if ($newVersion === '') {
+            $newVersion = $this->detectPackageVersion($zipFilePath);
+        }
+
+        if ($newVersion === '') {
+            return ['success' => false, 'message' => '无法识别更新包版本号（包内缺少 app/bootstrap.php 的 ZAP_CMS_VERSION）'];
         }
 
         if (!$this->checkFilePermissions()) {
             return ['success' => false, 'message' => '文件系统权限不足'];
         }
 
-        return $this->pm->applySystemUpdate($zipFilePath, $newVersion);
+        $result = $this->pm->applySystemUpdate($zipFilePath, $newVersion);
+
+        if (empty($result['success'])) {
+            $this->pm->recordUpdateHistory('core', ZAP_CMS_VERSION, $newVersion, 'failed');
+        }
+
+        return $result;
+    }
+
+    /**
+     * 从更新包中读取版本号（app/bootstrap.php 的 ZAP_CMS_VERSION）
+     *
+     * 兼容扁平包与“单层根目录”包（如 zapcms-1.0.2/app/bootstrap.php）。
+     */
+    public function detectPackageVersion(string $zipFile): string
+    {
+        if (!class_exists('ZipArchive')) {
+            return '';
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipFile) !== true) {
+            return '';
+        }
+
+        $content = $zip->getFromName('app/bootstrap.php');
+
+        if ($content === false) {
+            for ($i = 0; $i < $zip->numFiles; $i++) {
+                $name = (string)$zip->getNameIndex($i);
+                if (preg_match('#^[^/]+/app/bootstrap\.php$#', $name)) {
+                    $content = $zip->getFromName($name);
+                    break;
+                }
+            }
+        }
+
+        $zip->close();
+
+        if ($content === false || $content === '') {
+            return '';
+        }
+
+        if (preg_match('/ZAP_CMS_VERSION\s*=\s*([\'"])([0-9a-zA-Z.\-_]+)\1/', (string)$content, $m)) {
+            return $m[2];
+        }
+
+        return '';
     }
 
     // ==================== 插件更新检查 ====================

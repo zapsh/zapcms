@@ -165,27 +165,20 @@ $this->view->breadcrumbs = [
             </div>
             <div class="card-body">
                 <p class="text-muted small mb-3">
-                    <i class="fa-solid fa-circle-info me-1"></i>如果在线更新不可用，请从官网下载更新 ZIP 包后选择文件上传。
+                    <i class="fa-solid fa-circle-info me-1"></i>如果在线更新不可用，请从官网下载更新 ZIP 包后选择文件上传，版本号会自动从包内识别。
                 </p>
                 <form id="manualUpdateForm" enctype="multipart/form-data" onsubmit="return false;">
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-9">
                             <div class="input-group">
                                 <label class="input-group-text" for="updateZip"><i class="fa-solid fa-file-zipper"></i></label>
                                 <input class="form-control" type="file" id="updateZip" name="update_zip" accept=".zip">
                             </div>
-                            <div class="form-text">支持 .zip 格式的更新包</div>
+                            <div class="form-text">支持 .zip 格式；包内需包含 app/bootstrap.php（内含 ZAP_CMS_VERSION）</div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="input-group">
-                                <label class="input-group-text" for="manualVersion"><i class="fa-solid fa-tag"></i></label>
-                                <input type="text" class="form-control" id="manualVersion" name="version"
-                                       placeholder="目标版本号，如 1.2.0">
-                            </div>
-                        </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <button type="button" class="btn btn-outline-primary w-100" onclick="manualUpdate()">
-                                <i class="fa-solid fa-upload me-1"></i>上传
+                                <i class="fa-solid fa-upload me-1"></i>上传并更新
                             </button>
                         </div>
                     </div>
@@ -502,20 +495,14 @@ $this->view->breadcrumbs = [
 
     function manualUpdate() {
         const fileInput = document.getElementById('updateZip');
-        const versionInput = document.getElementById('manualVersion');
 
         if (!fileInput.files.length) {
             ZapToast.alert('请选择 ZIP 更新包', {bgColor: bgWarning, position: Toast_Pos_Center});
             return;
         }
-        if (!versionInput.value.trim()) {
-            ZapToast.alert('请输入目标版本号', {bgColor: bgWarning, position: Toast_Pos_Center});
-            return;
-        }
 
         const load = Zap.loading('正在上传并安装更新，请稍后...');
         const formData = new FormData(document.getElementById('manualUpdateForm'));
-        formData.append('version', versionInput.value.trim());
 
         $.ajax({
             url: '<?php echo Url::action('Update@manualUpdate'); ?>',

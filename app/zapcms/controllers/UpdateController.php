@@ -148,6 +148,7 @@ class UpdateController extends AdminController
             Response::json(['code' => 1, 'msg' => '只支持ZIP格式的更新包']);
         }
 
+        // 版本号默认从更新包内 app/bootstrap.php 自动识别，无需手工填写
         $newVersion = trim(req()->post('version', ''));
 
         $result = $this->updater->doManualUpdate($file['tmp_name'], $newVersion);

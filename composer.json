@@ -5,12 +5,12 @@
             "url": "../zap-php-framework"
         }
   ],
-  "name": "zapj/zapcms",
-  "description": "A simple CMS based on zap-php-framework",
+  "name": "zapsh/zapcms",
+  "description": "A simple CMS",
   "type": "project",
   "support": {
     "email": "zapcms@zap.cn",
-    "docs": "https://zap.cn/docs/zapcms-docs"
+    "docs": "https://zap.cn/docs/zapcms"
   },
   "require": {
     "php": ">=8.2",
