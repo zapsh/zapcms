@@ -112,7 +112,7 @@
         }, 400);
     });
 
-    const DATA_KEY$4 = 'lte.card-widget';
+    const DATA_KEY$4 = 'zui.card-widget';
     const EVENT_KEY$4 = `.${DATA_KEY$4}`;
     const EVENT_COLLAPSED$2 = `collapsed${EVENT_KEY$4}`;
     const EVENT_EXPANDED$2 = `expanded${EVENT_KEY$4}`;
@@ -125,9 +125,9 @@
     const CLASS_NAME_EXPANDING = 'expanding-card';
     const CLASS_NAME_WAS_COLLAPSED = 'was-collapsed';
     const CLASS_NAME_MAXIMIZED = 'maximized-card';
-    const SELECTOR_DATA_REMOVE = '[data-lte-toggle="card-remove"]';
-    const SELECTOR_DATA_COLLAPSE = '[data-lte-toggle="card-collapse"]';
-    const SELECTOR_DATA_MAXIMIZE = '[data-lte-toggle="card-maximize"]';
+    const SELECTOR_DATA_REMOVE = '[data-zui-toggle="card-remove"]';
+    const SELECTOR_DATA_COLLAPSE = '[data-zui-toggle="card-collapse"]';
+    const SELECTOR_DATA_MAXIMIZE = '[data-zui-toggle="card-maximize"]';
     const SELECTOR_CARD = `.${CLASS_NAME_CARD}`;
     const SELECTOR_CARD_BODY = '.card-body';
     const SELECTOR_CARD_FOOTER = '.card-footer';
@@ -281,7 +281,7 @@
         });
     });
 
-    const DATA_KEY$3 = 'lte.treeview';
+    const DATA_KEY$3 = 'zui.treeview';
     const EVENT_KEY$3 = `.${DATA_KEY$3}`;
     const EVENT_EXPANDED$1 = `expanded${EVENT_KEY$3}`;
     const EVENT_COLLAPSED$1 = `collapsed${EVENT_KEY$3}`;
@@ -290,7 +290,7 @@
     const SELECTOR_NAV_ITEM = '.nav-item';
     const SELECTOR_NAV_LINK = '.nav-link';
     const SELECTOR_TREEVIEW_MENU = '.nav-treeview';
-    const SELECTOR_DATA_TOGGLE$1 = '[data-lte-toggle="treeview"]';
+    const SELECTOR_DATA_TOGGLE$1 = '[data-zui-toggle="treeview"]';
     const Default = {
         animationSpeed: 300,
         accordion: true
@@ -358,7 +358,7 @@
                 const targetItem = target.closest(SELECTOR_NAV_ITEM);
                 const targetLink = target.closest(SELECTOR_NAV_LINK);
                 const targetTreeviewMenu = targetItem?.querySelector(SELECTOR_TREEVIEW_MENU);
-                const lteToggleElement = event.currentTarget;
+                const zuiToggleElement = event.currentTarget;
                 if (!targetTreeviewMenu) {
                     return;
                 }
@@ -366,8 +366,8 @@
                     event.preventDefault();
                 }
                 if (targetItem) {
-                    const accordionAttr = lteToggleElement.dataset.accordion;
-                    const animationSpeedAttr = lteToggleElement.dataset.animationSpeed;
+                    const accordionAttr = zuiToggleElement.dataset.accordion;
+                    const animationSpeedAttr = zuiToggleElement.dataset.animationSpeed;
                     const config = {
                         accordion: accordionAttr === undefined ? Default.accordion : accordionAttr === 'true',
                         animationSpeed: animationSpeedAttr === undefined ? Default.animationSpeed : Number(animationSpeedAttr)
@@ -379,11 +379,11 @@
         });
     });
 
-    const DATA_KEY$2 = 'lte.direct-chat';
+    const DATA_KEY$2 = 'zui.direct-chat';
     const EVENT_KEY$2 = `.${DATA_KEY$2}`;
     const EVENT_EXPANDED = `expanded${EVENT_KEY$2}`;
     const EVENT_COLLAPSED = `collapsed${EVENT_KEY$2}`;
-    const SELECTOR_DATA_TOGGLE = '[data-lte-toggle="chat-pane"]';
+    const SELECTOR_DATA_TOGGLE = '[data-zui-toggle="chat-pane"]';
     const SELECTOR_DIRECT_CHAT = '.direct-chat';
     const CLASS_NAME_DIRECT_CHAT_OPEN = 'direct-chat-contacts-open';
     class DirectChat {
@@ -419,13 +419,13 @@
         });
     });
 
-    const DATA_KEY$1 = 'lte.fullscreen';
+    const DATA_KEY$1 = 'zui.fullscreen';
     const EVENT_KEY$1 = `.${DATA_KEY$1}`;
     const EVENT_MAXIMIZED = `maximized${EVENT_KEY$1}`;
     const EVENT_MINIMIZED = `minimized${EVENT_KEY$1}`;
-    const SELECTOR_FULLSCREEN_TOGGLE = '[data-lte-toggle="fullscreen"]';
-    const SELECTOR_MAXIMIZE_ICON = '[data-lte-icon="maximize"]';
-    const SELECTOR_MINIMIZE_ICON = '[data-lte-icon="minimize"]';
+    const SELECTOR_FULLSCREEN_TOGGLE = '[data-zui-toggle="fullscreen"]';
+    const SELECTOR_MAXIMIZE_ICON = '[data-zui-icon="maximize"]';
+    const SELECTOR_MINIMIZE_ICON = '[data-zui-icon="minimize"]';
     class FullScreen {
         _element;
         _config;
@@ -485,7 +485,7 @@
         });
     });
 
-    const DATA_KEY = 'lte.push-menu';
+    const DATA_KEY = 'zui.push-menu';
     const EVENT_KEY = `.${DATA_KEY}`;
     const EVENT_OPEN = `open${EVENT_KEY}`;
     const EVENT_COLLAPSE = `collapse${EVENT_KEY}`;
@@ -497,8 +497,8 @@
     const SELECTOR_APP_SIDEBAR = '.app-sidebar';
     const SELECTOR_APP_WRAPPER = '.app-wrapper';
     const SELECTOR_SIDEBAR_EXPAND = `[class*="${CLASS_NAME_SIDEBAR_EXPAND}"]`;
-    const SELECTOR_SIDEBAR_TOGGLE = '[data-lte-toggle="sidebar"]';
-    const STORAGE_KEY_SIDEBAR_STATE = 'lte.sidebar.state';
+    const SELECTOR_SIDEBAR_TOGGLE = '[data-zui-toggle="sidebar"]';
+    const STORAGE_KEY_SIDEBAR_STATE = 'zui.sidebar.state';
     const Defaults = {
         sidebarBreakpoint: 992,
         enablePersistence: false
@@ -674,7 +674,7 @@
             btn.addEventListener('click', event => {
                 event.preventDefault();
                 let button = event.currentTarget;
-                if (button?.dataset.lteToggle !== 'sidebar') {
+                if (button?.dataset.zuiToggle !== 'sidebar') {
                     button = button?.closest(SELECTOR_SIDEBAR_TOGGLE);
                 }
                 if (button) {

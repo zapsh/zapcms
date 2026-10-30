@@ -30,7 +30,7 @@ use \zap\facades\Url;
             <div class="container-fluid">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" data-lte-toggle="sidebar" href="#" role="button">
+                        <a class="nav-link" data-zui-toggle="sidebar" href="#" role="button">
                             <i class="fa fa-bars"></i>
                         </a>
                     </li>
@@ -42,7 +42,7 @@ use \zap\facades\Url;
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" data-lte-toggle="fullscreen" href="#" role="button" title="全屏">
+                        <a class="nav-link" data-zui-toggle="fullscreen" href="#" role="button" title="全屏">
                             <i class="fa fa-expand"></i>
                         </a>
                     </li>

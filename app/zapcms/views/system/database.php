@@ -85,9 +85,9 @@ $totalTables = count($tableData);
                     <i class="fa fa-database card-header-icon text-warning"></i> 数据库连接信息
                 </h3>
                 <div class="card-tools">
-                    <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse" aria-label="折叠">
-                        <i data-lte-icon="expand" class="fa fa-plus"></i>
-                        <i data-lte-icon="collapse" class="fa fa-minus"></i>
+                    <button type="button" class="btn btn-tool" data-zui-toggle="card-collapse" aria-label="折叠">
+                        <i data-zui-icon="expand" class="fa fa-plus"></i>
+                        <i data-zui-icon="collapse" class="fa fa-minus"></i>
                     </button>
                 </div>
             </div>
@@ -156,9 +156,9 @@ $totalTables = count($tableData);
                     <span class="badge text-bg-success ms-2">共 <?php echo $totalTables; ?> 张表</span>
                 </h3>
                 <div class="card-tools">
-                    <button type="button" class="btn btn-tool" data-lte-toggle="card-collapse" aria-label="折叠">
-                        <i data-lte-icon="expand" class="fa fa-plus"></i>
-                        <i data-lte-icon="collapse" class="fa fa-minus"></i>
+                    <button type="button" class="btn btn-tool" data-zui-toggle="card-collapse" aria-label="折叠">
+                        <i data-zui-icon="expand" class="fa fa-plus"></i>
+                        <i data-zui-icon="collapse" class="fa fa-minus"></i>
                     </button>
                 </div>
             </div>

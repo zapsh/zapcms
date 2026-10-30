@@ -1,0 +1,193 @@
+@use "sass:map";
+
+//
+// Colors: Tokens, utilities and component hooks
+//
+// Generated for every entry in `$zui-palette` (see colors/_variables.scss).
+// Nothing here touches Bootstrap's own theme colours; the shapes mirror what
+// Bootstrap emits for them so the two mix freely.
+//
+
+// Tokens
+// --------------------------------------------------------
+// Mirrors what Bootstrap's _root.scss emits for $theme-colors: the colour, its
+// RGB channels (for the opacity utilities) and the subtle / emphasis pair used
+// by callouts — with the dark-mode values Bootstrap would derive.
+:root,
+[data-bs-theme="light"] {
+  @each $name, $value in $zui-palette {
+    --#{$prefix}#{$name}: #{$value};
+    --#{$prefix}#{$name}-rgb: #{to-rgb($value)};
+    --#{$prefix}#{$name}-text-emphasis: #{zui-hex(shade-color($value, 60%))};
+    --#{$prefix}#{$name}-bg-subtle: #{zui-hex(tint-color($value, 80%))};
+    --#{$prefix}#{$name}-border-subtle: #{zui-hex(tint-color($value, 60%))};
+  }
+}
+
+@if $enable-dark-mode {
+  @include color-mode(dark, true) {
+    @each $name, $value in $zui-palette {
+      --#{$prefix}#{$name}-text-emphasis: #{zui-hex(tint-color($value, 40%))};
+      --#{$prefix}#{$name}-bg-subtle: #{zui-hex(shade-color($value, 80%))};
+      --#{$prefix}#{$name}-border-subtle: #{zui-hex(shade-color($value, 40%))};
+    }
+  }
+}
+
+// Utilities
+// --------------------------------------------------------
+// Same shape as Bootstrap's own .bg-* / .text-* / .border-* / .text-bg-* /
+// .link-*, so `.bg-opacity-25`, `.link-underline-opacity-*` etc. compose.
+@each $name, $value in $zui-palette {
+  .bg-#{$name} {
+    --#{$prefix}bg-opacity: 1;
+    background-color: rgba(var(--#{$prefix}#{$name}-rgb), var(--#{$prefix}bg-opacity)) !important;
+  }
+
+  .text-#{$name} {
+    --#{$prefix}text-opacity: 1;
+    color: rgba(var(--#{$prefix}#{$name}-rgb), var(--#{$prefix}text-opacity)) !important;
+  }
+
+  .border-#{$name} {
+    --#{$prefix}border-opacity: 1;
+    border-color: rgba(var(--#{$prefix}#{$name}-rgb), var(--#{$prefix}border-opacity)) !important;
+  }
+
+  .text-bg-#{$name} {
+    color: zui-contrast($value) !important;
+    background-color: RGBA(var(--#{$prefix}#{$name}-rgb), var(--#{$prefix}bg-opacity, 1)) !important;
+  }
+
+  .link-#{$name} {
+    color: RGBA(var(--#{$prefix}#{$name}-rgb), var(--#{$prefix}link-opacity, 1)) !important;
+    text-decoration-color: RGBA(var(--#{$prefix}#{$name}-rgb), var(--#{$prefix}link-underline-opacity, 1)) !important;
+
+    &:hover,
+    &:focus {
+      color: RGBA(#{to-rgb(shade-color($value, 20%))}, var(--#{$prefix}link-opacity, 1)) !important;
+      text-decoration-color: RGBA(#{to-rgb(shade-color($value, 20%))}, var(--#{$prefix}link-underline-opacity, 1)) !important;
+    }
+  }
+}
+
+// `.bg-gradient-*` — the ZapUI 3 class, for the palette AND Bootstrap's
+// theme colours. Bootstrap 5.3 offers the composable `.bg-navy.bg-gradient`;
+// this is that gradient as one class, for v3 markup.
+@each $name, $value in map.merge($theme-colors, $zui-palette) {
+  .bg-gradient-#{$name} {
+    color: zui-contrast($value) !important;
+    background-color: $value !important;
+    background-image: var(--#{$prefix}gradient) !important;
+  }
+}
+
+// Component hooks
+// --------------------------------------------------------
+
+// Cards: feed the --zui-card-variant-* variables _cards.scss reads, so
+// `.card-navy`, `.card-navy.card-outline` and `.card.text-bg-navy` work —
+// and so do info-box progress bars, which read the same variables.
+@each $name, $value in $zui-palette {
+  .card-#{$name},
+  .bg-#{$name},
+  .text-bg-#{$name} {
+    --#{$zui-prefix}card-variant-bg: #{$value};
+    --#{$zui-prefix}card-variant-bg-rgb: #{to-rgb($value)};
+    --#{$zui-prefix}card-variant-color: #{zui-contrast($value)};
+    --#{$zui-prefix}card-variant-color-rgb: #{to-rgb(zui-contrast($value))};
+  }
+}
+
+// Callouts: same subtle / emphasis tokens as the theme-colour callouts
+@each $name, $value in $zui-palette {
+  .callout-#{$name} {
+    --#{$zui-prefix}callout-color: var(--#{$prefix}#{$name}-text-emphasis);
+    --#{$zui-prefix}callout-bg: var(--#{$prefix}#{$name}-bg-subtle);
+    --#{$zui-prefix}callout-border: var(--#{$prefix}#{$name}-border-subtle);
+    --#{$zui-prefix}callout-link: var(--#{$prefix}#{$name}-text-emphasis);
+    --#{$zui-prefix}callout-code-color: var(--#{$prefix}#{$name}-text-emphasis);
+    --#{$prefix}callout-link-color: var(--#{$prefix}#{$name}-text-emphasis);
+  }
+}
+
+// Direct chat
+@each $name, $value in $zui-palette {
+  .direct-chat-#{$name} {
+    --#{$zui-prefix}direct-chat-color: #{zui-contrast($value)};
+    --#{$zui-prefix}direct-chat-bg: #{$value};
+  }
+}
+
+// Buttons carrying a palette background (`.btn.bg-navy`, the v3 idiom):
+// a hover / active shade so they don't look inert
+@each $name, $value in $zui-palette {
+  .btn.bg-#{$name},
+  .btn.text-bg-#{$name},
+  .btn.bg-gradient-#{$name} {
+    &:hover,
+    &:focus-visible {
+      background-color: #{zui-hex(shade-color($value, 10%))} !important;
+    }
+
+    &:active,
+    &.active {
+      background-color: #{zui-hex(shade-color($value, 15%))} !important;
+    }
+  }
+}
+
+// `data-zui-contrast="aa"`
+// --------------------------------------------------------
+// Opt in to WCAG AA text on the backgrounds where this palette's own rule falls
+// short. Backgrounds are untouched — every colour keeps its exact value — only
+// the text on top of them flips. Emitted per colour only where the two rules
+// disagree, so the designed palette (every colour AA with white) adds nothing
+// here and the v3 sheet carries the eight that need it (#6110).
+//
+// A coloured sidebar or header carrying a flipped colour should also pair with
+// `data-bs-theme="light"` instead of `"dark"`, so its nav links follow the text.
+[data-zui-contrast="aa"] {
+  @each $name, $value in $zui-palette {
+    $aa: zui-contrast-aa($value);
+
+    @if zui-needs-aa($value) {
+      .text-bg-#{$name},
+      .bg-gradient-#{$name} {
+        color: $aa !important;
+      }
+
+      .card-#{$name},
+      .bg-#{$name},
+      .text-bg-#{$name} {
+        --#{$zui-prefix}card-variant-color: #{$aa};
+        --#{$zui-prefix}card-variant-color-rgb: #{to-rgb($aa)};
+      }
+
+      .direct-chat-#{$name} {
+        --#{$zui-prefix}direct-chat-color: #{$aa};
+      }
+    }
+  }
+}
+
+// Cascade order
+// --------------------------------------------------------
+// This sheet loads AFTER zap-ui.css, so `.bg-navy { --bs-bg-opacity: 1 }`
+// above would otherwise beat Bootstrap's earlier `.bg-opacity-25`. Re-emit the
+// opacity modifiers so they still win.
+@each $key, $val in (10: .1, 25: .25, 50: .5, 75: .75, 100: 1) {
+  .bg-opacity-#{$key} {
+    --#{$prefix}bg-opacity: #{$val};
+  }
+
+  .border-opacity-#{$key} {
+    --#{$prefix}border-opacity: #{$val};
+  }
+}
+
+@each $key, $val in (25: .25, 50: .5, 75: .75, 100: 1) {
+  .text-opacity-#{$key} {
+    --#{$prefix}text-opacity: #{$val};
+  }
+}

@@ -1,0 +1,167 @@
+//
+// Custom ZapUI Variables
+//
+
+// Prefix for :root CSS variables and others.
+$zui-prefix:                      zui- !default;
+
+// TRANSITIONS SETTINGS
+// --------------------------------------------------------
+// Transition global options
+$zui-transition-speed:            .3s !default;
+$zui-transition-fn:               ease-in-out !default;
+
+// SIDEBAR
+// --------------------------------------------------------
+$zui-sidebar-width:               250px !default;
+$zui-sidebar-breakpoint:          lg !default;
+$zui-sidebar-padding-x:           .5rem !default;
+$zui-sidebar-padding-x-compact:   .5rem !default;
+$zui-sidebar-padding-y:           .5rem !default;
+$zui-sidebar-padding-y-compact:   .25rem !default;
+$zui-sidebar-transition:          min-width $zui-transition-speed $zui-transition-fn,
+  max-width $zui-transition-speed $zui-transition-fn,
+  margin-left $zui-transition-speed $zui-transition-fn,
+  margin-right $zui-transition-speed $zui-transition-fn !default;
+
+// SIDEBAR SKINS
+// --------------------------------------------------------
+
+$zui-sidebar-hover-bg:              rgba($black, .1) !default;
+$zui-sidebar-color:                 $gray-800 !default;
+$zui-sidebar-hover-color:           $gray-900 !default;
+$zui-sidebar-active-color:          $black !default;
+$zui-sidebar-menu-active-bg:        rgba($black, .1) !default;
+$zui-sidebar-menu-active-color:     $black !default;
+$zui-sidebar-submenu-bg:            transparent !default;
+$zui-sidebar-submenu-color:         #777 !default;
+$zui-sidebar-submenu-hover-color:   $black !default;
+$zui-sidebar-submenu-hover-bg:      rgba($black, .1) !default;
+$zui-sidebar-submenu-active-color:  $gray-900 !default;
+$zui-sidebar-submenu-active-bg:     rgba($black, .1) !default;
+$zui-sidebar-header-color:          shade-color($gray-800, 5%) !default;
+
+// SIDEBAR MINI
+// --------------------------------------------------------
+$nav-link-padding-x-compact:      .25rem !default;
+$zui-sidebar-mini-width:          ($nav-link-padding-x + $zui-sidebar-padding-x + .8rem) * 2 !default;
+$zui-sidebar-mini-width-compact:  ($nav-link-padding-x-compact + $zui-sidebar-padding-x-compact + .8rem) * 2 !default;
+$zui-sidebar-nav-icon-width:      $zui-sidebar-mini-width - (($zui-sidebar-padding-x + $nav-link-padding-x) * 2) !default;
+$zui-sidebar-user-image-width:    $zui-sidebar-nav-icon-width + ($nav-link-padding-x * .4) !default;
+
+// MAIN HEADER
+// --------------------------------------------------------
+$nav-link-height-compact:             1.75rem !default;
+$zui-app-header-bottom-border-width:  $border-width !default;
+$zui-app-header-bottom-border-color:  var(--#{$prefix}border-color) !default;
+$zui-app-header-bottom-border:        $zui-app-header-bottom-border-width solid $zui-app-header-bottom-border-color !default;
+$zui-app-header-link-padding-y:       $navbar-padding-y !default;
+$zui-app-header-height:               ($nav-link-height + ($zui-app-header-link-padding-y * 2)) !default;
+$zui-app-header-height-compact:       ($nav-link-height-compact + ($zui-app-header-link-padding-y * 2)) !default;
+
+// Search fields in the chrome (navbar search, sidebar filter)
+$zui-search-field-width:              14rem !default;
+$zui-search-field-focus-width:        18rem !default;
+$zui-search-field-font-size:          $font-size-sm !default;
+$zui-search-field-padding-y:          .3rem !default;
+$zui-search-field-padding-x:          .75rem !default;
+$zui-search-field-icon-space:         2.125rem !default;
+$zui-zindex-fixed-header:           $zindex-fixed !default;
+
+// APP MAIN
+// --------------------------------------------------------
+$zui-app-main-padding-bottom:       $grid-gutter-width * .5 !default;
+
+// CONTENT PADDING
+// --------------------------------------------------------
+$zui-content-padding-y:           0 !default;
+$zui-content-padding-x:           .5rem !default;
+
+// MAIN FOOTER
+// --------------------------------------------------------
+$zui-app-footer-padding:           1rem !default;
+$zui-app-footer-padding-compact:   .5rem !default;
+$zui-app-footer-border-top-width:  1px !default;
+$zui-app-footer-border-top-color:  var(--#{$prefix}border-color) !default;
+$zui-app-footer-border-top:        $zui-app-footer-border-top-width solid $zui-app-footer-border-top-color !default;
+$zui-app-footer-bg:                var(--#{$prefix}body-bg) !default;
+$zui-app-footer-color:             var(--#{$prefix}secondary-color) !default;
+$zui-zindex-fixed-footer:         $zindex-fixed !default;
+// CONTENT BOTTOM AREA
+// --------------------------------------------------------
+$zui-app-content-bottom-area-margin-bottom: -$zui-app-main-padding-bottom !default;
+$zui-app-content-bottom-area-color:         $zui-app-footer-color !default;
+$zui-app-content-bottom-area-bg:            $zui-app-footer-bg !default;
+$zui-app-content-bottom-area-top-border:    $zui-app-footer-border-top !default;
+$zui-app-content-bottom-area-padding-y:     $zui-app-footer-padding !default;
+$zui-app-content-bottom-area-padding-x:     0 !default;
+
+// CONTENT TOP AREA
+// --------------------------------------------------------
+$zui-app-content-top-area-top-border:       $zui-app-footer-border-top !default;
+$zui-app-content-top-area-padding-y:     $zui-app-footer-padding !default;
+$zui-app-content-top-area-padding-x:     0 !default;
+
+// BRAND LINK
+// --------------------------------------------------------
+$navbar-brand-padding-y-compact:   $navbar-brand-padding-y * .75 !default;
+$navbar-padding-y-compact:         $navbar-padding-y * .5 !default;
+$zui-brand-link-padding-y:         $navbar-brand-padding-y + $navbar-padding-y !default;
+$zui-brand-link-padding-y-compact: $navbar-brand-padding-y-compact + $navbar-padding-y-compact !default;
+$zui-brand-link-padding-x:         $zui-sidebar-padding-x !default;
+$zui-brand-link-padding-x-compact: $zui-sidebar-padding-x-compact !default;
+$zui-brand-link-border-buttom:    1px !default;
+
+// CARDS
+// --------------------------------------------------------
+$zui-card-shadow: 0 0 1px rgba(var(--#{$prefix}body-color-rgb), .125), 0 1px 3px rgba(var(--#{$prefix}body-color-rgb), .2) !default;
+$zui-card-title-font-size: 1.1rem !default;
+$zui-card-title-font-weight: $font-weight-normal !default;
+
+// PROGRESS BARS
+// --------------------------------------------------------
+$zui-progress-bar-border-radius: 1px !default;
+
+// CALLOUTS
+// --------------------------------------------------------
+$zui-callout-link-font-weight: $alert-link-font-weight !default;
+
+// RIBBONS
+// --------------------------------------------------------
+// The size is the side of the square that clips the band; the band's own width
+// is derived from it, so these are the only three values a theme has to change.
+$zui-ribbon-size: 70px !default;
+$zui-ribbon-size-lg: 110px !default;
+$zui-ribbon-size-xl: 145px !default;
+$zui-ribbon-font-size: .8rem !default;
+$zui-ribbon-font-size-lg: 1rem !default;
+$zui-ribbon-font-size-xl: 1.25rem !default;
+$zui-ribbon-padding: .375rem 0 !default;
+$zui-ribbon-font-weight: $font-weight-normal !default;
+$zui-ribbon-shadow: 0 0 3px rgba(var(--#{$prefix}body-color-rgb), .3) !default;
+
+// WIDGETS
+// --------------------------------------------------------
+$zui-user-block-avatar-size: 2.5rem !default;
+$zui-user-block-avatar-size-sm: 1.75rem !default;
+$zui-user-block-username-font-size: 1rem !default;
+$zui-user-block-username-font-weight: $font-weight-semibold !default;
+$zui-user-block-description-font-size: .8125rem !default;
+// Kept in rem so the avatar's overhang past the header — half its own height —
+// stays computable in Sass rather than needing calc() at runtime.
+$zui-widget-user-header-padding: 1rem !default;
+$zui-widget-user-header-height: 8.4375rem !default;
+$zui-widget-user-image-size: 5.625rem !default;
+$zui-widget-user-2-image-size: 4.0625rem !default;
+
+// DIRECT CHAT
+// --------------------------------------------------------
+$zui-direct-chat-default-msg-bg: var(--#{$prefix}secondary-bg) !default;
+$zui-direct-chat-default-font-color: var(--#{$prefix}emphasis-color) !default;
+$zui-direct-chat-default-msg-border-color: var(--#{$prefix}border-color) !default;
+
+// Z-INDEX
+// --------------------------------------------------------
+$zui-zindex-app-header:          $zindex-fixed + 4 !default;
+$zui-zindex-sidebar:             $zindex-fixed + 8 !default;
+$zui-zindex-sidebar-overlay:     $zui-zindex-sidebar - 1 !default;

@@ -38,7 +38,8 @@ location / {
   - `scss/_components.scss` —— ZAP 组件与页面定制样式
   - `scss/bootstrap.scss` —— 安装向导使用的最小 Bootstrap 样式
   - `js/bootstrap.js` —— Bootstrap JS（暴露 `window.bootstrap`）
-- 依赖：`bootstrap` 5.3.x、`admin-lte` 4.x、`vite`、`sass-embedded`（见 `package.json`）
+  - `vendor/zap-ui/scss/` —— 内置的 ZapUI 基础样式源码（后台 UI 基座，含 LICENSE）
+- 依赖：`bootstrap` 5.3.x、`vite`、`sass-embedded`（见 `package.json`）
 
 ````bash
 npm install     # 首次安装

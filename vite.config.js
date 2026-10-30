@@ -72,7 +72,9 @@ export default defineConfig({
       scss: {
         // 允许 @import "bootstrap/scss/..." 这类裸模块路径
         loadPaths: [resolve(root, 'node_modules')],
-        silenceDeprecations: ['import', 'global-builtin', 'color-functions', 'mixed-decls', 'abs-percent'],
+        // Bootstrap 5.3 仍在使用 @import / 旧版 if() 等语法，这里统一静音其弃用告警
+        // 注意：sass 1.10x 起 mixed-decls 已失效，不能再列入（会反向告警）
+        silenceDeprecations: ['import', 'global-builtin', 'color-functions', 'abs-percent', 'if-function'],
       },
     },
   },

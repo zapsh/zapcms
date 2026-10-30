@@ -25,7 +25,7 @@ body.sidebar-mini.sidebar-open .docs-btn-text {
     <!-- 侧边栏菜单滚动区 -->
     <div class="sidebar-wrapper">
         <nav class="mt-2">
-            <ul class="nav sidebar-menu flex-column <?php \zapcms\AdminHook::echo('admin_menu_class'); ?>" data-lte-toggle="treeview" role="menu" data-accordion="false">
+            <ul class="nav sidebar-menu flex-column <?php \zapcms\AdminHook::echo('admin_menu_class'); ?>" data-zui-toggle="treeview" role="menu" data-accordion="false">
                 <?php \zapcms\AdminHook::echo('admin_menu_before'); ?>
                 <li class="nav-item">
                     <a href="<?php echo \zap\facades\Url::action('Index'); ?>" class="nav-link">

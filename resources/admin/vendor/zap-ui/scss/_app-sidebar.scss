@@ -1,0 +1,642 @@
+@use "sass:map";
+
+.app-sidebar {
+  --#{$zui-prefix}sidebar-hover-bg: #{$zui-sidebar-hover-bg};
+  --#{$zui-prefix}sidebar-color: #{$zui-sidebar-color};
+  --#{$zui-prefix}sidebar-hover-color: #{$zui-sidebar-hover-color};
+  --#{$zui-prefix}sidebar-active-color: #{$zui-sidebar-active-color};
+  --#{$zui-prefix}sidebar-menu-active-bg: #{$zui-sidebar-menu-active-bg};
+  --#{$zui-prefix}sidebar-menu-active-color: #{$zui-sidebar-menu-active-color};
+  --#{$zui-prefix}sidebar-submenu-bg: #{$zui-sidebar-submenu-bg};
+  --#{$zui-prefix}sidebar-submenu-color: #{$zui-sidebar-submenu-color};
+  --#{$zui-prefix}sidebar-submenu-hover-color: #{$zui-sidebar-submenu-hover-color};
+  --#{$zui-prefix}sidebar-submenu-hover-bg: #{$zui-sidebar-submenu-hover-bg};
+  --#{$zui-prefix}sidebar-submenu-active-color: #{$zui-sidebar-submenu-active-color};
+  --#{$zui-prefix}sidebar-submenu-active-bg: #{$zui-sidebar-submenu-active-bg};
+  --#{$zui-prefix}sidebar-header-color: #{$zui-sidebar-header-color};
+
+  z-index: $zui-zindex-sidebar;
+  // A column: brand and filter keep their size, .sidebar-wrapper takes the
+  // rest and scrolls (#6104). Anything else placed above or below the menu
+  // just works, without a hard-coded height calc.
+  display: flex;
+  flex-direction: column;
+  grid-area: #{$zui-prefix}app-sidebar;
+  min-width: var(--#{$zui-prefix}sidebar-width);
+  max-width: var(--#{$zui-prefix}sidebar-width);
+  @include transition($zui-sidebar-transition);
+}
+
+.sidebar-brand {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  height: $zui-app-header-height;
+  padding: $zui-brand-link-padding-y $zui-brand-link-padding-x;
+  overflow: hidden;
+  font-size: $navbar-brand-font-size;
+  white-space: nowrap;
+  border-bottom: $zui-brand-link-border-buttom solid var(--#{$prefix}border-color);
+  @include transition(width $zui-transition-speed $zui-transition-fn);
+
+  .brand-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+
+    .brand-image {
+      float: left;
+      width: auto;
+      max-height: 33px;
+      line-height: .8;
+    }
+
+    .brand-image-xs {
+      float: left;
+      width: auto;
+      max-height: 33px;
+      margin-top: -.1rem;
+      line-height: .8;
+    }
+
+    .brand-image-xl {
+      width: auto;
+      max-height: 40px;
+      line-height: .8;
+
+      &.single {
+        margin-top: -.3rem;
+      }
+    }
+  }
+
+  .brand-text {
+    margin-left: .5rem;
+    color: rgba(var(--#{$prefix}emphasis-color-rgb), .8);
+    @include transition(flex $zui-transition-speed $zui-transition-fn, width $zui-transition-speed $zui-transition-fn);
+    &:hover {
+      color: var(--#{$prefix}emphasis-color);
+    }
+  }
+}
+
+.sidebar-wrapper {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-top: $zui-sidebar-padding-y;
+  padding-right: $zui-sidebar-padding-x;
+  padding-bottom: $zui-sidebar-padding-y;
+  padding-left: $zui-sidebar-padding-x;
+  overscroll-behavior: contain;
+  @include scrollbar-color-gray();
+  @include scrollbar-width-thin();
+
+  .nav-item {
+    max-width: 100%;
+  }
+
+  .nav-link {
+    display: flex;
+    justify-content: flex-start;
+
+    p {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+  .nav-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    max-width: 1.5rem;
+  }
+
+  // Sidebar Menu. First level links
+  .sidebar-menu > .nav-item {
+    // links
+    > .nav-link {
+      color: var(--#{$zui-prefix}sidebar-color);
+
+      &:hover,
+      &:focus {
+        color: var(--#{$zui-prefix}sidebar-hover-color);
+        background-color: var(--#{$zui-prefix}sidebar-hover-bg);
+      }
+
+      &.active {
+        color: var(--#{$zui-prefix}sidebar-menu-active-color);
+        background-color: var(--#{$zui-prefix}sidebar-menu-active-bg);
+      }
+    }
+
+    // Open state
+    &.menu-open > .nav-link {
+      color: var(--#{$zui-prefix}sidebar-hover-color);
+      background-color: var(--#{$zui-prefix}sidebar-hover-bg);
+
+      &.active {
+        color: var(--#{$zui-prefix}sidebar-menu-active-color);
+        background-color: var(--#{$zui-prefix}sidebar-menu-active-bg);
+      }
+    }
+
+    // First Level Submenu
+    > .nav-treeview {
+      background-color: var(--#{$zui-prefix}sidebar-submenu-bg);
+    }
+  }
+
+  // Section Heading
+  .nav-header {
+    display: inline;
+    overflow: hidden;
+    color: var(--#{$zui-prefix}sidebar-header-color);
+    text-overflow: ellipsis;
+    background-color: inherit;
+  }
+
+  // All links within the sidebar menu
+  a {
+    color: var(--#{$zui-prefix}sidebar-color);
+  }
+
+  // All submenus
+  .nav-treeview {
+    > .nav-item {
+      > .nav-link {
+        color: var(--#{$zui-prefix}sidebar-submenu-color);
+
+        &:hover,
+        &:focus {
+          color: var(--#{$zui-prefix}sidebar-submenu-hover-color);
+          background-color: var(--#{$zui-prefix}sidebar-submenu-hover-bg);
+        }
+
+        &.active {
+          color: var(--#{$zui-prefix}sidebar-submenu-active-color);
+          background-color: var(--#{$zui-prefix}sidebar-submenu-active-bg);
+        }
+      }
+    }
+  }
+}
+
+// Sidebar navigation menu
+.sidebar-menu {
+  // All levels
+  .nav-item {
+    > .nav-link {
+      margin-bottom: .2rem;
+
+      .nav-arrow {
+        @include transition(transform $zui-transition-fn $zui-transition-speed);
+        transform: translateY(-50%) #{"/*rtl:append:rotate(180deg)*/"};
+        animation-name: fadeIn;
+        animation-duration: $zui-transition-speed;
+        animation-fill-mode: both;
+      }
+    }
+  }
+
+  // All levels
+  .nav-link > .nav-badge,
+  .nav-link > p > .nav-badge {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+  }
+
+  .nav-link > .nav-arrow,
+  .nav-link > p > .nav-arrow {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+  }
+
+  .nav-link {
+    position: relative;
+    width: 100%;
+    @include transition(width $zui-transition-fn $zui-transition-speed);
+    @include border-radius($border-radius);
+
+    p {
+      display: inline;
+      padding-left: .5rem;
+      margin: 0;
+    }
+  }
+
+  .nav-header {
+    position: relative;
+    width: 100%;
+    padding: $nav-link-padding-y ($nav-link-padding-y * 1.5);
+    font-size: .9rem;
+    @include transition(width $zui-transition-fn $zui-transition-speed);
+  }
+
+  // Tree view menu
+  .nav-treeview {
+    display: none;
+    padding: 0;
+    list-style: none;
+  }
+
+  .menu-open {
+    > .nav-treeview {
+      display: block;
+    }
+
+    > .nav-link {
+      .nav-arrow {
+        transform: translateY(-50%) rotate(90deg) #{"/*rtl:ignore*/"};
+      }
+    }
+  }
+
+  // Override: ensure badges/arrows are aligned to the end (right in LTR, left in RTL)
+  .nav-link > .nav-badge,
+  .nav-link > p > .nav-badge,
+  .nav-link > .nav-arrow,
+  .nav-link > p > .nav-arrow {
+    right: 1rem !important; // place at end in LTR
+    left: auto !important;
+  }
+}
+
+.nav-indent {
+  .nav-treeview {
+    padding-left: $zui-sidebar-padding-x;
+  }
+}
+
+.nav-compact.nav-indent {
+  .nav-treeview {
+    padding-left: 0;
+
+    .nav-item {
+      padding-left: $zui-sidebar-padding-x;
+    }
+  }
+}
+
+.sidebar-mini.sidebar-collapse.nav-indent {
+  .app-sidebar:hover {
+    .nav-treeview {
+      padding-left: 0;
+
+      .nav-item {
+        padding-left: $zui-sidebar-padding-x;
+      }
+    }
+  }
+}
+
+.sidebar-collapse {
+  &.nav-compact.nav-indent {
+    .nav-treeview {
+      .nav-item {
+        padding-left: 0;
+      }
+    }
+  }
+}
+
+.nav-compact .nav-link {
+  @include border-radius(0);
+  margin-bottom: 0 !important;
+}
+
+// A fix for text overflow while transitioning from sidebar mini to full sidebar
+.sidebar-menu,
+.sidebar-menu > .nav-header,
+.sidebar-menu .nav-link {
+  white-space: nowrap;
+}
+
+// Sidebar search: the filter field above the menu. It sits outside
+// .sidebar-wrapper so it stays put while the menu scrolls under it.
+.sidebar-search {
+  flex: 0 0 auto;
+  padding: $zui-sidebar-padding-y ($zui-sidebar-padding-x * 2);
+  @include zui-search-field();
+}
+
+// Logo style
+.logo-xs,
+.logo-xl {
+  position: absolute;
+  visibility: visible;
+  opacity: 1;
+
+  &.brand-image-xs {
+    top: 12px;
+    left: 18px;
+  }
+
+  &.brand-image-xl {
+    top: 6px;
+    left: 12px;
+  }
+}
+
+.logo-xs {
+  visibility: hidden;
+  opacity: 0;
+
+  &.brand-image-xl {
+    top: 8px;
+    left: 16px;
+  }
+}
+
+.brand-link {
+  &.logo-switch {
+    &::before {
+      content: "\00a0";
+    }
+  }
+}
+
+.sidebar-mini.sidebar-collapse {
+  .app-sidebar {
+    min-width: $zui-sidebar-mini-width;
+    max-width: $zui-sidebar-mini-width;
+  }
+
+  // Make the sidebar headers
+  .sidebar-menu .nav-header {
+    display: none;
+  }
+
+  // A text field can't render usefully in the mini rail; it returns on hover
+  // together with the labels it filters.
+  .app-sidebar:not(:hover) .sidebar-search {
+    display: none;
+  }
+
+  .sidebar-menu {
+    .nav-link {
+      width: $zui-sidebar-mini-width - $zui-sidebar-padding-x * 2;
+
+      p {
+        display: inline-block;
+        width: 0;
+        white-space: nowrap;
+      }
+    }
+    .nav-badge,
+    .nav-arrow {
+      display: none;
+      animation-name: fadeOut;
+      animation-duration: $zui-transition-speed;
+      animation-fill-mode: both;
+    }
+  }
+
+  .brand-text {
+    display: inline-block;
+    max-width: 0;
+    margin-left: 0;
+    overflow: hidden;
+  }
+
+  .sidebar-menu .nav-link p,
+  .brand-text,
+  .logo-xl,
+  .nav-arrow {
+    visibility: hidden;
+    animation-name: fadeOut;
+    animation-duration: $zui-transition-speed;
+    animation-fill-mode: both;
+  }
+
+
+  .logo-xs {
+    display: inline-block;
+    visibility: visible;
+    animation-name: fadeIn;
+    animation-duration: $zui-transition-speed;
+    animation-fill-mode: both;
+  }
+
+  &:not(.sidebar-without-hover) {
+    .app-sidebar:hover {
+      min-width: var(--#{$zui-prefix}sidebar-width);
+      max-width: var(--#{$zui-prefix}sidebar-width);
+
+      .sidebar-menu .nav-header {
+        display: inline;
+      }
+
+      .sidebar-menu .nav-link {
+        width: auto;
+      }
+
+      .sidebar-menu .nav-link p,
+      .brand-text,
+      .logo-xl {
+        width: auto;
+        margin-left: 0;
+        visibility: visible;
+        animation-name: fadeIn;
+        animation-duration: $zui-transition-speed;
+        animation-fill-mode: both;
+      }
+
+      .brand-text {
+        display: inline;
+        max-width: inherit;
+        margin-left: .5rem;
+        animation-name: fadeIn;
+        animation-duration: $zui-transition-speed;
+        animation-fill-mode: both;
+      }
+
+      .nav-badge,
+      .nav-arrow {
+        display: inline-block;
+        visibility: visible;
+        animation-name: fadeIn;
+        animation-duration: $zui-transition-speed;
+        animation-fill-mode: both;
+        animation-delay: $zui-transition-speed;
+      }
+
+      .nav-link p {
+        padding-left: .5rem;
+      }
+
+      .logo-xs {
+        visibility: hidden;
+        animation-name: fadeOut;
+        animation-duration: $zui-transition-speed;
+        animation-fill-mode: both;
+      }
+    }
+  }
+}
+
+.sidebar-collapse:not(.sidebar-mini) {
+  .app-sidebar {
+    margin-left: calc(var(--#{$zui-prefix}sidebar-width) * -1); // stylelint-disable-line function-disallowed-list
+  }
+}
+
+.sidebar-expand {
+  @each $breakpoint in map.keys($grid-breakpoints) {
+    $next: breakpoint-next($breakpoint, $grid-breakpoints);
+    $infix: breakpoint-infix($next, $grid-breakpoints);
+
+    /* stylelint-disable-next-line scss/selector-no-union-class-name */
+    &#{$infix} {
+      @include media-breakpoint-up($next) {
+        &.layout-fixed {
+          .app-main-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+          }
+          .app-sidebar-wrapper {
+            position: relative;
+          }
+          .app-main {
+            flex: 1 1 auto;
+            overflow: auto;
+          }
+          .app-sidebar {
+            position: sticky;
+            top: 0;
+            bottom: 0;
+            max-height: 100vh;
+
+            .sidebar-wrapper {
+              overflow-x: hidden;
+              overflow-y: auto;
+            }
+          }
+        }
+
+        &.sidebar-open {
+          .nav-link > .nav-badge,
+          .nav-link > p > .nav-badge {
+            animation-name: fadeIn;
+            animation-duration: $zui-transition-speed;
+            animation-fill-mode: both;
+            animation-delay: $zui-transition-speed;
+          }
+          .nav-link > .nav-arrow,
+          .nav-link > p > .nav-arrow {
+            animation-name: fadeIn;
+            animation-duration: $zui-transition-speed;
+            animation-fill-mode: both;
+            animation-delay: $zui-transition-speed;
+          }
+        }
+      }
+
+      @include media-breakpoint-down($next) {
+        $max: breakpoint-max($next);
+
+        &::before {
+          display: none;
+          content: "#{$max}";
+        }
+
+        .app-sidebar {
+          position: fixed;
+          top: 0;
+          bottom: 0;
+          max-height: 100vh;
+          margin-left: calc(var(--#{$zui-prefix}sidebar-width) * -1); // stylelint-disable-line function-disallowed-list
+
+          .sidebar-wrapper {
+            overflow-x: hidden;
+            overflow-y: auto;
+          }
+        }
+
+        &.sidebar-open {
+          .app-sidebar {
+            margin-left: 0;
+          }
+
+          .sidebar-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: $zui-zindex-sidebar-overlay;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            visibility: visible;
+            background-color: rgba(0, 0, 0, .2);
+            animation-name: fadeIn;
+            animation-fill-mode: both;
+          }
+        }
+      }
+    }
+  }
+}
+
+.sidebar-menu .nav-link p,
+.app-sidebar .brand-text,
+.app-sidebar .logo-xs,
+.app-sidebar .logo-xl {
+  @include transition(margin-left $zui-transition-speed linear, opacity $zui-transition-speed ease, visibility $zui-transition-speed ease);
+}
+
+// To prevent onload transition and animation
+.app-loaded {
+  &.sidebar-mini.sidebar-collapse {
+    .sidebar-menu .nav-link p,
+    .brand-text {
+      animation-duration: $zui-transition-speed;
+    }
+  }
+}
+body:not(.app-loaded) {
+  .app-header,
+  .app-sidebar,
+  .app-main,
+  .app-footer {
+    @include transition(none !important);
+    animation-duration: 0s !important;
+  }
+}
+.hold-transition {
+  .app-header,
+  .app-sidebar,
+  .app-main,
+  .app-footer,
+  .nav-arrow,
+  .nav-badge {
+    @include transition(none !important);
+    animation-duration: 0s !important;
+  }
+}
+
+@if $enable-dark-mode {
+  @include color-mode(dark) {
+    &.app-sidebar,
+    .app-sidebar {
+      --#{$zui-prefix}sidebar-hover-bg: #{$zui-sidebar-hover-bg-dark};
+      --#{$zui-prefix}sidebar-color: #{$zui-sidebar-color-dark};
+      --#{$zui-prefix}sidebar-hover-color: #{$zui-sidebar-hover-color-dark};
+      --#{$zui-prefix}sidebar-active-color: #{$zui-sidebar-active-color-dark};
+      --#{$zui-prefix}sidebar-menu-active-bg: #{$zui-sidebar-menu-active-bg-dark};
+      --#{$zui-prefix}sidebar-menu-active-color: #{$zui-sidebar-menu-active-color-dark};
+      --#{$zui-prefix}sidebar-submenu-bg: #{$zui-sidebar-submenu-bg-dark};
+      --#{$zui-prefix}sidebar-submenu-color: #{$zui-sidebar-submenu-color-dark};
+      --#{$zui-prefix}sidebar-submenu-hover-color: #{$zui-sidebar-submenu-hover-color-dark};
+      --#{$zui-prefix}sidebar-submenu-hover-bg: #{$zui-sidebar-submenu-hover-bg-dark};
+      --#{$zui-prefix}sidebar-submenu-active-color: #{$zui-sidebar-submenu-active-color-dark};
+      --#{$zui-prefix}sidebar-submenu-active-bg: #{$zui-sidebar-submenu-active-bg-dark};
+      --#{$zui-prefix}sidebar-header-color: #{$zui-sidebar-header-color-dark};
+    }
+  }
+}
+
