@@ -351,6 +351,19 @@ class CreateTables
 
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });
+
+        Schema::dropIfExists('migrations');
+        Schema::create('migrations',function(TableSchema $table){
+            $table->integer('id')->autoIncrement();
+            $table->varchar('migration', 191);
+            $table->integer('batch')->default('1');
+            $table->integer('executed_at')->default('0');
+
+            $table->addPrimaryKey('id');
+            $table->addIndex('idx_migration',['migration']);
+
+            $table->setTableEngine(TableSchema::ENGINE_INNODB);
+        });
     }
 
     public function installBaseData()

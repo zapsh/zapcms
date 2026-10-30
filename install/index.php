@@ -235,6 +235,8 @@ function importBaseDataAction()
         $schema = new \zapcms\support\CreateTables();
         $schema->installBaseData();
         $schema->installDemoData();
+        // 新装站点已按最新结构建表，把现有迁移标记为已执行，升级时只跑新增迁移
+        (new \zapcms\database\Migrator())->markAllAsRun();
         ob_get_clean();
 
         // 写入最终数据库配置文件

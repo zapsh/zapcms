@@ -866,24 +866,53 @@ class ZapPackageManager
             ];
         }
 
-        // 7. 执行可选的数据库/数据升级脚本（包根目录 update.php）
+        // 7. 执行数据库迁移（app/zapcms/migrations 中本包新增的迁移）
+        $migrationWarning = $this->runCoreMigrations();
+
+        // 7.1 执行可选的数据库/数据升级脚本（包根目录 update.php，兼容旧机制）
         $upgradeWarning = $this->runCoreUpgradeScript($newVersion);
 
         // 8. 清理缓存
         $this->clearCache();
 
         // 9. 记录更新历史
-        $this->recordUpdateHistory('core', ZAP_CMS_VERSION, $newVersion, 'success');
+        $historyStatus = ($migrationWarning === '' && $upgradeWarning === '') ? 'success' : 'warning';
+        $this->recordUpdateHistory('core', ZAP_CMS_VERSION, $newVersion, $historyStatus);
 
         // 10. 清理备份（保留最近N个）
         $this->cleanOldBackups(5);
 
         $message = '系统更新成功，版本: ' . $newVersion;
-        if ($upgradeWarning !== '') {
-            $message .= '（升级脚本警告：' . $upgradeWarning . '）';
+
+        $warnings = array_filter([$migrationWarning, $upgradeWarning], static fn($v) => $v !== '');
+        if (!empty($warnings)) {
+            $message .= '（升级警告：' . implode('；', $warnings) . '）';
         }
 
         return ['success' => true, 'message' => $message];
+    }
+
+    /**
+     * 执行核心数据库迁移（app/zapcms/migrations）。
+     *
+     * 迁移记录存在于 migrations 表，升级时只会执行更新包中新加入的迁移文件。
+     *
+     * @return string 警告信息，空字符串表示无异常
+     */
+    protected function runCoreMigrations(): string
+    {
+        try {
+            $migrator = new \zapcms\database\Migrator();
+            $result   = $migrator->run();
+
+            if (!empty($result['error'])) {
+                return '数据库迁移失败：' . $result['error'];
+            }
+
+            return '';
+        } catch (\Throwable $e) {
+            return '数据库迁移异常：' . $e->getMessage();
+        }
     }
 
     /**
