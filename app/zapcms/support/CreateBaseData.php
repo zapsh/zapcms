@@ -46,6 +46,7 @@ class CreateBaseData
                 ['id' => 17, 'title' => '评论', 'pid' => 0, 'path' => '17,', 'level' => 1, 'icon' => 'fa-regular fa-comment', 'link_to' => 'Comment', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(comment[/.]?.*)', 'show_position' => '', 'sort_order' => 5, 'updated_at' => 1786501912, 'created_at' => 1786501912],
                 ['id' => 18, 'title' => '媒体库', 'pid' => 0, 'path' => '18,', 'level' => 1, 'icon' => 'fa-regular fa-image', 'link_to' => 'Media', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(media[/.]?.*)', 'show_position' => '', 'sort_order' => 25, 'updated_at' => 1788056911, 'created_at' => 1788056911],
                 ['id' => 19, 'title' => '缓存管理', 'pid' => 3, 'path' => '3,19,', 'level' => 2, 'icon' => 'fa-solid fa-broom', 'link_to' => 'System@cache', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(system/cache[/.]?.*)', 'show_position' => '1,2', 'sort_order' => 8, 'updated_at' => 1793300000, 'created_at' => 1793300000],
+                ['id' => 20, 'title' => '日志查看', 'pid' => 3, 'path' => '3,20,', 'level' => 2, 'icon' => 'fa fa-file-lines', 'link_to' => 'System@logs', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(system/logs[/.]?.*)', 'show_position' => '1,2', 'sort_order' => 9, 'updated_at' => 1793300000, 'created_at' => 1793300000],
             ], true);
         });
 

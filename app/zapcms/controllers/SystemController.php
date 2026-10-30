@@ -145,6 +145,97 @@ class SystemController extends AdminController
     }
 
     /**
+     * 日志查看
+     */
+    public function logs()
+    {
+        $viewer = new \zapcms\services\LogViewer();
+
+        \view('system.logs', [
+            'page_title'    => '日志查看',
+            'page_subtitle' => '查看运行日志，支持按级别与关键字筛选',
+            'breadcrumbs'   => [
+                ['title' => '控制台', 'url' => \zap\facades\Url::action('Index')],
+                ['title' => '日志查看'],
+            ],
+            'log_files' => $viewer->files(),
+            'log_dir'   => $viewer->directory(),
+        ]);
+    }
+
+    /**
+     * 日志数据（AJAX：筛选 + 分页）
+     */
+    public function logsData()
+    {
+        if (!Request::isPost()) {
+            Response::json(['code' => 1, 'msg' => '非法请求']);
+            return;
+        }
+
+        $page  = max(1, (int)Request::post('page', 1));
+        $limit = 100;
+
+        try {
+            $viewer = new \zapcms\services\LogViewer();
+            $result = $viewer->read(
+                (string)Request::post('file', ''),
+                [
+                    'level'   => (string)Request::post('level', ''),
+                    'keyword' => (string)Request::post('keyword', ''),
+                ],
+                $limit,
+                ($page - 1) * $limit
+            );
+
+            Response::json(['code' => 0, 'data' => $result]);
+        } catch (\Throwable $e) {
+            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * 下载日志文件
+     */
+    public function logsDownload()
+    {
+        $viewer = new \zapcms\services\LogViewer();
+        $file   = $viewer->resolve((string)($_GET['file'] ?? ''));
+
+        if ($file === null) {
+            http_response_code(404);
+            echo '<h1>日志文件不存在</h1>';
+            exit;
+        }
+
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . basename($file) . '"');
+        header('Content-Length: ' . filesize($file));
+        readfile($file);
+        exit;
+    }
+
+    /**
+     * 清空日志（指定文件或全部）
+     */
+    public function logsClear()
+    {
+        if (!Request::isPost()) {
+            Response::json(['code' => 1, 'msg' => '非法请求']);
+            return;
+        }
+
+        try {
+            $viewer = new \zapcms\services\LogViewer();
+            $count  = $viewer->clear((string)Request::post('file', ''));
+
+            Response::json(['code' => 0, 'msg' => "已清空 {$count} 个日志文件"]);
+        } catch (\Throwable $e) {
+            Response::json(['code' => 1, 'msg' => $e->getMessage()]);
+        }
+    }
+
+    /**
      * 缓存管理：缓存 / 模板 / 缩略图 / 日志 / 临时文件的统计与清理
      */
     public function cache()
