@@ -750,12 +750,21 @@ class ZapPackageManager
      */
     public function backupSystem(array $excludeDirs = [])
     {
-        $defaultExclude = ['storage', 'node_modules', '.git', 'mods', 'themes'];
+        // 必须在备份开始前放开执行时间限制，否则大站点可能中途被中断
+        @set_time_limit(0);
+        @ignore_user_abort(true);
+
+        // var 目录必须排除：备份文件写在 var/backup 下，若把 var 一起复制会造成
+        // “备份包含备份”的无限递归（曾经把站点复制成几十万个文件直到卡死）
+        $defaultExclude = ['storage', 'var', 'node_modules', '.git', 'mods', 'themes', 'dist'];
         $excludeDirs    = array_merge($defaultExclude, $excludeDirs);
         $backupName     = 'system_backup_' . date('Ymd_His') . '_' . ZAP_CMS_VERSION;
         $backupPath     = $this->backupDir . '/' . $backupName;
 
         $this->ensureDirectory($backupPath);
+
+        $backupReal = realpath($this->backupDir);
+        $backupReal = $backupReal === false ? $this->backupDir : rtrim(str_replace('\\', '/', $backupReal), '/');
 
         $files = scandir(APP_ROOT);
         foreach ($files as $file) {
@@ -770,10 +779,19 @@ class ZapPackageManager
             $src  = APP_ROOT . '/' . $file;
             $dest = $backupPath . '/' . $file;
 
+            // 双保险：跳过备份目录自身（防止自定义 backupDir 位于项目内时递归）
+            $srcReal = realpath($src);
+            if ($srcReal !== false) {
+                $srcReal = rtrim(str_replace('\\', '/', $srcReal), '/');
+                if ($srcReal === $backupReal || str_starts_with($srcReal . '/', $backupReal . '/')) {
+                    continue;
+                }
+            }
+
             if (is_dir($src)) {
                 $this->copyDirectory($src, $dest);
             } else {
-                copy($src, $dest);
+                @copy($src, $dest);
             }
         }
 
@@ -789,6 +807,10 @@ class ZapPackageManager
      */
     public function applySystemUpdate(string $zipFile, string $newVersion): array
     {
+        // 备份 + 解压涉及大量文件操作，避免被 max_execution_time 或客户端断开中断
+        @set_time_limit(0);
+        @ignore_user_abort(true);
+
         // 1. 先备份
         $backupPath = $this->backupSystem();
         if (!$backupPath) {
@@ -1011,16 +1033,27 @@ class ZapPackageManager
 
     /**
      * 递归复制目录
+     *
+     * @param int $depth 递归深度，超过限制直接返回，防止符号链接/异常结构造成死循环
      */
-    public function copyDirectory(string $src, string $dst): bool
+    public function copyDirectory(string $src, string $dst, int $depth = 0): bool
     {
-        if (!is_dir($src)) {
+        if (!is_dir($src) || $depth > 32) {
+            return false;
+        }
+
+        // 不跟随符号链接 / junction，避免复制到自身或无限展开
+        if (is_link($src)) {
             return false;
         }
 
         $this->ensureDirectory($dst);
 
         $dir = opendir($src);
+        if ($dir === false) {
+            return false;
+        }
+
         while (($file = readdir($dir)) !== false) {
             if ($file === '.' || $file === '..') {
                 continue;
@@ -1029,10 +1062,14 @@ class ZapPackageManager
             $srcFile = $src . '/' . $file;
             $dstFile = $dst . '/' . $file;
 
+            if (is_link($srcFile)) {
+                continue;
+            }
+
             if (is_dir($srcFile)) {
-                $this->copyDirectory($srcFile, $dstFile);
+                $this->copyDirectory($srcFile, $dstFile, $depth + 1);
             } else {
-                copy($srcFile, $dstFile);
+                @copy($srcFile, $dstFile);
             }
         }
         closedir($dir);

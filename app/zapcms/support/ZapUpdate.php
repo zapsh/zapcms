@@ -243,6 +243,9 @@ class ZapUpdate
      */
     public function doCoreUpdate(string $downloadUrl, string $newVersion, string $sha256 = ''): array
     {
+        @set_time_limit(0);
+        @ignore_user_abort(true);
+
         $newVersion = $this->normalizeVersion($newVersion);
         $downloadUrl = trim($downloadUrl);
 
@@ -297,6 +300,9 @@ class ZapUpdate
      */
     public function doManualUpdate(string $zipFilePath, string $newVersion = ''): array
     {
+        @set_time_limit(0);
+        @ignore_user_abort(true);
+
         if (!file_exists($zipFilePath)) {
             return ['success' => false, 'message' => '更新包文件不存在'];
         }
