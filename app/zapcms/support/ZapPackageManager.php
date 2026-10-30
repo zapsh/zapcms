@@ -491,6 +491,9 @@ class ZapPackageManager
         // 9. 运行模块安装脚本
         $this->runPluginInstallScript($name);
 
+        // 10. 重新生成模块路由配置（config/module.php）
+        $this->syncModuleRoutes();
+
         return ['success' => true, 'message' => '插件安装成功'];
     }
 
@@ -534,6 +537,9 @@ class ZapPackageManager
 
         // 4. 删除 options 记录
         $this->removeInstalledModOption($name);
+
+        // 5. 重新生成模块路由配置（config/module.php）
+        $this->syncModuleRoutes();
 
         if ($keepFiles) {
             $message = $keepData
@@ -603,6 +609,9 @@ class ZapPackageManager
         // 7. 刷新 options 记录（读取新版 mod.json）
         $this->writeInstalledModOption($name, $this->readModInfoFromDir($name), (int)$plugin['status']);
 
+        // 7.1 重新生成模块路由配置（config/module.php）
+        $this->syncModuleRoutes();
+
         // 8. 清理备份
         if (is_dir($backupPath)) {
             $this->deleteDirectory($backupPath);
@@ -639,6 +648,9 @@ class ZapPackageManager
             $installed['updated_at'] = time();
             $this->saveInstalledModOption($name, $installed);
         }
+
+        // 重新生成模块路由配置（config/module.php）
+        $this->syncModuleRoutes();
 
         $action = $status ? '启用' : '禁用';
         return ['success' => true, 'message' => "插件{$action}成功"];
@@ -1385,5 +1397,152 @@ class ZapPackageManager
             $mods[] = $info;
         }
         return $mods;
+    }
+
+    // ==================== 模块路由自动注册 ====================
+
+    /**
+     * 根据已启用模块的 mod.json "route" 声明，自动生成 config/module.php。
+     *
+     * 触发时机：模块安装 / 卸载 / 启用 / 禁用 / 更新之后调用。
+     *
+     * @return array 生成的 prefixes 映射（URL 前缀 => 模块目录名）
+     */
+    public function syncModuleRoutes(): array
+    {
+        $prefixes = $this->collectModuleRoutes();
+        $this->writeModuleConfig($prefixes);
+        return $prefixes;
+    }
+
+    /**
+     * 从已启用（plugin.status=1）的模块收集路由映射。
+     */
+    protected function collectModuleRoutes(): array
+    {
+        $prefixes = [];
+        try {
+            $plugins = DB::table('plugin')->where('status', 1)->get();
+        } catch (\Throwable $e) {
+            // plugin 表尚不存在（如首次安装尚未建表）时，返回空集合
+            return $prefixes;
+        }
+
+        foreach ($plugins as $plugin) {
+            $name = (string)($plugin['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+            $info   = $this->readModInfoFromDir($name);
+            $routes = $this->normalizeRoute($info['route'] ?? null, $name);
+            foreach ($routes as $prefix => $target) {
+                $prefix = $this->sanitizeRoutePrefix($prefix);
+                $target = $this->sanitizePluginName($target);
+                if ($prefix !== '' && $target !== '') {
+                    $prefixes[$prefix] = $target;
+                }
+            }
+        }
+
+        ksort($prefixes);
+        return $prefixes;
+    }
+
+    /**
+     * 将 mod.json 的 route 字段归一化为 [URL前缀 => 模块目录]。
+     *
+     * 支持以下写法：
+     *   "route": "shop"                                         // 前缀即模块目录
+     *   "route": {"prefix": "shop"}                             // 单前缀
+     *   "route": {"prefix": "shop", "aliases": ["mall","cart"]} // 多前缀指向同一模块
+     *   "route": {"map": {"mall":"shopv2","cart":"shopv2"}}     // 显式映射（可指向其它目录）
+     */
+    protected function normalizeRoute($route, string $moduleDir): array
+    {
+        $out = [];
+        if (is_string($route) && trim($route) !== '') {
+            $out[trim($route)] = $moduleDir;
+            return $out;
+        }
+        if (!is_array($route)) {
+            return $out;
+        }
+        if (isset($route['map']) && is_array($route['map'])) {
+            foreach ($route['map'] as $prefix => $target) {
+                $out[(string)$prefix] = (string)$target;
+            }
+            return $out;
+        }
+        $prefix = (string)($route['prefix'] ?? '');
+        if ($prefix !== '') {
+            $out[$prefix] = $moduleDir;
+        }
+        foreach ((array)($route['aliases'] ?? []) as $alias) {
+            $alias = (string)$alias;
+            if ($alias !== '') {
+                $out[$alias] = $moduleDir;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * 清洗 URL 前缀（仅保留小写字母/数字/连字符/下划线，去首尾斜杠）。
+     */
+    protected function sanitizeRoutePrefix(string $prefix): string
+    {
+        $prefix = strtolower(trim(trim($prefix), '/'));
+        return (string)preg_replace('/[^a-z0-9\-_]/', '', $prefix);
+    }
+
+    /**
+     * 原子写入 config/module.php（含可选的 config/module.overrides.php 运行时合并）。
+     */
+    protected function writeModuleConfig(array $prefixes): bool
+    {
+        $export = var_export($prefixes, true);
+        $now    = date('Y-m-d H:i:s');
+
+        $content = <<<'PHP'
+<?php
+/**
+ * 模块路由配置 —— 由系统根据已启用模块的 mod.json "route" 自动生成。
+ * 生成时间：__NOW__
+ *
+ * 请勿手改本文件：模块安装 / 卸载 / 启用 / 禁用 / 更新时会重新生成。
+ * 需要手动新增或覆盖前缀映射时，请创建 config/module.overrides.php：
+ *
+ *   <?php
+ *   return ['mall' => 'shopv2', 'cart' => 'shopv2'];
+ *
+ * prefixes 语义：URL 前缀 => 模块目录名。
+ */
+
+$prefixes = __PREFIXES__;
+
+// 站点级手动覆盖（可选），优先级高于自动生成结果
+$overrideFile = __DIR__ . '/module.overrides.php';
+if (is_file($overrideFile)) {
+    $overrides = include $overrideFile;
+    if (is_array($overrides)) {
+        $prefixes = array_merge($prefixes, $overrides);
+    }
+}
+
+return ['prefixes' => $prefixes];
+PHP;
+
+        $content = str_replace(['__NOW__', '__PREFIXES__'], [$now, $export], $content);
+
+        $file = APP_ROOT . '/config/module.php';
+        $tmp  = $file . '.tmp.' . getmypid();
+        if (@file_put_contents($tmp, $content) === false) {
+            return false;
+        }
+        if (!@rename($tmp, $file)) {
+            @unlink($tmp);
+            return false;
+        }
+        return true;
     }
 }

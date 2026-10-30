@@ -8,5 +8,9 @@
     "package_name": "zapcms/example-plugin",
     "requires": {
         "zapcms": ">=1.0.0"
+    },
+    "route": {
+        "prefix": "example",
+        "aliases": ["example-alias"]
     }
 }

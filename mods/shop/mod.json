@@ -7,6 +7,10 @@
     "author": "ZAP CMS",
     "website": "https://zapcms.com",
     "autoload": "boot.php",
+    "route": {
+        "prefix": "shop",
+        "aliases": ["mall"]
+    },
     "admin_menu": [
         {
             "title": "商城",
