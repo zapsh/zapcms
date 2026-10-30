@@ -232,9 +232,21 @@ $getStatus = function($plugin) {
             </div>
             <div class="modal-body">
                 <p>确定要卸载插件 <strong id="uninstallPluginName">—</strong> 吗？</p>
-                <div class="alert alert-warning mb-0">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="keepUninstallData" checked>
+                    <label class="form-check-label" for="keepUninstallData">
+                        保留数据（不删除模块创建的数据表）
+                    </label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="keepUninstallFiles" checked>
+                    <label class="form-check-label" for="keepUninstallFiles">
+                        保留模块文件（不删除 mods 目录，之后可直接注册激活）
+                    </label>
+                </div>
+                <div class="alert alert-warning mb-0" id="uninstallTip">
                     <i class="fa fa-exclamation-circle me-1"></i>
-                    此操作将删除插件目录及所有相关文件，无法恢复。
+                    模块会从已安装列表移除并清理后台菜单，数据和模块文件均保留，之后在“模块”列表点“注册”即可重新激活。
                 </div>
             </div>
             <div class="modal-footer">
@@ -289,25 +301,63 @@ let currentUninstallName = '';
 function confirmUninstall(name) {
     currentUninstallName = name;
     document.getElementById('uninstallPluginName').textContent = name;
+    // 每次打开都回到“保留数据 + 保留文件”的安全默认
+    document.getElementById('keepUninstallData').checked = true;
+    document.getElementById('keepUninstallFiles').checked = true;
+    updateUninstallTip();
     const modal = new bootstrap.Modal('#uninstallModal');
     modal.show();
 }
 
+function updateUninstallTip() {
+    const keepData  = document.getElementById('keepUninstallData').checked;
+    const keepFiles = document.getElementById('keepUninstallFiles').checked;
+    const tip = document.getElementById('uninstallTip');
+    const btn = document.getElementById('confirmUninstall');
+
+    if (keepData && keepFiles) {
+        tip.className = 'alert alert-warning mb-0';
+        tip.innerHTML = '<i class="fa fa-exclamation-circle me-1"></i>相当于“注销”：清理后台菜单与安装登记，数据表和模块文件都保留，之后在“模块”列表点“注册”即可重新激活。';
+        btn.className = 'btn btn-warning';
+        btn.innerHTML = '<i class="fa fa-power-off me-1"></i>注销（保留数据与文件）';
+    } else if (keepData) {
+        tip.className = 'alert alert-warning mb-0';
+        tip.innerHTML = '<i class="fa fa-exclamation-circle me-1"></i>模块文件会被删除，数据表保留；重新启用需重新上传模块包，原有数据不会丢失。';
+        btn.className = 'btn btn-warning';
+        btn.innerHTML = '<i class="fa fa-trash me-1"></i>卸载（保留数据）';
+    } else if (keepFiles) {
+        tip.className = 'alert alert-danger mb-0';
+        tip.innerHTML = '<i class="fa fa-exclamation-circle me-1"></i><strong>注意：</strong>该模块创建的数据表会被删除且无法恢复，模块文件保留，可直接注册重新激活。';
+        btn.className = 'btn btn-danger';
+        btn.innerHTML = '<i class="fa fa-trash me-1"></i>注销（删除数据）';
+    } else {
+        tip.className = 'alert alert-danger mb-0';
+        tip.innerHTML = '<i class="fa fa-exclamation-circle me-1"></i><strong>危险：</strong>模块文件、后台菜单以及该模块创建的数据表都会被删除，数据无法恢复。';
+        btn.className = 'btn btn-danger';
+        btn.innerHTML = '<i class="fa fa-trash me-1"></i>彻底卸载（删除文件和数据）';
+    }
+}
+
+document.getElementById('keepUninstallData').addEventListener('change', updateUninstallTip);
+document.getElementById('keepUninstallFiles').addEventListener('change', updateUninstallTip);
+
 document.getElementById('confirmUninstall').addEventListener('click', function() {
     const btn = this;
+    const keepData  = document.getElementById('keepUninstallData').checked ? 1 : 0;
+    const keepFiles = document.getElementById('keepUninstallFiles').checked ? 1 : 0;
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>卸载中…';
 
     Zap.AjaxPost({
         url: '<?= Url::action('Plugin@uninstall') ?>',
-        data: { name: currentUninstallName },
+        data: { name: currentUninstallName, keep_data: keepData, keep_files: keepFiles },
         dataType: 'json',
         success: function(res) {
             bootstrap.Modal.getInstance('#uninstallModal').hide();
             btn.disabled = false;
             btn.innerHTML = '<i class="fa fa-trash me-1"></i>确认卸载';
             if (res.code === 0) {
-                ZapToast.alert('卸载成功', { bgColor: bgSuccess });
+                ZapToast.alert(res.msg || '卸载成功', { bgColor: bgSuccess });
                 setTimeout(function() { location.reload(); }, 600);
             } else {
                 ZapToast.alert(res.msg || '卸载失败', { bgColor: bgDanger });

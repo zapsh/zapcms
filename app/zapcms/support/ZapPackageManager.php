@@ -365,12 +365,14 @@ class ZapPackageManager
     }
 
     /**
-     * 卸载插件
+     * 卸载（或注销）插件
      *
-     * @param string $name 插件标识名
+     * @param string $name      插件标识名
+     * @param bool   $keepData  true 保留数据表，仅清理菜单与登记记录
+     * @param bool   $keepFiles true 保留模块目录，之后在模块列表点“注册”即可重新激活
      * @return array
      */
-    public function uninstallPlugin(string $name): array
+    public function uninstallPlugin(string $name, bool $keepData = true, bool $keepFiles = true): array
     {
         $plugin = DB::table('plugin')->where('name', $name)->first();
         if (!$plugin) {
@@ -386,22 +388,32 @@ class ZapPackageManager
             // 菜单清理失败不阻塞卸载
         }
 
-        // 1. 运行插件卸载脚本
-        $this->runPluginUninstallScript($name);
+        // 1. 运行插件卸载脚本（保留数据时不删表）
+        $this->runPluginUninstallScript($name, $keepData);
 
-        // 2. 删除插件目录
-        $pluginDir = $this->modsDir . '/' . $name;
-        if (is_dir($pluginDir)) {
-            $this->deleteDirectory($pluginDir);
+        // 2. 删除插件目录（保留文件时跳过，便于之后直接重新注册激活）
+        if (!$keepFiles) {
+            $pluginDir = $this->modsDir . '/' . $name;
+            if (is_dir($pluginDir)) {
+                $this->deleteDirectory($pluginDir);
+            }
         }
 
-        // 3. 从数据库删除
+        // 3. 从数据库删除登记
         DB::table('plugin')->where('name', $name)->delete();
 
         // 4. 删除 options 记录
         $this->removeInstalledModOption($name);
 
-        return ['success' => true, 'message' => '插件卸载成功'];
+        if ($keepFiles) {
+            $message = $keepData
+                ? '已注销：数据与模块文件均保留，可在模块列表点“注册”重新激活'
+                : '已注销：模块文件已保留，数据表已删除，可在模块列表点“注册”重新激活';
+        } else {
+            $message = $keepData ? '插件已卸载，数据表已保留' : '插件已彻底卸载，数据表已删除';
+        }
+
+        return ['success' => true, 'message' => $message];
     }
 
     /**
@@ -564,10 +576,15 @@ class ZapPackageManager
 
     /**
      * 运行插件卸载脚本
+     *
+     * 脚本内可通过局部变量 $keepData 或 $GLOBALS['zap_mod_uninstall_keep_data']
+     * 判断是否保留数据表：为 true 时只做菜单/登记清理，不删除业务数据。
      */
-    protected function runPluginUninstallScript(string $name): void
+    public function runPluginUninstallScript(string $name, bool $keepData = true): void
     {
         $uninstallScript = $this->modsDir . '/' . $name . '/uninstall.php';
+        // 供被 require 的脚本读取（require 共享当前作用域；GLOBALS 便于跨函数取用）
+        $GLOBALS['zap_mod_uninstall_keep_data'] = $keepData;
         if (file_exists($uninstallScript)) {
             try {
                 require $uninstallScript;

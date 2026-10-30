@@ -53,9 +53,12 @@ class Mod
 
     /**
      * 模块卸载回调
+     *
+     * @param bool $keepData true 时保留数据表，仅清理菜单
      */
-    public static function uninstall(): bool
+    public static function uninstall(bool $keepData = true): bool
     {
+        $GLOBALS['zap_mod_uninstall_keep_data'] = $keepData;
         $uninstallFile = __DIR__ . '/uninstall.php';
         if (file_exists($uninstallFile)) {
             return (bool) require $uninstallFile;

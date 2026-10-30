@@ -271,7 +271,11 @@ class PluginController extends AdminController
             Response::json(['code' => 1, 'msg' => '请指定要卸载的插件']);
         }
 
-        $result = $this->pm->uninstallPlugin($name);
+        // keep_data=1：保留数据表；keep_files=1：保留模块目录（之后可直接注册激活）
+        $keepData  = (bool)req()->post('keep_data', 0);
+        $keepFiles = (bool)req()->post('keep_files', 0);
+
+        $result = $this->pm->uninstallPlugin($name, $keepData, $keepFiles);
 
         Response::json([
             'code' => $result['success'] ? 0 : 1,
