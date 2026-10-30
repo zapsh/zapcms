@@ -68,10 +68,13 @@ class Theme
         }
         $themeInfo = IOUtils::readJsonFile($themeFile,true) ?:[];
 
-        if(!empty($themeInfo['settings']['option_keys'])){
-            $option_keys = $themeInfo['settings']['option_keys'];
-        }else{
-            $option_keys[] = [$theme];
+        $option_keys = $themeInfo['settings']['option_keys'] ?? [];
+        if(!is_array($option_keys)){
+            $option_keys = [$option_keys];
+        }
+        // 注意：这里必须是「一维字符串数组」，多包一层会导致 Option::join 时 Array to string conversion
+        if(empty($option_keys)){
+            $option_keys = [$theme];
         }
         $themeSettingsKeys = Option::getKeys($option_keys,'REGEXP');
         foreach ($themeInfo['options'] ?? [] as $key=>$value){

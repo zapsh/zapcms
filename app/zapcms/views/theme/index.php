@@ -65,8 +65,19 @@ $this->view->page_title = '主题管理';
                     ZapToast.alert("主题设置成功",{bgColor:bgSuccess});
                     Zap.reload();
                 }else{
-                    ZapToast.alert("主题设置失败: "+data.msg,{bgColor:bgDanger});
+                    ZapToast.alert("主题设置失败: "+(data.msg||data.message||''),{bgColor:bgDanger});
                 }
+            },
+            error:function(xhr){
+                // 服务端 500 时 jQuery 走 error 分支，之前没有处理导致“错误也没弹窗”
+                let msg = 'HTTP ' + xhr.status;
+                try {
+                    const err = JSON.parse(xhr.responseText);
+                    msg = err.message || err.msg || msg;
+                } catch (e) {
+                    if (xhr.responseText) { msg = xhr.responseText.substring(0, 200); }
+                }
+                ZapToast.alert("主题设置失败: " + msg, {bgColor:bgDanger});
             }
         }).always(function(){ load.dispose(); });
     }

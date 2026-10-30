@@ -69,7 +69,7 @@ class Option
     public static function getArray($option_name,$type = '='): array
     {
         if(is_array($option_name) && $type == 'REGEXP'){
-            $option_name = join('|',$option_name);
+            $option_name = join('|',array_filter($option_name,'is_scalar'));
             $option_name = "^({$option_name}).*";
         }else if(is_string($option_name) && $type == 'REGEXP'){
             $option_name = "^({$option_name}).*";
@@ -88,7 +88,8 @@ class Option
     public static function getKeys($option_name,$type = '='): array
     {
         if(is_array($option_name) && $type == 'REGEXP'){
-            $option_name = join('|',$option_name);
+            // 过滤掉非标量元素，避免误传多维数组时触发 Array to string conversion
+            $option_name = join('|',array_filter($option_name,'is_scalar'));
             $option_name = "^({$option_name}).*";
         }else if(is_string($option_name) && $type == 'REGEXP'){
             $option_name = "^({$option_name}).*";
