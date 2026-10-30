@@ -364,15 +364,25 @@ Zap.startLoading = function(){
 }
 
 Zap.reload=function(settings){
-    const defaultSettings = {id:'#zContent',url:null,data:null,callback:function(){}}
+    const defaultSettings = {id:null,url:null,data:null,callback:function(){}}
     if(settings === undefined){
         settings = {}
     }
     settings = Object.assign(defaultSettings,settings);
+    if(settings.id === null){
+        // 当前后台布局没有 #zContent，退回内容容器 .app-content
+        settings.id = document.getElementById('zContent') ? '#zContent' : '.app-content';
+    }
     if(settings.url === null){
         settings.url = location.href;
     }
-    $(settings.id).load(settings.url,settings.data,settings.callback);
+    const $target = $(settings.id);
+    if(!$target.length){
+        location.reload();
+        return;
+    }
+    // AJAX 请求下视图会跳过 layout（!IS_AJAX && layout()），服务端只返回内容片段
+    $target.load(settings.url,settings.data,settings.callback);
 }
 
 Zap.createElement = function(str){

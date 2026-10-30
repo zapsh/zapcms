@@ -9,6 +9,7 @@ use zapcms\services\Theme;
 use zap\facades\Cache;
 use zap\http\Request;
 use zap\http\Response;
+use zap\view\View;
 
 class ThemeController extends AdminController
 {
@@ -34,7 +35,14 @@ class ThemeController extends AdminController
             Theme::instance()->saveThemeOptions($theme);
             Cache::delete('options_website');
             Cache::delete('options_'.$theme);
-            Response::json(['code'=>0,'msg'=>'主题设置成功']);
+
+            // 返回重新渲染的卡片片段，前端拿到后直接替换 #themeGrid，无需整页刷新
+            $html = View::make('theme._grid', [
+                'themes'          => Theme::instance()->getAllThemesInfo(),
+                'website_options' => Option::getArray('website', 'REGEXP'),
+            ])->fetch();
+
+            Response::json(['code'=>0,'msg'=>'主题设置成功','html'=>$html]);
         }
     }
 
