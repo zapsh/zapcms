@@ -812,7 +812,16 @@ class ZapPackageManager
         }
         $this->deleteDirectory($testDir);
 
-        // 3. 直接解压覆盖到根目录
+        // 3. 保留站点自身的数据库配置（更新包不应覆盖已安装站点的连接信息）
+        $protectedFiles = [];
+        foreach (['config/database.php', 'config/backup.database.php'] as $relativePath) {
+            $absolutePath = APP_ROOT . '/' . $relativePath;
+            if (is_file($absolutePath)) {
+                $protectedFiles[$relativePath] = (string)file_get_contents($absolutePath);
+            }
+        }
+
+        // 4. 直接解压覆盖到根目录
         $extractResult = $this->extract($zipFile, APP_ROOT);
 
         if (!$extractResult) {
@@ -821,7 +830,12 @@ class ZapPackageManager
             return ['success' => false, 'message' => '文件覆盖失败，已恢复旧版本'];
         }
 
-        // 4. 校验解压后的核心版本号，避免包与清单不匹配
+        // 4.1 还原被更新包覆盖的数据库配置
+        foreach ($protectedFiles as $relativePath => $content) {
+            @file_put_contents(APP_ROOT . '/' . $relativePath, $content);
+        }
+
+        // 6. 校验解压后的核心版本号，避免包与清单不匹配
         $packedVersion = $this->readCoreVersion();
         if ($packedVersion !== '' && version_compare($packedVersion, ltrim($newVersion, 'vV'), '!=')) {
             $this->restoreBackup($backupPath);
@@ -831,16 +845,16 @@ class ZapPackageManager
             ];
         }
 
-        // 5. 执行可选的数据库/数据升级脚本（包根目录 update.php）
+        // 7. 执行可选的数据库/数据升级脚本（包根目录 update.php）
         $upgradeWarning = $this->runCoreUpgradeScript($newVersion);
 
-        // 6. 清理缓存
+        // 8. 清理缓存
         $this->clearCache();
 
-        // 7. 记录更新历史
+        // 9. 记录更新历史
         $this->recordUpdateHistory('core', ZAP_CMS_VERSION, $newVersion, 'success');
 
-        // 8. 清理备份（保留最近N个）
+        // 10. 清理备份（保留最近N个）
         $this->cleanOldBackups(5);
 
         $message = '系统更新成功，版本: ' . $newVersion;
