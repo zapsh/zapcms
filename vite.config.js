@@ -55,11 +55,23 @@ export default defineConfig({
         bootstrap: resolve(root, 'resources/admin/scss/bootstrap.scss'),
         // Bootstrap JS（暴露 window.bootstrap 供 admin.js 使用）
         'bootstrap.bundle': resolve(root, 'resources/admin/js/bootstrap.js'),
+        // 代码编辑器（CodeMirror 6，按需加载；语言包自动分包）
+        editor: resolve(root, 'resources/admin/js/editor.js'),
       },
       output: {
         entryFileNames: 'js/[name].js',
         assetFileNames: 'css/[name][extname]',
-        chunkFileNames: 'js/[name].js',
+        // 动态 import 产生的 chunk（CodeMirror 语言包）：按包名命名并带 hash
+        chunkFileNames(chunkInfo) {
+          const ids = chunkInfo.moduleIds || [];
+          const lang = ids.map((id) => id.match(/@codemirror[\\/]lang-([a-z0-9]+)[\\/]/i)).find(Boolean);
+          if (lang) return `js/cm-lang-${lang[1].toLowerCase()}-[hash].js`;
+
+          const lezer = ids.map((id) => id.match(/@lezer[\\/]([a-z0-9-]+)[\\/]/i)).find(Boolean);
+          if (lezer) return `js/cm-lang-${lezer[1].toLowerCase()}-[hash].js`;
+
+          return 'js/cm-chunk-[hash].js';
+        },
       },
       plugins: [
         dropEmptyJs(),

@@ -1,5 +1,4 @@
 <?php
-\zapcms\support\Asset::library('ace');
 $this->layout('layouts/common');
 /**
  * @var string $path 当前目录路径
@@ -372,6 +371,35 @@ const fileContentTabs = $('#fileContentTabs');
 const statusInfo = $('#statusInfo');
 const editorInstances = {};
 let activeFilePath = null;
+let editorSeq = 0;
+
+// 编辑器按需加载：首次打开文件时才下载 CodeMirror 6（assets/admin/js/editor.js）
+let zapEditorPromise = null;
+function loadZapEditor() {
+    if (window.ZapEditor) {
+        return Promise.resolve(window.ZapEditor);
+    }
+    if (zapEditorPromise) {
+        return zapEditorPromise;
+    }
+    zapEditorPromise = new Promise(function(resolve, reject) {
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.src = (window.ZAP_ASSETS_URL || '') + '/js/editor.js';
+        script.onload = function() {
+            window.ZapEditor ? resolve(window.ZapEditor) : reject(new Error('编辑器初始化失败'));
+        };
+        script.onerror = function() {
+            reject(new Error('编辑器加载失败'));
+        };
+        document.head.appendChild(script);
+    }).catch(function(err) {
+        // 允许下次打开文件时重试
+        zapEditorPromise = null;
+        throw err;
+    });
+    return zapEditorPromise;
+}
 
 // 文件搜索
 let searchTimer = null;
@@ -479,7 +507,9 @@ function getDir(path, pEl) {
             if (resp.type === 'list') {
                 renderFileList(resp.data, pEl);
             } else if (resp.type === 'content') {
-                openFile(resp.path, resp.filename, resp.content);
+                openFile(resp.path, resp.filename, resp.content).catch(function(err) {
+                    showToast(err.message || '编辑器加载失败', 'error');
+                });
             }
         },
         error: function() {
@@ -532,19 +562,22 @@ function renderFileList(data, pEl) {
     }
 }
 
-function openFile(path, filename, content) {
+async function openFile(path, filename, content) {
     // 如果已打开，更新内容并激活
     if (editorInstances[path]) {
         editorInstances[path].originalContent = content;
-        editorInstances[path].editor.setValue(content, -1);
-        editorInstances[path].editor.session.getUndoManager().reset();
+        editorInstances[path].editor.setValue(content);
+        editorInstances[path].editor.resetUndo();
         editorInstances[path].dirty = false;
         updateTabDirty(path, false);
         activateTab(path);
         return;
     }
 
-    const uId = 'ace' + (Math.random() + 1).toString(36).substring(10);
+    // 首次打开文件时才下载编辑器
+    const ZapEditor = await loadZapEditor();
+
+    const uId = 'zap-editor-' + (++editorSeq);
 
     // 创建编辑器面板
     const editorPane = $(`<div class="editor-pane active" id="${uId}-pane"></div>`).appendTo(fileContentTabs);
@@ -566,32 +599,23 @@ function openFile(path, filename, content) {
 
     fileToolbarTabs.append(tabEl);
 
-    // 初始化ACE编辑器
-    const editor = ace.edit(uId);
-    const modelist = ace.require('ace/ext/modelist');
-    const mode = modelist.getModeForPath(filename).mode;
-    editor.session.setMode(mode);
-    editor.setValue(content, -1);
-    editor.session.getUndoManager().reset();
-    editor.setOptions({
-        fontSize: '14px',
-        showPrintMargin: false,
-        enableBasicAutocompletion: true,
-        enableSnippets: true,
-        enableLiveAutocompletion: true,
+    // 初始化编辑器（CodeMirror 6，语言包按文件后缀异步加载）
+    const editor = ZapEditor.create(editorDiv[0], {
+        filename: filename,
+        content: content,
+        onChange: function() {
+            const inst = editorInstances[path];
+            if (!inst) {
+                return;
+            }
+            // 与打开时内容比对，撤回后能正确清除脏标记
+            const dirty = editor.getValue() !== inst.originalContent;
+            if (inst.dirty !== dirty) {
+                inst.dirty = dirty;
+                updateTabDirty(path, dirty);
+            }
+        },
     });
-
-    // 监听内容变化
-    editor.session.on('change', function() {
-        const dirty = editor.session.getUndoManager().hasUndo();
-        if (editorInstances[path]) {
-            editorInstances[path].dirty = dirty;
-            updateTabDirty(path, dirty);
-        }
-    });
-
-    // 修复编辑器大小
-    editor.resize();
 
     editorInstances[path] = {
         id: uId,
@@ -602,7 +626,7 @@ function openFile(path, filename, content) {
         path: path,
         originalContent: content,
         dirty: false,
-        type: 'ace'
+        type: 'editor'
     };
 
     activeFilePath = path;
@@ -611,8 +635,9 @@ function openFile(path, filename, content) {
     editorToolbar.show();
     updateToolbar(path, filename);
 
-    // 显示编辑器
+    // 显示编辑器（CodeMirror 需要面板可见后再测量尺寸）
     editorPane.addClass('active');
+    editor.resize();
     updateStatusBar('已打开: ' + filename);
 
     // 高亮左侧文件树
@@ -696,7 +721,7 @@ function saveCurrentFile() {
             if (resp.code === 0) {
                 inst.originalContent = content;
                 inst.dirty = false;
-                inst.editor.session.getUndoManager().reset();
+                inst.editor.resetUndo();
                 updateTabDirty(activeFilePath, false);
                 showToast('文件保存成功', 'success');
                 updateStatusBar('已保存: ' + inst.filename + ' (' + formatSize(resp.size) + ')');
