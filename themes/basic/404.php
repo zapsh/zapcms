@@ -1,6 +1,8 @@
 <?php
 defined('IN_ZAPCMS') or die('No permission to access');
 $this->extend('layout/default');
+$__state = pageState();
+$__state['is404'] = true;
 $this->beginBlock('content');
 $catalogMenu = pageState()->getCatalogList();
 ?>

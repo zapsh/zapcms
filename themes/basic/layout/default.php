@@ -4,6 +4,45 @@ defined('IN_ZAPCMS') or die('No permission to access');
 $state = pageState();
 $catalogMenu = $state->getCatalogList();
 $footerCatalogMenu = $catalogMenu;
+
+// ── SEO 兜底 ──────────────────────────────────────────────
+// 控制器默认不设置 pageTitle，这里统一补全，保证每个页面都有
+// <title>/keywords/description，而不是整段 meta 都不输出。
+$siteTitle  = trim((string)option('website.title', 'ZAP CMS')) ?: 'ZAP CMS';
+$siteSlogan = trim((string)option('website.slogan', ''));
+$node       = $state['node'] ?? [];
+$nodeTitle  = trim((string)($node['title'] ?? ''));
+
+if (trim((string)$state['pageTitle']) === '') {
+    if (!empty($state['is404'])) {
+        $pageTitle = '页面未找到 - ' . $siteTitle;
+    } elseif (!empty($state['isSearch'])) {
+        $pageTitle = '搜索结果 - ' . $siteTitle;
+    } elseif ($nodeTitle !== '' && $nodeTitle !== $siteTitle) {
+        $pageTitle = $nodeTitle . ' - ' . $siteTitle;
+    } elseif ($siteSlogan !== '') {
+        $pageTitle = $siteTitle . ' - ' . $siteSlogan;
+    } else {
+        $pageTitle = $siteTitle;
+    }
+    $state['pageTitle'] = $pageTitle;
+}
+
+if (trim((string)$state['pageKeywords']) === '') {
+    $state['pageKeywords'] = trim((string)($node['keywords'] ?? ''))
+        ?: (string)option('website.keywords', '');
+}
+
+if (trim((string)$state['pageDescription']) === '') {
+    $description = trim((string)($node['description'] ?? ''));
+    if ($description === '') {
+        $description = trim(strip_tags((string)($node['excerpt'] ?? '')));
+    }
+    if ($description === '') {
+        $description = (string)option('website.description', '');
+    }
+    $state['pageDescription'] = $description;
+}
 ?>
 <!DOCTYPE html>
 <html lang="zh">

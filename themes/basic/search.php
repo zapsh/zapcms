@@ -1,5 +1,7 @@
 <?php defined('IN_ZAPCMS') or die('No permission to access');
 $this->extend('layout/default');
+$__state = pageState();
+$__state['isSearch'] = true;
 $this->beginBlock('content');
 
 // ── 数据准备 ────────────────────────────────────────────

@@ -216,6 +216,11 @@ ul.list-inline.post-meta li i { color: #1e6bff; }
 /* ─── 文章列表页：产品卡片适配 article_list ─── */
 .content-wrap { margin-top: 10px; }
 
+/* 列表页：右侧内容区与左侧栏顶端对齐
+   （冲掉外层 .content-wrap 的 10px 与网格卡片自身的 30px 上边距） */
+.col-sm-9 > .content-wrap { margin-top: 0; }
+.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content { margin-top: 0; }
+
 /* ─── 面包屑 ─── */
 .bread_area {
     margin-bottom: 30px;
