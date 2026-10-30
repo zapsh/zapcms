@@ -23,9 +23,17 @@ class ModController extends Controller
      * 前端模块路由入口
      *
      * URL 段解析：/mod/{$module}/{$controller}/{$action}/{$params...}
+     *
+     * 注意：第一个参数名必须是 $method —— Startup::dispatchFrontend() 以
+     * 命名参数 ['method' => ..., 'params' => ...] 调用本方法。
+     *
+     * @param string $method 模块名（URL 前缀对应的模块目录名）
+     * @param array  $params 剩余 URL 段
      */
-    public function _invoke($module, $params): void
+    public function _invoke($method, $params): void
     {
+        $module = (string)$method;
+
         if (empty($module)) {
             http_response_code(404);
             echo "Module name is required.";
