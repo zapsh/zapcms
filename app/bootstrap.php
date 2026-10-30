@@ -8,7 +8,7 @@
  *
  */
 
-const ZAP_CMS_VERSION = '1.0.13';
+const ZAP_CMS_VERSION = '1.0.14';
 const ZAP_CMS_RELEASE_DATE = '2026-10-30';
 
 define('APP_ROOT', dirname(__DIR__));
@@ -215,6 +215,8 @@ config_set('cache.redis', [
     ],
     'password' => (string)config('cache.redis_password', ''),
     'database' => (int)config('cache.redis_database', 0),
+    // 键前缀：避免清理缓存时 flushDB 误删同库其它应用的数据
+    'prefix'   => (string)config('cache.redis_prefix', 'zapcms:'),
 ]);
 
 // Maintenance Mode 开关（server.maintenance，保存在 options 表）：

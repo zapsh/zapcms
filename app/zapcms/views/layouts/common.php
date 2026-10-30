@@ -55,6 +55,11 @@ use \zap\facades\Url;
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
+                        <a class="nav-link" href="#" role="button" title="清理缓存" onclick="zapClearCacheQuick(event)">
+                            <i class="fa fa-eraser"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" data-zui-toggle="fullscreen" href="#" role="button" title="全屏">
                             <i class="fa fa-expand"></i>
                         </a>
@@ -182,6 +187,48 @@ use \zap\facades\Url;
         <?php
         \zapcms\services\AdminPage::instance()->showFlashMessages();
         ?>
+    </script>
+
+    <script>
+        // 顶栏「清理缓存」快捷入口：只清理数据缓存与模板缓存
+        function zapClearCacheQuick(event) {
+            event.preventDefault();
+
+            Swal.fire({
+                title: '确认清理缓存？',
+                text: '将清空数据缓存与模板缓存，页面会在下次访问时自动重建。',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '立即清理',
+                cancelButtonText: '取消',
+                confirmButtonColor: '#dc3545'
+            }).then(function (result) {
+                if (!result.isConfirmed) {
+                    return;
+                }
+
+                const load = Zap.loading('正在清理缓存，请稍后');
+
+                $.ajax({
+                    url: '<?php echo \zap\facades\Url::action('System@cacheClear'); ?>',
+                    method: 'post',
+                    data: {type: 'cache'},
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.code === 0) {
+                            ZapToast.alert(data.msg, {bgColor: bgSuccess, position: Toast_Pos_Center});
+                        } else {
+                            ZapToast.alert(data.msg, {bgColor: bgDanger, position: Toast_Pos_Center});
+                        }
+                    },
+                    error: function (xhr) {
+                        ZapToast.alert('请求失败：' + xhr.status, {bgColor: bgDanger, position: Toast_Pos_Center});
+                    }
+                }).always(function () {
+                    load.dispose();
+                });
+            });
+        }
     </script>
     <?php echo $this->block('page_scripts'); ?>
     <?php print_scripts(ASSETS_BODY); ?>

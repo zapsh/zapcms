@@ -145,7 +145,28 @@ class SystemController extends AdminController
     }
 
     /**
-     * 清空当前缓存驱动中的所有缓存数据
+     * 缓存管理：缓存 / 模板 / 缩略图 / 日志 / 临时文件的统计与清理
+     */
+    public function cache()
+    {
+        \view('system.cache', [
+            'page_title'    => '缓存管理',
+            'page_subtitle' => '运行时缓存、模板、缩略图、日志与临时文件',
+            'breadcrumbs'   => [
+                ['title' => '控制台', 'url' => \zap\facades\Url::action('Index')],
+                ['title' => '缓存管理'],
+            ],
+            'cache_targets' => \zapcms\services\CacheManager::targets(),
+            'cache_stats'   => \zapcms\services\CacheManager::stats(),
+            'cache_driver'  => \zapcms\services\CacheManager::driver(),
+            'cache_enabled' => \zapcms\services\CacheManager::enabled(),
+        ]);
+    }
+
+    /**
+     * 清理缓存。
+     *
+     * type: cache(默认，数据+模板) / data / template / thumbs / logs / tmp / all
      */
     public function cacheClear()
     {
@@ -153,11 +174,32 @@ class SystemController extends AdminController
             Response::json(['code' => 1, 'msg' => '非法请求']);
             return;
         }
+
+        $type = strtolower(trim((string)Request::post('type', 'cache')));
+        if ($type === '') {
+            $type = 'cache';
+        }
+
         try {
-            \zap\facades\Cache::clear();
-            Response::json(['code' => 0, 'msg' => '缓存已清空']);
-        } catch (\Exception $e) {
-            Response::json(['code' => 1, 'msg' => '清空缓存失败: ' . $e->getMessage()]);
+            $result = \zapcms\services\CacheManager::clear($type);
+
+            if (!empty($result['redis'])) {
+                $msg = 'Redis 缓存已清空（仅限本应用前缀）';
+            } else {
+                $msg = sprintf(
+                    '已清理 %d 个文件，释放 %s',
+                    $result['removed'],
+                    \zapcms\services\CacheManager::formatBytes($result['freed'])
+                );
+            }
+
+            if (!empty($result['failed'])) {
+                $msg .= sprintf('；%d 个文件被占用，已跳过', $result['failed']);
+            }
+
+            Response::json(['code' => 0, 'msg' => $msg, 'data' => $result]);
+        } catch (\Throwable $e) {
+            Response::json(['code' => 1, 'msg' => '清理失败: ' . $e->getMessage()]);
         }
     }
 

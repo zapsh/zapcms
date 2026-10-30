@@ -163,7 +163,7 @@ const ZapModal = {
         $('#' + params.id + ' .modal-footer > button').on('click',function (e) {
             const btnName = 'btn'+$(e.target).data('index');
             if(params[btnName] !== undefined){
-                callback = params[btnName];
+                const callback = params[btnName];
                 callback(e);
             }
         });
@@ -315,7 +315,7 @@ function ZapDialog(settings){
                 </div>`;
     }
     this.create=function(){
-        q = document.querySelector('#'+this.settings.id);
+        const q = document.querySelector('#'+this.settings.id);
         if(this.settings.replace === true && q !==null){
             q.remove();
         }else if(this.settings.replace === false && q !==null){
