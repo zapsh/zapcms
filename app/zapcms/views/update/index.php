@@ -33,7 +33,7 @@ $this->view->breadcrumbs = [
                 </p>
             </div>
             <i class="fa-solid fa-code-branch position-absolute opacity-25" style="font-size:4rem;right:15px;top:10px;"></i>
-            <?php if (($update_info['has_update'] ?? false) && ($update_info['download_url'] ?? false)): ?>
+            <?php if (($update_info['has_update'] ?? false) && ($update_info['download_url'] ?? false) && ($update_info['php_ok'] ?? true)): ?>
             <a href="#" class="stretched-link rounded-bottom d-block text-center text-decoration-none small py-1 text-black" onclick="showUpdateConfirm();return false;"
                style="background:rgba(0,0,0,.1);margin:0 -1rem -1rem -1rem;">
                 立即更新 <i class="fa-solid fa-arrow-right ms-1"></i>
@@ -80,7 +80,7 @@ $this->view->breadcrumbs = [
 <?php elseif (!$update_info && empty($update_info)): ?>
 <div class="alert border-start border-4 border-warning shadow-sm mb-4 bg-white">
     <h6 class="mb-1"><i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>无法获取更新信息</h6>
-    <p class="mb-0 text-muted small">可能原因：更新 API 地址无法访问，或当前网络环境受限。您可以尝试 <a href="#" onclick="checkUpdate();return false;" class="text-decoration-underline">重新检查</a> 或使用手动上传更新。</p>
+    <p class="mb-0 text-muted small">可能原因：更新镜像（latest.json）无法访问，或当前网络环境受限。您可以尝试 <a href="#" onclick="checkUpdate();return false;" class="text-decoration-underline">重新检查</a>，或使用手动上传更新包。</p>
 </div>
 <?php endif; ?>
 
@@ -121,12 +121,35 @@ $this->view->breadcrumbs = [
                 <?php endif; ?>
 
                 <?php if ($update_info['release_date']): ?>
-                <p class="text-muted small mb-3">
+                <p class="text-muted small mb-2">
                     <i class="fa-regular fa-calendar me-1"></i>发布日期：<?php echo htmlspecialchars($update_info['release_date']); ?>
                 </p>
                 <?php endif; ?>
 
-                <button class="btn btn-warning btn-lg w-100" onclick="showUpdateConfirm()">
+                <p class="text-muted small mb-3">
+                    <?php if (!empty($update_info['package_size'])): ?>
+                    <span class="me-3"><i class="fa-solid fa-file-zipper me-1"></i>更新包：<?php echo number_format($update_info['package_size'] / 1048576, 2); ?> MB</span>
+                    <?php endif; ?>
+                    <?php if (!empty($update_info['sha256'])): ?>
+                    <span class="me-3" title="<?php echo htmlspecialchars($update_info['sha256']); ?>">
+                        <i class="fa-solid fa-shield-halved me-1"></i>SHA256：<code><?php echo htmlspecialchars(substr($update_info['sha256'], 0, 12)); ?>…</code>
+                    </span>
+                    <?php endif; ?>
+                    <?php if (!empty($update_info['manifest_url'])): ?>
+                    <span title="<?php echo htmlspecialchars($update_info['manifest_url']); ?>">
+                        <i class="fa-solid fa-server me-1"></i>更新源：<?php echo htmlspecialchars(parse_url($update_info['manifest_url'], PHP_URL_HOST) ?: '—'); ?>
+                    </span>
+                    <?php endif; ?>
+                </p>
+
+                <?php if (($update_info['php_ok'] ?? true) === false): ?>
+                <div class="alert alert-danger py-2 small mb-3">
+                    <i class="fa-solid fa-circle-exclamation me-1"></i>
+                    当前 PHP <?php echo PHP_VERSION; ?> 低于新版本要求（>= <?php echo htmlspecialchars($update_info['min_php']); ?>），请先升级 PHP 再更新。
+                </div>
+                <?php endif; ?>
+
+                <button class="btn btn-warning btn-lg w-100" onclick="showUpdateConfirm()" <?php echo ($update_info['php_ok'] ?? true) ? '' : 'disabled'; ?>>
                     <i class="fa-solid fa-rocket me-1"></i>一键更新到 v<?php echo htmlspecialchars($update_info['latest_version']); ?>
                 </button>
             </div>

@@ -8,77 +8,284 @@ namespace zapcms\support;
  */
 class ZapUpdate
 {
+    /** 更新镜像根地址 */
+    public const MIRROR = 'https://mirrors.zap.cn/zapcms';
+
+    /** 版本清单文件名（也可直接写完整 URL） */
+    public const MANIFEST = 'latest.json';
+
+    /** 更新包命名规则，{version} 会被替换为版本号；清单中 download_url 优先 */
+    public const PACKAGE_PATTERN = 'zapcms-{version}.zip';
+
+    /** 版本清单缓存时间（秒），0 表示不缓存 */
+    public const CACHE_TTL = 600;
+
+    /** 请求超时（秒），实际下载超时 = TIMEOUT * 3 */
+    public const TIMEOUT = 15;
+
+    /** 是否校验更新包 sha256（清单提供 sha256 时生效） */
+    public const VERIFY_HASH = true;
+
+    /** 是否校验镜像 HTTPS 证书 */
+    public const VERIFY_SSL = true;
+
+    /** PHP 缺少 CA 根证书导致校验失败时，是否降级为不校验重试 */
+    public const INSECURE_FALLBACK = true;
+
     protected ZapPackageManager $pm;
+
+    /** 版本清单缓存文件 */
+    protected string $manifestCacheFile;
 
     public function __construct()
     {
         $this->pm = new ZapPackageManager();
+
+        $this->pm->setTimeout(self::TIMEOUT);
+        $this->pm->setSslVerify(self::VERIFY_SSL);
+        $this->pm->setInsecureFallback(self::INSECURE_FALLBACK);
+
+        $this->manifestCacheFile = APP_ROOT . '/var/cache/update_manifest.json';
     }
 
-    // ==================== 核心更新 ====================
+    // ==================== 核心更新（镜像源） ====================
+
+    /**
+     * 更新源根地址，如 https://mirrors.zap.cn/zapcms
+     */
+    public function getMirror(): string
+    {
+        return rtrim(self::MIRROR, '/');
+    }
+
+    /**
+     * 版本清单地址，如 https://mirrors.zap.cn/zapcms/latest.json
+     */
+    public function getManifestUrl(): string
+    {
+        $manifest = self::MANIFEST;
+        if (preg_match('#^https?://#i', $manifest)) {
+            return $manifest;
+        }
+        return $this->getMirror() . '/' . ltrim($manifest, '/');
+    }
 
     /**
      * 检查系统核心是否有新版本
      *
-     * @return array|null 返回null表示检查失败
+     * @param bool $force true 时忽略本地缓存，强制请求镜像
+     * @return array|null 返回 null 表示检查失败（网络/格式问题）
      */
-    public function checkCoreUpdate(): ?array
+    public function checkCoreUpdate(bool $force = false): ?array
     {
-        $response = $this->pm->apiGet('update/check', [
-            'version'   => ZAP_CMS_VERSION,
-            'php'       => PHP_VERSION,
-            'mysql'     => $this->getDbVersion(),
-            'site_url'  => ($_SERVER['HTTP_HOST'] ?? '') . ($_SERVER['REQUEST_URI'] ?? ''),
-        ]);
-
-        if (!$response) {
+        $manifest = $this->fetchManifest($force);
+        if (!$manifest) {
             return null;
         }
 
+        $info = $this->buildCoreUpdateInfo($manifest);
+        return $info;
+    }
+
+    /**
+     * 获取最新版本清单（带文件缓存）
+     */
+    public function fetchManifest(bool $force = false): ?array
+    {
+        $ttl = self::CACHE_TTL;
+
+        if (!$force && $ttl > 0 && is_file($this->manifestCacheFile)
+            && (time() - (int)filemtime($this->manifestCacheFile)) < $ttl) {
+            $cached = json_decode((string)@file_get_contents($this->manifestCacheFile), true);
+            if (is_array($cached) && !empty($cached['data']) && is_array($cached['data'])) {
+                return $cached['data'];
+            }
+        }
+
+        $data = $this->pm->httpGet($this->getManifestUrl());
+        if (!is_array($data) || empty($data)) {
+            // 请求失败时，若存在过期缓存则继续使用，避免后台页面因网络抖动显示“检查失败”
+            if (is_file($this->manifestCacheFile)) {
+                $cached = json_decode((string)@file_get_contents($this->manifestCacheFile), true);
+                if (is_array($cached) && !empty($cached['data']) && is_array($cached['data'])) {
+                    return $cached['data'];
+                }
+            }
+            return null;
+        }
+
+        // 兼容 { "data": {...} } / { "latest": {...} } 包装
+        if (isset($data['data']) && is_array($data['data'])) {
+            $data = $data['data'];
+        } elseif (isset($data['latest']) && is_array($data['latest'])) {
+            $data = $data['latest'];
+        }
+
+        // 至少要有版本号，否则视为无效清单
+        if ($this->normalizeVersion($data['version'] ?? $data['latest_version'] ?? '') === '') {
+            return null;
+        }
+
+        $this->writeManifestCache($data);
+
+        return $data;
+    }
+
+    /**
+     * 清除更新清单缓存（更新完成后调用）
+     */
+    public function clearManifestCache(): void
+    {
+        if (is_file($this->manifestCacheFile)) {
+            @unlink($this->manifestCacheFile);
+        }
+    }
+
+    /**
+     * 写入清单缓存
+     */
+    protected function writeManifestCache(array $data): void
+    {
+        $dir = dirname($this->manifestCacheFile);
+        if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+            return;
+        }
+        @file_put_contents(
+            $this->manifestCacheFile,
+            json_encode(['time' => time(), 'mirror' => $this->getMirror(), 'data' => $data], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        );
+    }
+
+    /**
+     * 把镜像清单转换成统一的更新信息结构
+     */
+    public function buildCoreUpdateInfo(array $data): ?array
+    {
+        $latest = $this->normalizeVersion($data['version'] ?? $data['latest_version'] ?? '');
+        if ($latest === '') {
+            return null;
+        }
+
+        $current = $this->normalizeVersion(ZAP_CMS_VERSION);
+
+        $changelog = $data['changelog'] ?? $data['notes'] ?? '';
+        if (is_array($changelog)) {
+            $changelog = implode("\n", array_map('strval', $changelog));
+        }
+
+        $minPhp = (string)($data['min_php'] ?? $data['php'] ?? '');
+        $minPhp = ltrim(trim($minPhp), '>=');
+        $phpOk  = $minPhp === '' || version_compare(PHP_VERSION, $minPhp, '>=');
+
         return [
-            'has_update'      => $response['has_update'] ?? false,
-            'current_version' => ZAP_CMS_VERSION,
-            'latest_version'  => $response['latest_version'] ?? ZAP_CMS_VERSION,
-            'download_url'    => $response['download_url'] ?? '',
-            'changelog'       => $response['changelog'] ?? '',
-            'release_date'    => $response['release_date'] ?? '',
-            'package_size'    => $response['package_size'] ?? 0,
-            'is_critical'     => $response['is_critical'] ?? false,
+            'has_update'      => version_compare($latest, $current, '>'),
+            'current_version' => $current,
+            'latest_version'  => $latest,
+            'download_url'    => $this->resolveDownloadUrl($data, $latest),
+            'changelog'       => trim((string)$changelog),
+            'release_date'    => (string)($data['release_date'] ?? $data['date'] ?? ''),
+            'package_size'    => (int)($data['size'] ?? $data['package_size'] ?? 0),
+            'sha256'          => strtolower(trim((string)($data['sha256'] ?? $data['checksum'] ?? ''))),
+            'is_critical'     => (bool)($data['critical'] ?? $data['is_critical'] ?? false),
+            'min_php'         => $minPhp,
+            'php_ok'          => $phpOk,
+            'manifest_url'    => $this->getManifestUrl(),
         ];
+    }
+
+    /**
+     * 解析更新包下载地址：清单 download_url → packages[版本] → 文件名规则
+     */
+    protected function resolveDownloadUrl(array $data, string $version): string
+    {
+        $url = (string)($data['download_url'] ?? $data['download'] ?? $data['url'] ?? '');
+
+        if ($url === '' && !empty($data['packages']) && is_array($data['packages'])) {
+            $package = $data['packages'][$version] ?? null;
+            if (is_array($package)) {
+                $url = (string)($package['url'] ?? $package['download_url'] ?? '');
+            } elseif (is_string($package)) {
+                $url = $package;
+            }
+        }
+
+        if ($url === '') {
+            $url = str_replace('{version}', $version, self::PACKAGE_PATTERN);
+        }
+
+        // 相对路径拼到镜像根地址上
+        if ($url !== '' && !preg_match('#^https?://#i', $url)) {
+            $url = $this->getMirror() . '/' . ltrim($url, '/');
+        }
+
+        return $url;
+    }
+
+    /**
+     * 规范化版本号：去空白、去前缀 v/V
+     */
+    protected function normalizeVersion(string $version): string
+    {
+        $version = trim($version);
+        if ($version !== '' && ($version[0] === 'v' || $version[0] === 'V')) {
+            $version = substr($version, 1);
+        }
+        return $version;
     }
 
     /**
      * 执行系统核心更新
      *
-     * @param string $downloadUrl 下载地址
+     * @param string $downloadUrl 下载地址（通常来自 latest.json）
      * @param string $newVersion  新版本号
+     * @param string $sha256      更新包 sha256（可空，为空则不校验）
      * @return array
      */
-    public function doCoreUpdate(string $downloadUrl, string $newVersion): array
+    public function doCoreUpdate(string $downloadUrl, string $newVersion, string $sha256 = ''): array
     {
-        // 检查URL是否有效
-        if (empty($downloadUrl)) {
+        $newVersion = $this->normalizeVersion($newVersion);
+        $downloadUrl = trim($downloadUrl);
+
+        if ($newVersion === '') {
+            return ['success' => false, 'message' => '目标版本号无效'];
+        }
+
+        if ($downloadUrl === '' || !preg_match('#^https?://#i', $downloadUrl)) {
             return ['success' => false, 'message' => '更新地址无效'];
         }
 
-        // 检查文件系统可写
         if (!$this->checkFilePermissions()) {
             return ['success' => false, 'message' => '文件系统权限不足，请确保项目目录可写'];
         }
 
-        // 检查磁盘空间
         if (!$this->checkDiskSpace()) {
             return ['success' => false, 'message' => '磁盘空间不足（需要至少50MB可用空间）'];
         }
 
-        // 下载更新包
         $zipFile = $this->pm->download($downloadUrl, 'zapcms_update_' . $newVersion . '.zip');
         if (!$zipFile) {
-            return ['success' => false, 'message' => '更新包下载失败，请检查网络连接'];
+            return ['success' => false, 'message' => '更新包下载失败，请检查网络连接或镜像地址'];
         }
 
-        // 应用更新
-        return $this->pm->applySystemUpdate($zipFile, $newVersion);
+        // 校验更新包完整性
+        if ($sha256 !== '' && self::VERIFY_HASH) {
+            $actual = @hash_file('sha256', $zipFile);
+            if ($actual === false || !hash_equals($sha256, strtolower($actual))) {
+                @unlink($zipFile);
+                return ['success' => false, 'message' => '更新包校验失败（sha256 不匹配），已终止更新'];
+            }
+        }
+
+        $result = $this->pm->applySystemUpdate($zipFile, $newVersion);
+
+        @unlink($zipFile);
+        $this->clearManifestCache();
+
+        if (empty($result['success'])) {
+            $this->pm->recordUpdateHistory('core', ZAP_CMS_VERSION, $newVersion, 'failed');
+        }
+
+        return $result;
     }
 
     /**
@@ -261,13 +468,19 @@ class ZapUpdate
     }
 
     /**
-     * 获取当前数据库版本
+     * 获取当前数据库版本（SQLite / MySQL 通用）
      */
     protected function getDbVersion(): string
     {
         try {
-            $result = DB::select('SELECT VERSION() as version');
-            return $result[0]['version'] ?? 'unknown';
+            $pdo    = \zap\DB::connection();
+            $driver = (string)$pdo->getAttribute(\PDO::ATTR_DRIVER_NAME);
+
+            if ($driver === 'sqlite') {
+                return 'SQLite ' . $pdo->query('SELECT sqlite_version()')->fetchColumn();
+            }
+
+            return $driver . ' ' . $pdo->getAttribute(\PDO::ATTR_SERVER_VERSION);
         } catch (\Throwable $e) {
             return 'unknown';
         }

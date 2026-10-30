@@ -44,15 +44,16 @@ class UpdateController extends AdminController
     }
 
     /**
-     * AJAX: 检查核心更新
+     * AJAX: 检查核心更新（强制刷新，忽略清单缓存）
      */
     public function ajaxCheckCore()
     {
-        $updateInfo = $this->updater->checkCoreUpdate();
+        $updateInfo = $this->updater->checkCoreUpdate(true);
 
         Response::json([
-            'code' => $updateInfo ? 0 : 1,
-            'data' => $updateInfo,
+            'code'  => $updateInfo ? 0 : 1,
+            'data'  => $updateInfo,
+            'msg'   => $updateInfo ? '' : '无法连接更新镜像，请稍后重试',
         ]);
     }
 
@@ -82,8 +83,29 @@ class UpdateController extends AdminController
         $downloadUrl = trim(req()->post('download_url', ''));
         $newVersion  = trim(req()->post('version', ''));
 
-        if (empty($downloadUrl) || empty($newVersion)) {
+        if ($newVersion === '') {
             Response::json(['code' => 1, 'msg' => '参数不完整']);
+        }
+
+        // 以镜像最新清单为准，客户端参数仅作兜底，避免被伪造下载地址
+        $sha256 = '';
+        $info   = $this->updater->checkCoreUpdate(true);
+        if ($info && $info['latest_version'] === ltrim($newVersion, 'vV')) {
+            if (!empty($info['download_url'])) {
+                $downloadUrl = $info['download_url'];
+            }
+            $sha256 = (string)($info['sha256'] ?? '');
+
+            if (!($info['php_ok'] ?? true)) {
+                Response::json([
+                    'code' => 1,
+                    'msg'  => '当前 PHP 版本 ' . PHP_VERSION . ' 不满足新版本要求（需 >= ' . $info['min_php'] . '）',
+                ]);
+            }
+        }
+
+        if ($downloadUrl === '') {
+            Response::json(['code' => 1, 'msg' => '未获取到更新包地址，请重新检查更新']);
         }
 
         // 检查权限
@@ -99,7 +121,7 @@ class UpdateController extends AdminController
             Response::json(['code' => 1, 'msg' => '磁盘空间不足，请至少保留50MB可用空间']);
         }
 
-        $result = $this->updater->doCoreUpdate($downloadUrl, $newVersion);
+        $result = $this->updater->doCoreUpdate($downloadUrl, $newVersion, $sha256);
 
         Response::json([
             'code' => $result['success'] ? 0 : 1,

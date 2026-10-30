@@ -37,6 +37,16 @@ class ZapPackageManager
     protected bool $sslVerify = true;
 
     /**
+     * SSL 证书校验失败时是否允许降级重试（部分 PHP 环境缺少 CA 根证书）
+     */
+    protected bool $insecureFallback = true;
+
+    /**
+     * 最近一次请求是否发生了 SSL 降级
+     */
+    protected bool $lastRequestInsecure = false;
+
+    /**
      * cURL超时时间(秒)
      */
     protected int $timeout = 30;
@@ -46,7 +56,7 @@ class ZapPackageManager
         $this->tmpDir    = APP_ROOT . '/var/tmp';
         $this->backupDir = APP_ROOT . '/var/backup';
         $this->modsDir   = APP_ROOT . '/mods';
-        $this->apiUrl    = Option::get('website.api_url', 'https://api.zap.cn/api/v1');
+        $this->apiUrl    = Option::get('website.api_url', 'https://mirrors.zap.cn/zapcms');
 
         $this->ensureDirectory($this->tmpDir);
         $this->ensureDirectory($this->backupDir);
@@ -87,6 +97,23 @@ class ZapPackageManager
         return $this;
     }
 
+    /**
+     * 是否允许 SSL 校验失败时降级重试
+     */
+    public function setInsecureFallback(bool $allow): self
+    {
+        $this->insecureFallback = $allow;
+        return $this;
+    }
+
+    /**
+     * 最近一次请求是否因证书问题降级为不校验
+     */
+    public function lastRequestWasInsecure(): bool
+    {
+        return $this->lastRequestInsecure;
+    }
+
     // ==================== 远程API请求 ====================
 
     /**
@@ -111,18 +138,52 @@ class ZapPackageManager
     }
 
     /**
-     * HTTP GET 请求
+     * HTTP GET 请求（返回原始文本）
      */
-    public function httpGet(string $url): ?array
+    public function httpGetRaw(string $url): ?string
+    {
+        $this->lastRequestInsecure = false;
+
+        $result = $this->curlGetRequest($url, $this->sslVerify);
+
+        if ($result['error'] !== '' && $this->sslVerify && $this->insecureFallback
+            && $this->isSslError($result['errno'], $result['error'])) {
+            // 部分 PHP 环境未配置 CA 根证书，降级重试避免更新功能完全不可用
+            $this->lastRequestInsecure = true;
+            error_log('ZapPackageManager: SSL 校验失败，已降级为不校验重试（建议在 php.ini 配置 curl.cainfo）：' . $result['error']);
+            $result = $this->curlGetRequest($url, false);
+        }
+
+        if ($result['error'] !== '') {
+            error_log("ZapPackageManager HTTP GET error: {$result['error']}");
+            return null;
+        }
+
+        if ($result['code'] >= 400) {
+            error_log("ZapPackageManager HTTP GET failed with code: {$result['code']}");
+            return null;
+        }
+
+        // 兼容带 BOM 的文件（部分静态镜像会输出 UTF-8 BOM）
+        return ltrim($result['body'], "\xEF\xBB\xBF");
+    }
+
+    /**
+     * 执行一次 GET 请求
+     *
+     * @return array{body:string,code:int,errno:int,error:string}
+     */
+    protected function curlGetRequest(string $url, bool $verify): array
     {
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_CONNECTTIMEOUT => min(10, $this->timeout),
             CURLOPT_TIMEOUT        => $this->timeout,
-            CURLOPT_SSL_VERIFYPEER => $this->sslVerify,
-            CURLOPT_SSL_VERIFYHOST => $this->sslVerify ? 2 : 0,
+            CURLOPT_SSL_VERIFYPEER => $verify,
+            CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
             CURLOPT_USERAGENT      => 'ZAPCMS/' . ZAP_CMS_VERSION,
             CURLOPT_HTTPHEADER     => [
                 'Accept: application/json',
@@ -131,21 +192,69 @@ class ZapPackageManager
             ],
         ]);
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error    = curl_error($ch);
+        $body  = curl_exec($ch);
+        $code  = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $errno = curl_errno($ch);
+        $error = curl_error($ch);
+        curl_close($ch);
 
-        if ($error) {
-            error_log("ZapPackageManager HTTP GET error: {$error}");
+        return [
+            'body'  => $body === false ? '' : (string)$body,
+            'code'  => $code,
+            'errno' => $errno,
+            'error' => $error,
+        ];
+    }
+
+    /**
+     * 判断错误是否为 SSL 证书相关
+     */
+    protected function isSslError(int $errno, string $error): bool
+    {
+        // 35 连接失败 / 51 对端证书校验失败 / 58 证书问题 / 59 加密套件 / 60 CA 校验失败
+        // 53 引擎 / 54 引擎设置 / 66 引擎初始化 / 77 CA 文件 / 80 关闭失败 / 83 签发者 / 90-91 校验状态
+        $sslErrnos = [35, 51, 53, 54, 58, 59, 60, 66, 77, 80, 82, 83, 90, 91];
+
+        if (in_array($errno, $sslErrnos, true)) {
+            return true;
+        }
+
+        return stripos($error, 'SSL') !== false
+            || stripos($error, 'certificate') !== false
+            || stripos($error, 'cacert') !== false;
+    }
+
+    /**
+     * HTTP GET 请求并解析 JSON
+     */
+    public function httpGet(string $url): ?array
+    {
+        $raw = $this->httpGetRaw($url);
+        if ($raw === null) {
             return null;
         }
 
-        if ($httpCode >= 400) {
-            error_log("ZapPackageManager HTTP GET failed with code: {$httpCode}");
-            return null;
+        return $this->decodeJson($raw);
+    }
+
+    /**
+     * 宽松解析 JSON：先按标准 JSON，失败则兼容未加引号的键 / 单引号写法
+     */
+    public function decodeJson(string $raw): ?array
+    {
+        $decoded = json_decode($raw, true);
+        if (is_array($decoded)) {
+            return $decoded;
         }
 
-        return json_decode($response, true);
+        // 兼容 { version: '1.0.0' } 这类 JS 对象字面量写法
+        $normalized = preg_replace('/([,{])\s*([A-Za-z_][A-Za-z0-9_\-]*)\s*:/', '$1"$2":', $raw);
+        if ($normalized !== null) {
+            $normalized = str_replace("'", '"', $normalized);
+            $decoded    = json_decode($normalized, true);
+        }
+
+        return is_array($decoded) ? $decoded : null;
     }
 
     /**
@@ -204,34 +313,56 @@ class ZapPackageManager
         }
 
         $tmpFile = $this->tmpDir . '/' . $filename;
+        $this->lastRequestInsecure = false;
 
-        $fp = fopen($tmpFile, 'w+');
-        if (!$fp) {
-            return false;
+        $verifyAttempts = [$this->sslVerify];
+        if ($this->sslVerify && $this->insecureFallback) {
+            $verifyAttempts[] = false;
         }
 
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL            => $url,
-            CURLOPT_FILE           => $fp,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_TIMEOUT        => $this->timeout * 3,
-            CURLOPT_SSL_VERIFYPEER => $this->sslVerify,
-            CURLOPT_SSL_VERIFYHOST => $this->sslVerify ? 2 : 0,
-            CURLOPT_USERAGENT      => 'ZAPCMS/' . ZAP_CMS_VERSION,
-        ]);
+        foreach ($verifyAttempts as $index => $verify) {
+            $fp = fopen($tmpFile, 'w+');
+            if (!$fp) {
+                return false;
+            }
 
-        $success  = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error    = curl_error($ch);
-        fclose($fp);
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL            => $url,
+                CURLOPT_FILE           => $fp,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_CONNECTTIMEOUT => min(15, $this->timeout),
+                CURLOPT_TIMEOUT        => $this->timeout * 3,
+                CURLOPT_SSL_VERIFYPEER => $verify,
+                CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,
+                CURLOPT_USERAGENT      => 'ZAPCMS/' . ZAP_CMS_VERSION,
+            ]);
 
-        if (!$success || $httpCode >= 400 || $error) {
+            $success = curl_exec($ch);
+            $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $errno    = curl_errno($ch);
+            $error    = curl_error($ch);
+            curl_close($ch);
+            fclose($fp);
+
+            if ($success && $httpCode < 400 && $error === '') {
+                return $tmpFile;
+            }
+
+            // 证书问题且还有一次不带校验的机会，清理半成品后重试
+            if ($index === 0 && isset($verifyAttempts[1]) && $this->isSslError($errno, $error)) {
+                $this->lastRequestInsecure = true;
+                error_log('ZapPackageManager: 下载包 SSL 校验失败，已降级为不校验重试：' . $error);
+                @unlink($tmpFile);
+                continue;
+            }
+
+            error_log("ZapPackageManager download failed: code={$httpCode} error={$error}");
             @unlink($tmpFile);
             return false;
         }
 
-        return $tmpFile;
+        return false;
     }
 
     /**
@@ -672,10 +803,12 @@ class ZapPackageManager
             return ['success' => false, 'message' => '更新包解压失败'];
         }
 
-        // 验证更新包是否包含必要文件
-        if (!file_exists(APP_ROOT . '/index.php')) {
-            $this->deleteDirectory($testDir);
-            return ['success' => false, 'message' => '系统文件异常，更新失败'];
+        // 验证更新包是否包含必要文件（检查包内容，而不是当前站点文件）
+        foreach (['index.php', 'app/bootstrap.php'] as $requiredFile) {
+            if (!file_exists($testDir . '/' . $requiredFile)) {
+                $this->deleteDirectory($testDir);
+                return ['success' => false, 'message' => "更新包内容不完整（缺少 {$requiredFile}），更新已取消"];
+            }
         }
         $this->deleteDirectory($testDir);
 
@@ -688,22 +821,92 @@ class ZapPackageManager
             return ['success' => false, 'message' => '文件覆盖失败，已恢复旧版本'];
         }
 
-        // 4. 清理缓存
+        // 4. 校验解压后的核心版本号，避免包与清单不匹配
+        $packedVersion = $this->readCoreVersion();
+        if ($packedVersion !== '' && version_compare($packedVersion, ltrim($newVersion, 'vV'), '!=')) {
+            $this->restoreBackup($backupPath);
+            return [
+                'success' => false,
+                'message' => "更新包版本不匹配（包内 v{$packedVersion}，清单 v{$newVersion}），已回滚",
+            ];
+        }
+
+        // 5. 执行可选的数据库/数据升级脚本（包根目录 update.php）
+        $upgradeWarning = $this->runCoreUpgradeScript($newVersion);
+
+        // 6. 清理缓存
         $this->clearCache();
 
-        // 5. 记录更新历史
-        DB::table('update_history')->insert([
-            'target'       => 'system',
-            'from_version' => ZAP_CMS_VERSION,
-            'to_version'   => $newVersion,
-            'status'       => 'success',
-            'created_at'   => time(),
-        ]);
+        // 7. 记录更新历史
+        $this->recordUpdateHistory('core', ZAP_CMS_VERSION, $newVersion, 'success');
 
-        // 6. 清理备份（可选保留最近N个）
+        // 8. 清理备份（保留最近N个）
         $this->cleanOldBackups(5);
 
-        return ['success' => true, 'message' => '系统更新成功，版本: ' . $newVersion];
+        $message = '系统更新成功，版本: ' . $newVersion;
+        if ($upgradeWarning !== '') {
+            $message .= '（升级脚本警告：' . $upgradeWarning . '）';
+        }
+
+        return ['success' => true, 'message' => $message];
+    }
+
+    /**
+     * 读取项目内的核心版本号（app/bootstrap.php 中的 ZAP_CMS_VERSION）
+     */
+    public function readCoreVersion(): string
+    {
+        $file = APP_ROOT . '/app/bootstrap.php';
+        if (!is_file($file)) {
+            return '';
+        }
+        $content = (string)@file_get_contents($file);
+        if (preg_match('/ZAP_CMS_VERSION\s*=\s*([\'"])([0-9a-zA-Z.\-_]+)\1/', $content, $m)) {
+            return $m[2];
+        }
+        return '';
+    }
+
+    /**
+     * 执行更新包内的升级脚本（update.php），执行成功后删除该一次性脚本
+     *
+     * @return string 警告信息，空字符串表示无异常
+     */
+    protected function runCoreUpgradeScript(string $toVersion): string
+    {
+        $script = APP_ROOT . '/update.php';
+        if (!is_file($script)) {
+            return '';
+        }
+
+        $fromVersion = ZAP_CMS_VERSION;
+        try {
+            require $script;
+            @unlink($script);
+            return '';
+        } catch (\Throwable $e) {
+            error_log("Core upgrade script error [{$fromVersion} -> {$toVersion}]: " . $e->getMessage());
+            return $e->getMessage();
+        }
+    }
+
+    /**
+     * 写入更新历史
+     */
+    public function recordUpdateHistory(string $target, string $fromVersion, string $toVersion, string $status = 'success', string $changelog = ''): void
+    {
+        try {
+            DB::table('update_history')->insert([
+                'target'       => $target,
+                'from_version' => $fromVersion,
+                'to_version'   => $toVersion,
+                'changelog'    => $changelog,
+                'status'       => $status,
+                'created_at'   => time(),
+            ]);
+        } catch (\Throwable $e) {
+            error_log('recordUpdateHistory failed: ' . $e->getMessage());
+        }
     }
 
     /**
