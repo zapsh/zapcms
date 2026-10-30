@@ -13,5 +13,6 @@ return [
     "available_languages" => [],
 
     //secure
-    "app_key" => ""
+    "app_key" => "",
+
 ];
