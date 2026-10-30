@@ -359,9 +359,22 @@ function buildEnvChecks(): array
         return is_dir($full) && is_writable($full);
     };
 
+    // 配置文件（config/*.php）在安装前可能尚不存在，由安装程序负责生成。
+    // 因此：文件已存在则判断其自身可写；不存在则判断所在目录可写（能被创建即可）。
     $checkFileWritable = function (string $path): bool {
         $full = base_path($path);
-        return is_file($full) && is_writable($full);
+        if (is_file($full)) {
+            return is_writable($full);
+        }
+        $dir = dirname($full);
+        return is_dir($dir) && is_writable($dir);
+    };
+
+    $fileWritableLabel = function (string $path) use ($checkFileWritable): string {
+        if (!$checkFileWritable($path)) {
+            return '不可写';
+        }
+        return is_file(base_path($path)) ? '可写' : '不存在（将自动生成）';
     };
 
     $items = [
@@ -403,15 +416,15 @@ function buildEnvChecks(): array
         ],
         [
             'label'   => 'config/database.php 可写',
-            'value'   => $checkFileWritable('config/database.php') ? '可写' : '不可写或不存在',
+            'value'   => $fileWritableLabel('config/database.php'),
             'pass'    => $checkFileWritable('config/database.php'),
-            'failMsg' => 'config/database.php 不可写入',
+            'failMsg' => 'config/ 目录不可写入，无法生成 config/database.php',
         ],
         [
             'label'   => 'config/config.php 可写',
-            'value'   => $checkFileWritable('config/config.php') ? '可写' : '不可写或不存在',
+            'value'   => $fileWritableLabel('config/config.php'),
             'pass'    => $checkFileWritable('config/config.php'),
-            'failMsg' => 'config/config.php 不可写入',
+            'failMsg' => 'config/ 目录不可写入，无法生成 config/config.php',
         ],
     ];
 
