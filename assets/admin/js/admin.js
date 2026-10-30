@@ -583,3 +583,99 @@ const loadScript = (fileUrl, async = true, type = "text/javascript") => {
     });
 };
 
+/* ============================================================
+ * 主题外观：Light / Dark / Auto
+ * ------------------------------------------------------------
+ * - 存储：localStorage['zap-theme'] = light | dark | auto
+ * - 生效：<html data-bs-theme="light|dark">（驱动 Bootstrap 5.3 / ZapUI 变量）
+ * - auto：跟随系统 prefers-color-scheme，系统切换时实时同步
+ * ============================================================ */
+(function () {
+    const STORAGE_KEY = 'zap-theme';
+    const MODES = ['light', 'dark', 'auto'];
+    const ICONS = { light: 'fa-sun', dark: 'fa-moon', auto: 'fa-circle-half-stroke' };
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function readMode() {
+        let mode = 'light';
+        try {
+            mode = localStorage.getItem(STORAGE_KEY) || 'light';
+        } catch (e) {
+            // 隐私模式等场景下 localStorage 不可用，退回浅色
+        }
+        return MODES.indexOf(mode) === -1 ? 'light' : mode;
+    }
+
+    function resolve(mode) {
+        return mode === 'auto' ? (media.matches ? 'dark' : 'light') : mode;
+    }
+
+    function paint(mode) {
+        const theme = resolve(mode);
+        const root = document.documentElement;
+
+        root.setAttribute('data-bs-theme', theme);
+        root.setAttribute('data-zap-theme', mode);
+
+        // 顶栏按钮图标跟随所选模式（auto 显示半圆）
+        document.querySelectorAll('[data-zap-theme-icon]').forEach(function (el) {
+            el.className = 'fa ' + ICONS[mode] + ' zap-theme-icon';
+        });
+
+        // 下拉项选中态
+        document.querySelectorAll('.zap-theme-option').forEach(function (el) {
+            const active = el.getAttribute('data-theme') === mode;
+            el.classList.toggle('active', active);
+            el.setAttribute('aria-checked', active ? 'true' : 'false');
+            const check = el.querySelector('.zap-theme-check');
+            if (check) {
+                check.classList.toggle('invisible', !active);
+            }
+        });
+
+        // 通知页面内的组件（如代码编辑器）同步明暗
+        window.dispatchEvent(new CustomEvent('zap:theme', { detail: { mode: mode, theme: theme } }));
+    }
+
+    function setMode(mode) {
+        if (MODES.indexOf(mode) === -1) {
+            mode = 'light';
+        }
+        try {
+            localStorage.setItem(STORAGE_KEY, mode);
+        } catch (e) {
+            // 忽略写入失败，仅当次生效
+        }
+        paint(mode);
+    }
+
+    // 下拉项点击
+    document.addEventListener('click', function (e) {
+        const el = e.target instanceof Element ? e.target.closest('.zap-theme-option') : null;
+        if (!el) {
+            return;
+        }
+        e.preventDefault();
+        setMode(el.getAttribute('data-theme'));
+    });
+
+    // 系统主题变化：只在 auto 模式跟随
+    const onSystemChange = function () {
+        if (readMode() === 'auto') {
+            paint('auto');
+        }
+    };
+    if (typeof media.addEventListener === 'function') {
+        media.addEventListener('change', onSystemChange);
+    } else if (typeof media.addListener === 'function') {
+        media.addListener(onSystemChange);
+    }
+
+    // 脚本在 <head> 中执行，DOM 就绪后再同步控件状态
+    $(function () {
+        paint(readMode());
+    });
+
+    window.ZapTheme = { get: readMode, set: setMode, apply: paint };
+})();
+

@@ -14,14 +14,14 @@ $this->layout('layouts/common');
 .zap-dev-sidebar {
     width: 260px;
     min-width: 260px;
-    border-right: 1px solid #dee2e6;
-    background: #fff;
+    border-right: 1px solid var(--bs-border-color);
+    background: var(--bs-body-bg);
     display: flex;
     flex-direction: column;
 }
 .zap-dev-sidebar-header {
     padding: 0.75rem;
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid var(--bs-border-color);
     flex-shrink: 0;
 }
 .zap-dev-sidebar-header .input-group-text {
@@ -32,7 +32,7 @@ $this->layout('layouts/common');
     border-left: none;
 }
 .zap-dev-sidebar-header .form-control:focus {
-    border-color: #ced4da;
+    border-color: var(--bs-border-color);
     box-shadow: none;
 }
 .zap-dev-file-tree {
@@ -49,7 +49,7 @@ $this->layout('layouts/common');
     padding: 0.35rem 0.75rem;
     cursor: pointer;
     font-size: 0.875rem;
-    color: #495057;
+    color: var(--bs-body-color);
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -60,12 +60,12 @@ $this->layout('layouts/common');
     border-left: 3px solid transparent;
 }
 .zap-dev-file-tree .list-group-item:hover {
-    background: #f0f3f7;
+    background: var(--bs-secondary-bg);
 }
 .zap-dev-file-tree .list-group-item.active {
-    background: #e7f1ff;
-    border-left-color: #0d6efd;
-    color: #0d6efd;
+    background: var(--bs-primary-bg-subtle);
+    border-left-color: var(--bs-primary);
+    color: var(--bs-primary);
     font-weight: 500;
 }
 .zap-dev-file-tree .list-group-item .item-icon {
@@ -81,7 +81,7 @@ $this->layout('layouts/common');
     transition: transform 0.2s;
     font-size: 0.7rem;
     margin-left: auto;
-    color: #adb5bd;
+    color: var(--bs-secondary-color);
 }
 .zap-dev-file-tree .list-group-item.dir-item.expanded .chevron {
     transform: rotate(90deg);
@@ -96,7 +96,7 @@ $this->layout('layouts/common');
     position: relative;
     margin-left: 1rem; /* 每层递进缩进,嵌套自动累加,支持任意层级 */
     padding-left: 0.3rem;
-    border-left: 1px solid #e9ecef; /* 树形引导竖线 */
+    border-left: 1px solid var(--bs-border-color); /* 树形引导竖线 */
 }
 .zap-dev-file-tree .child-list.open {
     display: block;
@@ -113,19 +113,19 @@ $this->layout('layouts/common');
     top: 50%;
     width: 0.3rem;
     height: 1px;
-    background: #e9ecef;
+    background: var(--bs-secondary-bg);
 }
 .zap-dev-main {
     flex: 1;
     display: flex;
     flex-direction: column;
     min-width: 0;
-    background: #fff;
+    background: var(--bs-body-bg);
 }
 .zap-dev-tabs {
     display: flex;
-    border-bottom: 1px solid #dee2e6;
-    background: #f8f9fa;
+    border-bottom: 1px solid var(--bs-border-color);
+    background: var(--bs-tertiary-bg);
     overflow-x: auto;
     flex-shrink: 0;
     scrollbar-width: none;
@@ -141,23 +141,23 @@ $this->layout('layouts/common');
     align-items: center;
     gap: 0.4rem;
     padding: 0.5rem 0.75rem;
-    border-right: 1px solid #dee2e6;
+    border-right: 1px solid var(--bs-border-color);
     cursor: pointer;
     font-size: 0.82rem;
     white-space: nowrap;
-    color: #6c757d;
-    background: #f8f9fa;
+    color: var(--bs-secondary-color);
+    background: var(--bs-tertiary-bg);
     min-width: 0;
     transition: background 0.15s;
 }
 .zap-dev-tab:hover {
-    background: #e9ecef;
+    background: var(--bs-secondary-bg);
 }
 .zap-dev-tab.active {
-    background: #fff;
-    color: #212529;
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
     font-weight: 500;
-    border-bottom: 2px solid #0d6efd;
+    border-bottom: 2px solid var(--bs-primary);
     margin-bottom: -1px;
 }
 .zap-dev-tab .tab-name {
@@ -174,11 +174,11 @@ $this->layout('layouts/common');
     justify-content: center;
     border-radius: 3px;
     font-size: 0.65rem;
-    color: #adb5bd;
+    color: var(--bs-secondary-color);
 }
 .zap-dev-tab .tab-close:hover {
-    background: #dee2e6;
-    color: #495057;
+    background: var(--bs-border-color);
+    color: var(--bs-body-color);
 }
 .zap-dev-tab .tab-modified {
     width: 7px;
@@ -192,14 +192,14 @@ $this->layout('layouts/common');
     align-items: center;
     justify-content: space-between;
     padding: 0.4rem 0.75rem;
-    border-bottom: 1px solid #e9ecef;
-    background: #fafafa;
+    border-bottom: 1px solid var(--bs-border-color);
+    background: var(--bs-tertiary-bg);
     flex-shrink: 0;
     gap: 0.75rem;
 }
 .zap-dev-toolbar .file-info {
     font-size: 0.8rem;
-    color: #6c757d;
+    color: var(--bs-secondary-color);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -208,7 +208,7 @@ $this->layout('layouts/common');
 .zap-dev-toolbar .file-info .file-lang {
     display: inline-block;
     padding: 0.1rem 0.4rem;
-    background: #e9ecef;
+    background: var(--bs-secondary-bg);
     border-radius: 3px;
     font-size: 0.7rem;
     margin-left: 0.5rem;
@@ -246,7 +246,7 @@ $this->layout('layouts/common');
     display: flex;
     align-items: center;
     padding: 0.2rem 0.75rem;
-    background: #0d6efd;
+    background: var(--bs-primary);
     color: #fff;
     font-size: 0.75rem;
     flex-shrink: 0;
@@ -263,7 +263,7 @@ $this->layout('layouts/common');
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #adb5bd;
+    color: var(--bs-secondary-color);
     gap: 0.75rem;
 }
 .zap-dev-welcome i {
@@ -279,12 +279,12 @@ $this->layout('layouts/common');
     margin-top: 1rem;
 }
 .zap-dev-welcome .shortcuts kbd {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
+    background: var(--bs-tertiary-bg);
+    border: 1px solid var(--bs-border-color);
     padding: 0.15rem 0.4rem;
     border-radius: 3px;
     font-size: 0.75rem;
-    color: #6c757d;
+    color: var(--bs-secondary-color);
 }
 .empty-state {
     flex: 1;
@@ -292,7 +292,7 @@ $this->layout('layouts/common');
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #adb5bd;
+    color: var(--bs-secondary-color);
 }
 .empty-state i {
     font-size: 3rem;
@@ -305,7 +305,7 @@ $this->layout('layouts/common');
 .loading-spinner {
     padding: 0.25rem 0.75rem;
     font-size: 0.8rem;
-    color: #adb5bd;
+    color: var(--bs-secondary-color);
 }
 </style>
 

@@ -7,6 +7,19 @@ use \zap\facades\Url;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php echo $this->e($title ?? 'ZAP CMS');?></title>
+    <script>
+        /* 主题引导：必须在样式表之前执行，避免暗色主题闪白 */
+        (function () {
+            var mode = 'light';
+            try { mode = localStorage.getItem('zap-theme') || 'light'; } catch (e) {}
+            if (mode !== 'light' && mode !== 'dark' && mode !== 'auto') { mode = 'light'; }
+            var theme = mode === 'auto'
+                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : mode;
+            document.documentElement.setAttribute('data-bs-theme', theme);
+            document.documentElement.setAttribute('data-zap-theme', mode);
+        })();
+    </script>
     <link href="<?php echo base_url();?>/assets/admin/css/zap-admin.css" rel="stylesheet">
     
     <script src="<?php echo base_url();?>/assets/sweetalert2.all.min.js"></script>
@@ -26,7 +39,7 @@ use \zap\facades\Url;
 <body class="<?php echo $body_class ?? 'layout-fixed sidebar-expand-lg bg-body-tertiary'; ?>">
     <div class="app-wrapper">
         <!-- 顶部导航栏 -->
-        <nav class="app-header navbar navbar-expand bg-white shadow-sm">
+        <nav class="app-header navbar navbar-expand bg-body shadow-sm">
             <div class="container-fluid">
                 <ul class="navbar-nav">
                     <li class="nav-item">
@@ -45,6 +58,25 @@ use \zap\facades\Url;
                         <a class="nav-link" data-zui-toggle="fullscreen" href="#" role="button" title="全屏">
                             <i class="fa fa-expand"></i>
                         </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link" data-bs-toggle="dropdown" href="#" role="button" title="主题外观" aria-label="主题外观">
+                            <i class="fa fa-sun zap-theme-icon" data-zap-theme-icon></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end shadow" style="min-width: 170px;">
+                            <button type="button" class="dropdown-item d-flex align-items-center zap-theme-option" data-theme="light" role="menuitemradio" aria-checked="false">
+                                <i class="fa fa-sun fa-fw me-2"></i><span>Light</span>
+                                <i class="fa fa-check ms-auto zap-theme-check invisible"></i>
+                            </button>
+                            <button type="button" class="dropdown-item d-flex align-items-center zap-theme-option" data-theme="dark" role="menuitemradio" aria-checked="false">
+                                <i class="fa fa-moon fa-fw me-2"></i><span>Dark</span>
+                                <i class="fa fa-check ms-auto zap-theme-check invisible"></i>
+                            </button>
+                            <button type="button" class="dropdown-item d-flex align-items-center zap-theme-option" data-theme="auto" role="menuitemradio" aria-checked="false">
+                                <i class="fa fa-circle-half-stroke fa-fw me-2"></i><span>Auto</span>
+                                <i class="fa fa-check ms-auto zap-theme-check invisible"></i>
+                            </button>
+                        </div>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link" data-bs-toggle="dropdown" href="#" role="button">

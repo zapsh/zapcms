@@ -1,9 +1,23 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-bs-theme="light">
+<html lang="zh-CN">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ZAP CMS - 登录</title>
+
+    <script>
+        /* 主题引导：与后台保持一致，避免暗色主题闪白 */
+        (function () {
+            var mode = 'light';
+            try { mode = localStorage.getItem('zap-theme') || 'light'; } catch (e) {}
+            if (mode !== 'light' && mode !== 'dark' && mode !== 'auto') { mode = 'light'; }
+            var theme = mode === 'auto'
+                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+                : mode;
+            document.documentElement.setAttribute('data-bs-theme', theme);
+            document.documentElement.setAttribute('data-zap-theme', mode);
+        })();
+    </script>
 
     <link rel="stylesheet" href="<?php echo base_url();?>/assets/admin/css/zap-admin.css">
 <script src="<?php echo base_url();?>/assets/jquery/jquery-3.6.4.min.js"></script>

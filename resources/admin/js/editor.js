@@ -12,7 +12,36 @@
 import { basicSetup } from 'codemirror';
 import { Compartment, EditorSelection, EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
-import { indentUnit } from '@codemirror/language';
+import { defaultHighlightStyle, indentUnit, syntaxHighlighting } from '@codemirror/language';
+import { oneDarkHighlightStyle } from '@codemirror/theme-one-dark';
+
+// 明暗主题共用的框架样式：底色/字号/行号栏全部走 Bootstrap 变量，跟随后台主题
+const BASE_THEME = EditorView.theme({
+  '&': { height: '100%', backgroundColor: 'var(--bs-body-bg)', color: 'var(--bs-body-color)' },
+  '.cm-scroller': { fontFamily: "Consolas, Menlo, Monaco, 'Courier New', monospace", fontSize: '14px' },
+  '.cm-content': { paddingBottom: '3rem' },
+  '.cm-gutters': {
+    backgroundColor: 'var(--bs-tertiary-bg)',
+    color: 'var(--bs-secondary-color)',
+    borderRight: '1px solid var(--bs-border-color)',
+  },
+  '.cm-activeLine': { backgroundColor: 'var(--bs-secondary-bg)' },
+  '.cm-activeLineGutter': { backgroundColor: 'var(--bs-secondary-bg)' },
+  '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
+    backgroundColor: 'var(--bs-primary-bg-subtle) !important',
+  },
+});
+
+function isDarkTheme() {
+  return document.documentElement.getAttribute('data-bs-theme') === 'dark';
+}
+
+// 语法高亮随主题切换（后台通过 zap:theme 事件通知）
+function highlightExtension() {
+  return isDarkTheme()
+    ? syntaxHighlighting(oneDarkHighlightStyle)
+    : syntaxHighlighting(defaultHighlightStyle, { fallback: true });
+}
 
 // 后缀 → 语言包（按需加载）
 const LANGUAGES = [
@@ -46,19 +75,17 @@ async function detectLanguage(filename) {
  */
 function create(parent, { filename = '', content = '', onChange } = {}) {
   const languageSlot = new Compartment();
+  const highlightSlot = new Compartment();
   let language = null;
   let destroyed = false;
 
   const buildExtensions = () => [
     basicSetup,
+    BASE_THEME,
     EditorState.tabSize.of(4),
     indentUnit.of('    '),
     languageSlot.of(language ?? []),
-    EditorView.theme({
-      '&': { height: '100%' },
-      '.cm-scroller': { fontFamily: "Consolas, Menlo, Monaco, 'Courier New', monospace", fontSize: '14px' },
-      '.cm-content': { paddingBottom: '3rem' },
-    }),
+    highlightSlot.of(highlightExtension()),
     EditorView.updateListener.of((update) => {
       if (update.docChanged && typeof onChange === 'function') onChange();
     }),
@@ -87,6 +114,13 @@ function create(parent, { filename = '', content = '', onChange } = {}) {
     view.requestMeasure();
   }
 
+  // 后台切换明暗主题时同步语法高亮
+  function onThemeChange() {
+    if (destroyed) return;
+    view.dispatch({ effects: highlightSlot.reconfigure(highlightExtension()) });
+  }
+  window.addEventListener('zap:theme', onThemeChange);
+
   return {
     view,
     getValue: () => view.state.doc.toString(),
@@ -97,6 +131,7 @@ function create(parent, { filename = '', content = '', onChange } = {}) {
     focus: () => view.focus(),
     destroy: () => {
       destroyed = true;
+      window.removeEventListener('zap:theme', onThemeChange);
       view.destroy();
     },
   };

@@ -312,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <style>
 .permalink-option {
     padding: 12px 16px;
-    border: 1px solid #e9ecef;
+    border: 1px solid var(--bs-border-color);
     border-radius: 6px;
     transition: border-color 0.2s;
 }
@@ -320,12 +320,12 @@ document.addEventListener('DOMContentLoaded', function() {
     border-color: #adb5bd;
 }
 .permalink-option:has(input:checked) {
-    border-color: #0d6efd;
+    border-color: var(--bs-primary);
     background-color: #f0f6ff;
 }
 .form-check-input:checked {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
 }
 .tag-btn {
     margin-bottom: 4px;

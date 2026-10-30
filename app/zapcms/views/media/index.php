@@ -27,17 +27,17 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         user-select: none;
         white-space: nowrap;
         font-size: 0.85rem;
-        color: #495057;
+        color: var(--bs-body-color);
         position: relative;
         transition: background-color 0.15s ease, color 0.15s ease;
     }
     .media-tree .tree-item:hover {
         background: rgba(13, 110, 253, 0.07);
-        color: #212529;
+        color: var(--bs-body-color);
     }
     .media-tree .tree-item.active {
         background: var(--bs-primary-bg-subtle, #cfe2ff);
-        color: var(--bs-primary, #0d6efd);
+        color: var(--bs-primary);
         font-weight: 600;
     }
     .media-tree .tree-item.active::before {
@@ -48,12 +48,12 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         bottom: 20%;
         width: 3px;
         border-radius: 0 2px 2px 0;
-        background: var(--bs-primary, #0d6efd);
+        background: var(--bs-primary);
     }
     .media-tree .tree-children {
         margin-left: 1rem;
         padding-left: 0.3rem;
-        border-left: 1px solid #e9ecef;
+        border-left: 1px solid var(--bs-border-color);
     }
     /* 子项与父级竖线的连接横线（L 形引导线） */
     .media-tree .tree-children .tree-item {
@@ -66,19 +66,19 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         top: 50%;
         width: 0.3rem;
         height: 1px;
-        background: #e9ecef;
+        background: var(--bs-secondary-bg);
         pointer-events: none;
     }
     .media-tree .tree-toggle {
         width: 0.9rem;
         flex-shrink: 0;
         text-align: center;
-        color: #adb5bd;
+        color: var(--bs-secondary-color);
         font-size: 0.7rem;
         transition: color 0.15s ease;
     }
     .media-tree .tree-item:hover .tree-toggle {
-        color: var(--bs-primary, #0d6efd);
+        color: var(--bs-primary);
     }
     .media-tree .tree-caret {
         transition: transform 0.2s ease;
@@ -97,22 +97,22 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         color: #868e96;
     }
     .media-tree .tree-item.active .tree-folder-icon {
-        color: var(--bs-primary, #0d6efd);
+        color: var(--bs-primary);
     }
     .media-tree .tree-badge {
         flex-shrink: 0;
         min-width: 1.15rem;
         padding: 0.15rem 0.35rem;
         border-radius: 999px;
-        background: #e9ecef;
-        color: #6c757d;
+        background: var(--bs-secondary-bg);
+        color: var(--bs-secondary-color);
         font-size: 0.68rem;
         line-height: 1;
         text-align: center;
     }
     .media-tree .tree-item.active .tree-badge {
         background: rgba(13, 110, 253, 0.14);
-        color: var(--bs-primary, #0d6efd);
+        color: var(--bs-primary);
     }
     .media-file-card {
         transition: box-shadow 0.15s;
@@ -126,7 +126,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         align-items: center;
         justify-content: center;
         overflow: hidden;
-        background: #f8f9fa;
+        background: var(--bs-tertiary-bg);
         position: relative;
     }
     .media-file-card .media-thumb img {
@@ -136,7 +136,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
     }
     .media-file-card .media-thumb i {
         font-size: 3rem;
-        color: #adb5bd;
+        color: var(--bs-secondary-color);
     }
     .media-file-card.selected {
         outline: 2px solid var(--bs-primary, #0d6efd);
