@@ -3,6 +3,7 @@ var/cache/*
 var/logs/*
 var/tmp/*
 var/backups/*
+var/backup/*
 storage/backups/*
 storage/cache/*
 storage/thumbs/*

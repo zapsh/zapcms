@@ -17,11 +17,12 @@
     "zapsh/zap-php-framework": "dev-main",
     "ext-pdo": "*",
     "ext-gd": "*",
-    "monolog/monolog": "^2.9",
     "ext-json": "*",
     "ezyang/htmlpurifier": "^4.0",
     "phpmailer/phpmailer": "^7.0",
-    "overtrue/pinyin": "^3.0"
+    "overtrue/pinyin": "^3.0",
+    "twig/twig": "3.*",
+    "monolog/monolog": "^3.12"
   },
   "autoload": {
     "files":[
@@ -33,5 +34,6 @@
       "mods\\" :"mods/"
     }
   },
-  "minimum-stability": "dev"
+  "minimum-stability": "dev",
+  "prefer-stable": true
 }

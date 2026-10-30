@@ -54,7 +54,7 @@ $this->view->page_title = '主题管理';
 
 <script>
     function activationTheme(themeName){
-        const load = Zap.loadding('正在启用主题...');
+        const load = Zap.loading('正在启用主题...');
         $.ajax({
             url:'<?php echo url_action('Theme@activationTheme'); ?>',
             method:'POST',

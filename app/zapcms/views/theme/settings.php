@@ -29,7 +29,7 @@ if (is_file($view)) {
 
 <script>
     function saveSettings() {
-        const load = Zap.loadding('正在保存...');
+        const load = Zap.loading('正在保存...');
         $.ajax({
             url: '<?php echo url_action('Theme@saveSettings'); ?>',
             method: 'POST',

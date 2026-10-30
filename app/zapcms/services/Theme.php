@@ -12,6 +12,7 @@ namespace zapcms\services;
 
 use FilesystemIterator;
 use zap\traits\SingletonTrait;
+use zapcms\support\IOUtils;
 
 class Theme
 {

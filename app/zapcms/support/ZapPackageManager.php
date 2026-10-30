@@ -196,7 +196,7 @@ class ZapPackageManager
         $code  = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $errno = curl_errno($ch);
         $error = curl_error($ch);
-        curl_close($ch);
+        // PHP 8.0+ 起 curl_close() 已无实际作用，8.5 中会触发 deprecated 日志，直接省略
 
         return [
             'body'  => $body === false ? '' : (string)$body,
@@ -342,7 +342,6 @@ class ZapPackageManager
             $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
             $errno    = curl_errno($ch);
             $error    = curl_error($ch);
-            curl_close($ch);
             fclose($fp);
 
             if ($success && $httpCode < 400 && $error === '') {
@@ -1015,6 +1014,13 @@ class ZapPackageManager
         if (is_dir($cacheDir)) {
             $this->deleteDirectory($cacheDir);
             $this->ensureDirectory($cacheDir);
+        }
+
+        // Twig 编译缓存（更新后模板可能已变化，必须一并清理）
+        $twigCacheDir = APP_ROOT . '/var/cache/twig';
+        if (is_dir($twigCacheDir)) {
+            $this->deleteDirectory($twigCacheDir);
+            $this->ensureDirectory($twigCacheDir);
         }
     }
 
