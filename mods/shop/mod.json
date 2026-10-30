@@ -1,16 +1,22 @@
 {
     "name": "shop",
     "title": "商城模块",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "type": "module",
     "description": "产品展示、购物车、订单基础模块",
     "author": "ZAP CMS",
     "website": "https://zapcms.com",
     "autoload": "boot.php",
     "admin_menu": [
-        {"title": "产品管理", "url": "/z-admin/mod/shop/product", "icon": "fa-cubes"},
-        {"title": "订单管理", "url": "/z-admin/mod/shop/order", "icon": "fa-receipt"},
-        {"title": "商城设置", "url": "/z-admin/mod/shop/settings", "icon": "fa-cog"}
+        {
+            "title": "商城",
+            "icon": "fa-solid fa-store",
+            "sort_order": 20,
+            "children": [
+                {"title": "商城概况", "url": "mod/shop", "icon": "fa-solid fa-gauge-high"},
+                {"title": "产品管理", "url": "mod/shop/product", "icon": "fa-solid fa-cube"}
+            ]
+        }
     ],
     "dependencies": {
         "zapcms": ">=1.0"

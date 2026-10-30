@@ -84,7 +84,18 @@ class Bootstrap
         foreach ($rows as $key => $json) {
             $name = substr($key, strlen('mod.installed.'));
             $info = is_string($json) ? (json_decode($json, true) ?: []) : [];
-            if (empty($info['status']) || empty($info['autoload'])) {
+            if (empty($info['status'])) {
+                continue;
+            }
+
+            // 同步模块后台菜单：mod.json 的 admin_menu 有变化时才写库
+            try {
+                \zapcms\support\ModMenu::sync($name, $info);
+            } catch (\Throwable $e) {
+                // 菜单同步失败不影响后台启动
+            }
+
+            if (empty($info['autoload'])) {
                 continue;
             }
             $script = APP_ROOT . '/mods/' . $name . '/' . $info['autoload'];

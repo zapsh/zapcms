@@ -13,5 +13,9 @@ defined('IN_ZAPCMS_ADMIN') or die('No permission to access');
 
 // 示例：注册后台 hook（需 ZapCMS >= 1.0）
 // \zapcms\AdminHook::on('admin_menu_after', function () {
-//     echo '<li><a href="' . site_url('/z-admin/mod/shop/settings') . '">商城设置</a></li>';
+//     // 不要写死 /z-admin/，url_action() 会自动拼上当前后台前缀
+//     echo '<li><a href="' . url_action('mod/shop/product') . '">产品管理</a></li>';
 // });
+//
+// 更推荐的做法：在 mod.json 的 admin_menu 中声明菜单，
+// 模块启用后由 zapcms\support\ModMenu 自动同步到后台菜单，无需写代码。

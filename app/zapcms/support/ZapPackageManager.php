@@ -379,6 +379,13 @@ class ZapPackageManager
 
         $name = $this->sanitizePluginName($name);
 
+        // 0. 清理模块注册的后台菜单
+        try {
+            ModMenu::remove($name);
+        } catch (\Throwable $e) {
+            // 菜单清理失败不阻塞卸载
+        }
+
         // 1. 运行插件卸载脚本
         $this->runPluginUninstallScript($name);
 

@@ -318,6 +318,17 @@ class PluginController extends AdminController
 
         $result = $this->pm->togglePluginStatus($name, $status);
 
+        // 启用时注册模块后台菜单，禁用时移除
+        if (!empty($result['success'])) {
+            try {
+                $status === 1
+                    ? \zapcms\support\ModMenu::sync($name, [], true)
+                    : \zapcms\support\ModMenu::remove($name);
+            } catch (\Throwable $e) {
+                // 菜单同步失败不影响启停结果
+            }
+        }
+
         Response::json([
             'code' => $result['success'] ? 0 : 1,
             'msg'  => $result['message'],

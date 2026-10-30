@@ -85,7 +85,9 @@ class ProductController
             Product::query()->insert($data);
         }
 
-        header('Location: ' . $_SERVER['HTTP_REFERER'] ?? '/z-admin/mod/shop/product');
+        // 不写死后台前缀，交给 Url::action 拼接（后台路径可被修改）
+        $back = $_SERVER['HTTP_REFERER'] ?? url_action('mod/shop/product');
+        header('Location: ' . $back);
     }
 
     /**
@@ -96,7 +98,7 @@ class ProductController
         if ($id > 0) {
             Product::query()->where('id', $id)->delete();
         }
-        header('Location: /z-admin/mod/shop/product');
+        header('Location: ' . url_action('mod/shop/product'));
     }
 
     // ==================== 前端方法 ====================

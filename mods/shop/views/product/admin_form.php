@@ -1,15 +1,17 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $product ? '编辑产品' : '添加产品' ?> — 商城</title>
-</head>
-<body>
+<?php
+!IS_AJAX && $this->layout('layouts/common');
+$this->view->page_title  = $product ? '编辑产品' : '添加产品';
+$this->view->breadcrumbs = [
+    ['title' => '控制台', 'url' => url_action('Index')],
+    ['title' => '商城', 'url' => url_action('mod/shop/product')],
+    ['title' => '产品管理', 'url' => url_action('mod/shop/product')],
+    ['title' => $product ? '编辑产品' : '添加产品'],
+];
+?>
 <div class="container-fluid p-3">
     <h4 class="mb-3"><?= $product ? '编辑产品' : '添加产品' ?></h4>
 
-    <form method="post" action="/z-admin/mod/shop/product/save">
+    <form method="post" action="<?= url_action('mod/shop/product/save') ?>">
         <input type="hidden" name="id" value="<?= $product['id'] ?? 0 ?>">
 
         <div class="row g-3">
@@ -82,10 +84,8 @@
 
             <div class="col-12">
                 <button type="submit" class="btn btn-success">保存</button>
-                <a href="/z-admin/mod/shop/product" class="btn btn-secondary">返回</a>
+                <a href="<?= url_action('mod/shop/product') ?>" class="btn btn-secondary">返回</a>
             </div>
         </div>
     </form>
 </div>
-</body>
-</html>

@@ -1,11 +1,12 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>商城仪表盘</title>
-</head>
-<body>
+<?php
+!IS_AJAX && $this->layout('layouts/common');
+$this->view->page_title  = '商城仪表盘';
+$this->view->breadcrumbs = [
+    ['title' => '控制台', 'url' => url_action('Index')],
+    ['title' => '商城', 'url' => url_action('mod/shop/product')],
+    ['title' => '仪表盘'],
+];
+?>
 <div class="container-fluid p-3">
     <h4 class="mb-4">商城仪表盘</h4>
 
@@ -29,10 +30,8 @@
     </div>
 
     <div class="mt-4">
-        <a href="/z-admin/mod/shop/product" class="btn btn-primary">
+        <a href="<?= url_action('mod/shop/product') ?>" class="btn btn-primary">
             <i class="fa fa-cubes"></i> 管理产品
         </a>
     </div>
 </div>
-</body>
-</html>

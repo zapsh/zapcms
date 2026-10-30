@@ -1,15 +1,16 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>产品管理 — 商城</title>
-</head>
-<body>
+<?php
+!IS_AJAX && $this->layout('layouts/common');
+$this->view->page_title  = '产品管理';
+$this->view->breadcrumbs = [
+    ['title' => '控制台', 'url' => url_action('Index')],
+    ['title' => '商城', 'url' => url_action('mod/shop/product')],
+    ['title' => '产品管理'],
+];
+?>
 <div class="container-fluid p-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">产品管理</h4>
-        <a href="/z-admin/mod/shop/product/edit" class="btn btn-primary">
+        <a href="<?= url_action('mod/shop/product/edit') ?>" class="btn btn-primary">
             <i class="fa fa-plus"></i> 添加产品
         </a>
     </div>
@@ -53,9 +54,9 @@
                         </td>
                         <td><?= $row['sort'] ?></td>
                         <td>
-                            <a href="/z-admin/mod/shop/product/edit/<?= $row['id'] ?>"
+                            <a href="<?= url_action('mod/shop/product/edit/' . (int) $row['id']) ?>"
                                class="btn btn-sm btn-outline-primary">编辑</a>
-                            <a href="/z-admin/mod/shop/product/delete/<?= $row['id'] ?>"
+                            <a href="<?= url_action('mod/shop/product/delete/' . (int) $row['id']) ?>"
                                class="btn btn-sm btn-outline-danger"
                                onclick="return confirm('确认删除？')">删除</a>
                         </td>
@@ -79,5 +80,3 @@
     </nav>
     <?php endif; ?>
 </div>
-</body>
-</html>
