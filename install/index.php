@@ -27,10 +27,15 @@ function json_response(array $data): void
 }
 
 // ── 已是完整安装则直接跳首页 ──────────────────────────────
-if (is_file('../var/install.lock')) {
+// 与 app/bootstrap.php 的 app_is_installed() 保持同一判定：
+// install.lock 与 config/database.php 同时存在才算安装完成，
+// 否则「lock 残留 + 配置缺失」会导致 首页 ⇄ 安装页 反复重定向。
+$installRoot = dirname(__DIR__);
+if (is_file($installRoot . '/var/install.lock') && is_file($installRoot . '/config/database.php')) {
     header('Location: ../');
     exit();
 }
+unset($installRoot);
 
 $app = new \zap\App(realpath('../'));
 

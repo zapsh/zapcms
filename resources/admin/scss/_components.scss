@@ -260,3 +260,112 @@
     --#{$prefix}table-hover-color: var(--#{$prefix}body-color);
   }
 }
+
+// ===========================================================================
+// 暗色模式：Summernote 富文本编辑器
+// ---------------------------------------------------------------------------
+// summernote-lite.min.css 自带写死的浅色配色，且在本样式表之后加载；
+// 这里统一加 [data-bs-theme="dark"] 前缀提升优先级，不改第三方文件。
+// ===========================================================================
+[data-bs-theme="dark"] {
+  .note-editor.note-frame,
+  .note-editor.note-airframe {
+    border-color: var(--#{$prefix}border-color);
+  }
+
+  .note-frame,
+  .note-airframe {
+    color: var(--#{$prefix}body-color);
+  }
+
+  // 工具栏
+  .note-toolbar {
+    background-color: var(--#{$prefix}tertiary-bg);
+    border-color: var(--#{$prefix}border-color);
+    color: var(--#{$prefix}body-color);
+  }
+
+  .note-btn {
+    background-color: var(--#{$prefix}body-bg);
+    border-color: var(--#{$prefix}border-color);
+    color: var(--#{$prefix}body-color);
+
+    &:hover,
+    &:focus,
+    &.focus,
+    &.active,
+    &:active {
+      background-color: var(--#{$prefix}secondary-bg);
+      border-color: var(--#{$prefix}border-color);
+      color: var(--#{$prefix}body-color);
+    }
+  }
+
+  // 下拉面板 / 气泡
+  .note-dropdown-menu,
+  .note-popover,
+  .note-popover-content {
+    background-color: var(--#{$prefix}body-bg);
+    border-color: var(--#{$prefix}border-color);
+    color: var(--#{$prefix}body-color);
+  }
+
+  .note-dropdown-item:hover {
+    background-color: var(--#{$prefix}secondary-bg);
+  }
+
+  // 编辑区（正文）保持「白纸」外观：内容最终展示在前台浅色主题，
+  // 这里不跟随暗色，避免作者写下的深色文字在暗底上看不见。
+  .note-editor .note-editing-area .note-editable {
+    background-color: #fff;
+    color: #212529;
+  }
+
+  // 代码视图仍使用暗色，方便对照后台整体风格
+  .note-editor .note-editing-area .note-codable {
+    background-color: var(--#{$prefix}tertiary-bg);
+    color: var(--#{$prefix}body-color);
+  }
+
+  // 白纸编辑区内的占位提示需要深灰（--bs-secondary-color 在暗色主题下是浅色）
+  .note-placeholder {
+    color: #6c757d;
+  }
+
+  // 底部状态栏
+  .note-statusbar {
+    background-color: var(--#{$prefix}tertiary-bg);
+    border-top-color: var(--#{$prefix}border-color);
+  }
+
+  .note-status-output {
+    border-top-color: var(--#{$prefix}border-color);
+    color: var(--#{$prefix}body-color);
+  }
+
+  // 插入图片/链接/视频等弹窗
+  .note-modal-content {
+    background-color: var(--#{$prefix}body-bg);
+    border-color: var(--#{$prefix}border-color);
+    color: var(--#{$prefix}body-color);
+  }
+
+  .note-modal-header,
+  .note-modal-footer {
+    border-color: var(--#{$prefix}border-color);
+  }
+
+  .note-modal-title {
+    color: var(--#{$prefix}body-color);
+  }
+
+  .note-input {
+    background-color: var(--#{$prefix}body-bg);
+    border-color: var(--#{$prefix}border-color);
+    color: var(--#{$prefix}body-color);
+  }
+
+  .note-help-block {
+    color: var(--#{$prefix}secondary-color);
+  }
+}

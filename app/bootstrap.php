@@ -8,7 +8,7 @@
  *
  */
 
-const ZAP_CMS_VERSION = '1.0.7';
+const ZAP_CMS_VERSION = '1.0.10';
 const ZAP_CMS_RELEASE_DATE = '2026-10-20';
 
 define('APP_ROOT', dirname(__DIR__));
@@ -18,8 +18,126 @@ if (PHP_VERSION_ID < 80200) {
 }
 
 /**
+ * 是否已完成安装。
+ *
+ * 判定依据（两者缺一不可）：
+ *   - var/install.lock   安装向导最后一步写入，是「安装完成」的唯一凭据；
+ *   - config/database.php 数据库连接配置。
+ *
+ * 只判断 lock 会把「lock 残留但配置被删」误判为已安装；
+ * 只判断 database.php 会把「配置已写入但建表没跑完」误判为已安装。
+ * 一律使用 APP_ROOT 绝对路径，避免依赖进程工作目录（CLI / 子目录部署）。
+ */
+function app_is_installed(): bool
+{
+    static $installed = null;
+
+    if ($installed === null) {
+        $installed = is_file(APP_ROOT . '/var/install.lock')
+            && is_file(APP_ROOT . '/config/database.php');
+    }
+
+    return $installed;
+}
+
+/**
+ * 安装向导地址，兼容子目录部署（如 /cms/install/index.php）。
+ */
+function app_install_url(): string
+{
+    $script = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? '/index.php'));
+    $base = rtrim(dirname($script), '/');
+
+    if ($base === '/' || $base === '.' || $base === '\\') {
+        $base = '';
+    }
+
+    return $base . '/install/index.php';
+}
+
+/**
+ * 输出极简提示页并结束请求（用于无法发送重定向头的场景）。
+ *
+ * @param array{url: string, text: string}|null $link
+ */
+function app_notice(int $status, string $title, string $message, ?array $link = null): void
+{
+    if (!headers_sent()) {
+        http_response_code($status);
+        header('Content-Type: text/html; charset=utf-8');
+    }
+
+    $linkHtml = '';
+    if ($link !== null) {
+        $linkHtml = '<p style="margin:0;"><a href="' . htmlspecialchars($link['url'], ENT_QUOTES)
+            . '" style="color:#0d6efd;">' . htmlspecialchars($link['text'], ENT_QUOTES) . '</a></p>';
+    }
+
+    echo '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">'
+        . '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        . '<title>' . htmlspecialchars($title, ENT_QUOTES) . '</title></head>'
+        . '<body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;'
+        . 'background:#f5f6fa;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#333;">'
+        . '<div style="max-width:560px;padding:24px;text-align:center;">'
+        . '<h1 style="margin:0 0 12px;font-size:22px;">' . htmlspecialchars($title, ENT_QUOTES) . '</h1>'
+        . '<p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#666;">'
+        . htmlspecialchars($message, ENT_QUOTES) . '</p>'
+        . $linkHtml
+        . '</div></body></html>';
+    exit;
+}
+
+/**
+ * 跳转到安装向导：有 header 权限用 302，已经输出过内容时退化为提示页，
+ * 避免 header() 警告或白屏。
+ */
+function app_redirect_install(): void
+{
+    $url = app_install_url();
+
+    if (!headers_sent()) {
+        header('Location: ' . $url, true, 302);
+        exit;
+    }
+
+    app_notice(200, 'ZAP CMS 尚未安装', '检测到系统还未完成安装，请先运行安装向导。', [
+        'url'  => $url,
+        'text' => '进入安装向导',
+    ]);
+}
+
+/**
+ * 未安装时引导到安装向导。
+ *
+ * 跳过判定：
+ *   - 已安装；
+ *   - 显式声明 ZAP_SKIP_INSTALL_CHECK（特殊场景，比如自检脚本）；
+ *   - CLI 运行（console / 队列），改为 stderr 提示并以非 0 退出；
+ *   - 当前请求已在 install 目录内，避免「首页 ⇄ 安装页」死循环。
+ */
+function app_require_installed(): void
+{
+    if (app_is_installed() || defined('ZAP_SKIP_INSTALL_CHECK')) {
+        return;
+    }
+
+    if (PHP_SAPI === 'cli') {
+        fwrite(STDERR, 'ZAP CMS is not installed yet: ' . APP_ROOT . PHP_EOL);
+        exit(1);
+    }
+
+    $script = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    if (str_contains($script, '/install/')) {
+        return;
+    }
+
+    app_redirect_install();
+}
+
+/**
  * 检测 PDO 异常是否为"数据库表不存在"引起。
- * 若检测到表不存在，跳转到安装页面；否则不做处理，由上层继续抛出。
+ * 未安装时跳转安装向导；已安装则给出明确提示（避免重定向死循环）；
+ * 非表缺失错误不做处理，由上层继续抛出，交给 ErrorHandler 渲染。
  *
  * 此函数独立于 Option.php，在 bootstrap 层统一拦截数据库异常，
  * 避免在 Option 等业务类中耦合安装跳转逻辑。
@@ -36,21 +154,21 @@ function check_database_error(\PDOException $e): void
         || preg_match("/Table\s+['`][^'`]+['`]\s+doesn't exist/i", $message)
         || preg_match('/Base table or view not found/i', $message);
 
-    if ($tableMissing) {
-        if (!headers_sent()) {
-            header('Location: /install/index.php');
-        } else {
-            echo '<script>location.href="/install/index.php";</script>';
-        }
-        exit();
+    if (!$tableMissing) {
+        return;
     }
+
+    // 已安装却查不到表：多半是连到了空库 / 表被误删。
+    // 此时再跳安装页只会「安装页 → 首页」来回重定向，直接给出可诊断的提示。
+    if (app_is_installed()) {
+        app_notice(500, '数据库结构缺失', '系统已安装，但当前数据库中找不到所需的数据表。请检查 config/database.php 是否指向了正确的数据库。');
+    }
+
+    app_redirect_install();
 }
 
 // Install — 未安装时进入安装流程
-if (!is_file('config/database.php') || !is_file('var/install.lock')) {
-    header('Location: /install/index.php');
-    exit();
-}
+app_require_installed();
 
 require "vendor/autoload.php";
 $app = new \zap\App(dirname(__DIR__));
