@@ -11,6 +11,10 @@
 // 品牌主色。如需切换为 ZAP 绿，改为 #198754
 $primary: #0d6efd;
 
+// 后台基础字号。Bootstrap 默认 1rem（16px）在后台显得偏大，
+// 这里统一为 14px；改回 1rem 即恢复默认，0.9375rem 为 15px。
+$font-size-base: .875rem;
+
 // 内容区留白（颜色请使用 --bs-* 变量，以便明暗主题同时生效）
 $zap-content-padding-x: 1rem;
 $zap-content-padding-y: .5rem;
