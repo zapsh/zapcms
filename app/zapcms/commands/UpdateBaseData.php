@@ -224,9 +224,24 @@ class UpdateBaseData extends Command
         $out[] = "        Schema::dropIfExists('{$logicalName}');";
         $out[] = "        Schema::create('{$logicalName}',function(TableSchema \$table){";
 
+        // 被索引或主键引用的列：MySQL 不允许 TEXT 列参与索引（无前缀长度）。
+        // SQLite 不保留 varchar 长度（统一存为 TEXT），因此导出时必须显式降级为 varchar。
+        $keyColumns = [];
+        foreach ($columns as $col) {
+            if (!empty($col['primary'])) {
+                $keyColumns[$col['name']] = true;
+            }
+        }
+        foreach ($indexes as $idx) {
+            $idxCols = is_array($idx['columns']) ? $idx['columns'] : [$idx['column'] ?? $idx['columns']];
+            foreach ($idxCols as $c) {
+                $keyColumns[$c] = true;
+            }
+        }
+
         // Emit columns
         foreach ($columns as $col) {
-            $out[] = '            ' . $this->generateColumnLine($col);
+            $out[] = '            ' . $this->generateColumnLine($col, $keyColumns);
         }
 
         // Blank line before indexes
@@ -276,8 +291,10 @@ class UpdateBaseData extends Command
 
     /**
      * Generate a single column line like: $table->varchar('title',255)->nullable()->default(null);
+     *
+     * @param array $keyColumns 被索引 / 主键引用的列名集合（键为列名）
      */
-    protected function generateColumnLine(array $col): string
+    protected function generateColumnLine(array $col, array $keyColumns = []): string
     {
         $name     = $col['name'];
         $method   = $col['method'];
@@ -285,6 +302,16 @@ class UpdateBaseData extends Command
         $nullable = $col['nullable'] ?? false;
         $default  = $col['default'] ?? null;
         $autoInc  = !empty($col['auto_increment']);
+
+        // MySQL 限制：TEXT 列不能建索引（无前缀长度），也不能带默认值。
+        // 导出时对此类列自动降级为 varchar，保证生成的 DDL 在 MySQL 下可执行。
+        if ($method === 'text' && (isset($keyColumns[$name]) || $default !== null)) {
+            $method = 'varchar';
+            $length = 255;
+            if (is_string($default)) {
+                $length = max($length, mb_strlen($default) + 10);
+            }
+        }
 
         // Build method call with arguments
         if ($length !== null) {
@@ -824,7 +851,11 @@ class UpdateBaseData extends Command
 
         $raw = trim((string) $rawDefault);
 
-        // SQLite: defaults are raw values; strings may be single-quoted
+        // SQLite: defaults are raw values; strings may be quoted with ' or "
+        if (preg_match('/^"(.*)"$/s', $raw, $m)) {
+            $raw = $m[1];
+        }
+
         if (preg_match("/^'(.*)'$/s", $raw, $m)) {
             return $m[1];
         }

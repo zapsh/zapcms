@@ -20,7 +20,7 @@ class CreateTables
         Schema::dropIfExists('admin');
         Schema::create('admin',function(TableSchema $table){
             $table->integer('id')->autoIncrement();
-            $table->text('username');
+            $table->varchar('username', 100);
             $table->text('password');
             $table->text('full_name');
             $table->text('phone_number');
@@ -66,7 +66,7 @@ class CreateTables
             $table->text('icon')->nullable();
             $table->text('link_to')->nullable();
             $table->text('link_target')->nullable();
-            $table->text('link_type')->nullable()->default('action');
+            $table->varchar('link_type', 50)->nullable()->default('action');
             $table->text('active_rule')->nullable();
             $table->text('show_position')->nullable();
             $table->integer('sort_order')->nullable()->default('0');
@@ -82,7 +82,7 @@ class CreateTables
         Schema::create('admin_meta',function(TableSchema $table){
             $table->integer('meta_id')->autoIncrement();
             $table->integer('object_id');
-            $table->text('meta_name');
+            $table->varchar('meta_name', 100);
             $table->text('meta_value');
 
             $table->addPrimaryKey('meta_id');
@@ -131,16 +131,16 @@ class CreateTables
         Schema::dropIfExists('comments');
         Schema::create('comments',function(TableSchema $table){
             $table->integer('comment_id');
-            $table->text('object_type')->default('"node"');
+            $table->varchar('object_type', 50)->default('node');
             $table->integer('object_id');
             $table->text('title');
             $table->text('author')->nullable();
             $table->text('author_email')->nullable();
             $table->text('author_url')->nullable();
             $table->text('author_ip')->nullable();
-            $table->integer('author_id')->nullable()->default('"0"');
+            $table->integer('author_id')->nullable()->default(0);
             $table->text('content');
-            $table->integer('approved')->nullable()->default('"0"');
+            $table->integer('approved')->nullable()->default(0);
             $table->text('agent');
             $table->integer('parent')->nullable();
             $table->integer('created_at')->nullable();
@@ -156,7 +156,7 @@ class CreateTables
         Schema::create('node',function(TableSchema $table){
             $table->integer('id')->autoIncrement();
             $table->integer('author_id');
-            $table->text('node_type')->nullable();
+            $table->varchar('node_type', 50)->nullable();
             $table->text('title');
             $table->text('slug')->nullable();
             $table->text('excerpt')->nullable();
@@ -169,7 +169,7 @@ class CreateTables
             $table->text('comment_status')->nullable();
             $table->integer('comment_count')->nullable()->default('0');
             $table->text('mime_type')->nullable();
-            $table->text('status')->nullable();
+            $table->varchar('status', 50)->nullable();
             $table->integer('pub_time')->nullable()->default('0');
             $table->integer('update_time')->nullable()->default('0');
             $table->integer('add_time')->nullable()->default('0');
@@ -217,7 +217,7 @@ class CreateTables
             $table->text('placeholder')->nullable();
             $table->integer('required')->nullable()->default('0');
             $table->text('help')->nullable();
-            $table->text('group_name')->default('');
+            $table->varchar('group_name', 100)->default('');
 
             $table->addPrimaryKey('field_id');
             $table->addIndex('idx_node_type_id',['node_type_id']);
@@ -228,11 +228,11 @@ class CreateTables
         Schema::dropIfExists('node_types');
         Schema::create('node_types',function(TableSchema $table){
             $table->integer('type_id')->autoIncrement();
-            $table->text('type_name');
+            $table->varchar('type_name', 100);
             $table->text('title');
             $table->text('description')->nullable();
             $table->text('node_type')->nullable();
-            $table->text('version')->nullable()->default('0.0.0');
+            $table->varchar('version', 20)->nullable()->default('0.0.0');
             $table->integer('sort_order')->nullable()->default('0');
             $table->integer('status')->nullable()->default('1');
             $table->integer('updated_at')->nullable();
@@ -247,7 +247,7 @@ class CreateTables
         Schema::dropIfExists('options');
         Schema::create('options',function(TableSchema $table){
             $table->integer('id')->autoIncrement();
-            $table->text('option_name');
+            $table->varchar('option_name', 191);
             $table->text('option_value')->nullable();
             $table->integer('sort_order')->nullable()->default('0');
             $table->integer('autoload')->nullable()->default('0');
@@ -280,9 +280,9 @@ class CreateTables
         Schema::dropIfExists('plugin');
         Schema::create('plugin',function(TableSchema $table){
             $table->integer('id')->autoIncrement();
-            $table->text('name');
+            $table->varchar('name', 100);
             $table->text('title');
-            $table->text('version')->nullable()->default('1.0.0');
+            $table->varchar('version', 20)->nullable()->default('1.0.0');
             $table->text('author')->nullable();
             $table->text('description')->nullable();
             $table->text('homepage')->nullable();
@@ -315,7 +315,7 @@ class CreateTables
         Schema::dropIfExists('roles_permissions');
         Schema::create('roles_permissions',function(TableSchema $table){
             $table->integer('role_id');
-            $table->text('perm_key');
+            $table->varchar('perm_key', 150);
             $table->text('extras')->nullable();
             $table->integer('assignment_time')->nullable();
 
@@ -339,11 +339,11 @@ class CreateTables
         Schema::dropIfExists('update_history');
         Schema::create('update_history',function(TableSchema $table){
             $table->integer('id')->autoIncrement();
-            $table->text('target');
+            $table->varchar('target', 100);
             $table->text('from_version');
             $table->text('to_version');
             $table->text('changelog')->nullable();
-            $table->text('status')->nullable()->default('success');
+            $table->varchar('status', 20)->nullable()->default('success');
             $table->integer('created_at')->nullable()->default('0');
 
             $table->addPrimaryKey('id');
