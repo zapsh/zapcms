@@ -22,7 +22,7 @@ class ProductController
     {
         $page  = (int) ($_GET['page'] ?? 1);
         $size  = 20;
-        $query = Product::query()->orderBy('sort DESC, id DESC');
+        $query = Product::createQuery()->orderBy('sort DESC, id DESC');
 
         $total = $query->count();
         $list  = $query->limit($size, ($page - 1) * $size)->get();
@@ -43,7 +43,7 @@ class ProductController
     {
         $product = [];
         if ($id > 0) {
-            $product = Product::query()->where('id', $id)->first();
+            $product = Product::createQuery()->where('id', $id)->first();
             if (!$product) {
                 echo '产品不存在';
                 return;
@@ -78,11 +78,11 @@ class ProductController
 
         if ($id > 0) {
             $data['updated_at'] = date('Y-m-d H:i:s');
-            Product::query()->where('id', $id)->update($data);
+            Product::createQuery()->where('id', $id)->update($data);
         } else {
             $data['created_at'] = date('Y-m-d H:i:s');
             $data['updated_at'] = date('Y-m-d H:i:s');
-            Product::query()->insert($data);
+            Product::createQuery()->insert($data);
         }
 
         // 不写死后台前缀，交给 Url::action 拼接（后台路径可被修改）
@@ -96,7 +96,7 @@ class ProductController
     public function delete(int $id): void
     {
         if ($id > 0) {
-            Product::query()->where('id', $id)->delete();
+            Product::createQuery()->where('id', $id)->delete();
         }
         header('Location: ' . url_action('mod/shop/product'));
     }

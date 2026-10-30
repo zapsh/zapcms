@@ -550,7 +550,7 @@ class ZapPackageManager
     /**
      * 运行插件安装脚本
      */
-    protected function runPluginInstallScript(string $name): void
+    public function runPluginInstallScript(string $name): void
     {
         $installScript = $this->modsDir . '/' . $name . '/install.php';
         if (file_exists($installScript)) {

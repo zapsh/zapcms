@@ -177,6 +177,8 @@ class PluginController extends AdminController
                 'status'       => 1,
                 'installed_at' => $now,
             ]);
+            // 执行模块安装脚本（建表等），否则“注册已存在模块”只有登记、没有初始化
+            $this->pm->runPluginInstallScript($name);
             Response::json(['code' => 0, 'msg' => '模块注册成功']);
         }
 
@@ -248,6 +250,9 @@ class PluginController extends AdminController
             'status'       => 1,
             'installed_at' => $now,
         ]);
+
+        // 执行模块安装脚本（建表等）
+        $this->pm->runPluginInstallScript($name);
 
         Response::json(['code' => 0, 'msg' => '插件安装成功']);
     }

@@ -19,8 +19,8 @@ class IndexController
      */
     public function index(): void
     {
-        $productCount = Product::query()->count();
-        $onlineCount  = Product::query()->where('status', Product::STATUS_ON)->count();
+        $productCount = Product::createQuery()->count();
+        $onlineCount  = Product::createQuery()->where('status', Product::STATUS_ON)->count();
 
         View::render('index.admin', [
             'productCount' => $productCount,
