@@ -35,6 +35,9 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tencent.com/g' /etc/apk/repositorie
 WORKDIR /app
 
 # 将当前目录下所有文件拷贝到/app
+# 注意：本项目通过 composer path repository 依赖同级的 ../zap-php-framework，
+# 容器内的 composer install 无法解析该路径，因此 vendor/ 随源码一起复制。
+# 依赖 .dockerignore 过滤掉 node_modules 与运行时产物。
 COPY . /app
 
 # 生成 nginx 配置
@@ -42,7 +45,8 @@ RUN cat > /etc/nginx/conf.d/default.conf << 'NGINX_EOF'
 server {
     listen       80;
     server_name  localhost;
-    root /app/public;
+    # 本项目 index.php 位于仓库根目录，Web 根即 /app
+    root /app;
     index  index.html index.htm index.php;
     error_page  404              /404.html;
     error_page  500 502 503 504  /50x.html;
@@ -51,9 +55,21 @@ server {
         try_files $uri $uri/ /index.php?$query_string;
     }
 
+    # 上传目录禁止解析 PHP
     location ~ /storage/.*\.php$ {
         deny all;
     }
+
+    # 拒绝直接访问源码与敏感文件（与仓库根目录 .htaccess 保持一致）
+    # install/ 是一次性安装向导，应用层已有「已安装则跳转」守卫；
+    # 站点交付后建议在此处加上 deny all，由运维在外部网关屏蔽安装入口。
+    location ~* ^/(app|config|mods|vendor|var)/ {
+        deny all;
+    }
+    location ~* (composer\.(json|lock)|Dockerfile|console|README\.md|LICENSE|CHANGELOG\.md|\.env) {
+        deny all;
+    }
+
     location ~ \.php$ {
         fastcgi_pass   127.0.0.1:9000;
         fastcgi_index  index.php;
@@ -70,8 +86,9 @@ NGINX_EOF
 # 生成 php-fpm 配置
 RUN cat > /etc/php82/php-fpm.d/www.conf << 'FPM_EOF'
 [www]
-user = nobody
-group = nobody
+# 与 nginx 同账户运行，便于共享 storage/var 的属主，避免使用 777 权限
+user = nginx
+group = nginx
 listen = 127.0.0.1:9000
 pm = dynamic
 pm.max_children = 5
@@ -115,7 +132,7 @@ variables_order = "GPCS"
 request_order = "GP"
 register_argc_argv = Off
 auto_globals_jit = On
-post_max_size = 8M
+post_max_size = 25M
 default_mimetype = "text/html"
 default_charset = "UTF-8"
 
@@ -125,7 +142,8 @@ user_dir =
 enable_dl = Off
 
 file_uploads = On
-upload_max_filesize = 2M
+# 与后台「文件上传」默认上限保持一致（UploadController::maxFileSizeMb 默认 20）
+upload_max_filesize = 20M
 max_file_uploads = 20
 
 allow_url_fopen = On
@@ -179,7 +197,9 @@ bcmath.scale = 0
 
 [Session]
 session.save_handler = files
-session.use_strict_mode = 0
+session.save_path = "/tmp/php-sessions"
+; 拒绝未初始化的 session id，配合登录时的 session_regenerate_id 防御会话固定
+session.use_strict_mode = 1
 session.use_cookies = 1
 session.use_only_cookies = 1
 session.name = PHPSESSID
@@ -187,8 +207,10 @@ session.auto_start = 0
 session.cookie_lifetime = 0
 session.cookie_path = /
 session.cookie_domain =
-session.cookie_httponly =
-session.cookie_samesite =
+session.cookie_httponly = 1
+session.cookie_samesite = Lax
+; 若站点全站 HTTPS，请将此值改为 1
+session.cookie_secure = 0
 session.serialize_handler = php
 session.gc_probability = 1
 session.gc_divisor = 1000
@@ -224,8 +246,11 @@ php-fpm -D
 nginx -g "daemon off;"
 RUN_EOF
 
-RUN mkdir -p /run/nginx \
-    && chmod -R 777 /app/storage \
+RUN mkdir -p /run/nginx /tmp/php-sessions \
+    && chown -R nginx:nginx /tmp/php-sessions \
+    # storage 与 var 需要 PHP 进程可写；改为收紧的属主 + 775，不再使用 777
+    && chown -R nginx:nginx /app/storage /app/var \
+    && chmod -R 775 /app/storage /app/var \
     && chmod +x /run.sh \
     && mv /usr/sbin/php-fpm82 /usr/sbin/php-fpm \
     && ln -sf /usr/bin/php82 /usr/bin/php

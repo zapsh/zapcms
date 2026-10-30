@@ -1,4 +1,9 @@
 .idea
+.vscode
+node_modules/
+
+
+# 运行时缓存与日志
 var/cache/*
 var/logs/*
 var/tmp/*
@@ -7,5 +12,14 @@ var/backup/*
 storage/backups/*
 storage/cache/*
 storage/thumbs/*
-.vscode
-node_modules/
+
+/config/config.php
+/config/security.php
+
+# 安装状态标记
+/var/install.lock
+
+# 环境变量
+.env
+.env.*
+!.env.example

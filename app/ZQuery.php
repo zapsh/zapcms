@@ -414,8 +414,14 @@ class ZQuery
             }
         }
 
-        // 普通字段
-        $col = $this->orderbyMap[$orderby] ?? $orderby;
+        // 普通字段：仅接受白名单中的排序键，未知值一律回退到默认排序。
+        // 注意：不能把 $orderby 原样透传给 Query::orderBy()——框架的 quoteColumn()
+        // 对 SQLite 是直通的（见 ZPDO::quoteColumn 的 default 分支），MySQL 分支也只是
+        // 加反引号而不转义内部的反引号，两者都无法阻止 ORDER BY 注入。
+        if (!is_string($orderby) || !array_key_exists($orderby, $this->orderbyMap)) {
+            $orderby = 'date';
+        }
+        $col = $this->orderbyMap[$orderby];
 
         if ($col === 'RAND()') {
             $q->orderByRaw('RAND()');

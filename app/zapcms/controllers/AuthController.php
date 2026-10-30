@@ -38,6 +38,11 @@ class AuthController extends Controller
             }
 
             //登录成功
+            // 必须先重建会话 ID：登录前的会话 ID 可能已被攻击者预置（会话固定）
+            session()->regenerate(true);
+            // 同时更换 CSRF Token，避免登录前下发的 Token 被复用
+            session()->regenerateToken(true);
+
             DB::table('admin')->set('last_ip', Request::ip())
                 ->set('last_access_time', time())
                 ->where('username',$username)

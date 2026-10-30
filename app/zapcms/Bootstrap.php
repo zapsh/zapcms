@@ -14,6 +14,7 @@ use zap\http\Router;
 use zap\http\Request;
 use zap\view\View;
 use zapcms\services\Option;
+use zapcms\support\Csrf;
 
 class Bootstrap
 {
@@ -153,6 +154,8 @@ class Bootstrap
                 // 保存 controller/method（kebab-case）到 Router 供全局访问
                 app()->router->controller = $controllerName;
                 app()->router->method = strtolower($methodName);
+                // CSRF：控制器构造完成后、执行动作前统一校验
+                Csrf::guard($controllerName . '@' . $methodName);
                 $instance->_invoke($methodName, $extraParams);
                 return;
             }
@@ -170,6 +173,9 @@ class Bootstrap
         // 保存已解析的 controller/method（kebab-case）到 Router 供全局访问
         app()->router->controller = $controllerName;
         app()->router->method = strtolower($methodName);
+
+        // CSRF：控制器构造完成后、执行动作前统一校验（GET/HEAD/OPTIONS 自动放行）
+        Csrf::guard($controllerName . '@' . $methodName);
 
         // 调用控制器方法（camelCase），传入额外参数
         if (!empty($extraParams)) {

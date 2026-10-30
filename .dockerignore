@@ -1,0 +1,46 @@
+# 前端依赖与构建产物（assets/admin 为提交到仓库的构建输出，需保留）
+node_modules
+npm-debug.log*
+package-lock.json
+
+# 版本控制 / IDE
+.git
+.gitignore
+.gitattributes
+.gitlab-ci.yml
+.github
+.idea
+.vscode
+
+# 测试与静态分析（目前尚未引入，先占位）
+tests
+phpunit.xml
+phpunit.xml.dist
+.phpunit.result.cache
+.phpstan
+phpstan.neon
+phpstan.neon.dist
+
+# 运行时产物：不要打进镜像，容器启动时为空目录或由应用生成
+var/cache/*
+var/logs/*
+var/tmp/*
+var/backup/*
+var/backups/*
+var/*.log
+storage/thumbs/*
+storage/backups/*
+storage/cache/*
+
+# 环境与安装状态：部署后不应固化在镜像里
+.env
+.env.*
+config/database.php
+config/config.php
+config/security.php
+var/install.lock
+
+# 文档与部署脚本
+Dockerfile
+rewrite.conf
+*.md

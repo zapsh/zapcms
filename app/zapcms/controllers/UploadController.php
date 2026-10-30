@@ -9,19 +9,38 @@ use zap\http\Response;
 
 class UploadController extends AdminController
 {
-    /** 允许上传的扩展名白名单（小写） */
+    /**
+     * 允许上传的扩展名白名单（小写）
+     *
+     * 注意：svg 不在其中 —— 它是 XML 文档而非位图，可内嵌 <script>，
+     * 且 storage/ 目录会被 Web 服务器直接输出，等同于存储型 XSS。
+     */
     private const ALLOWED_EXTENSIONS = [
-        'jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico',
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'ico',
         'zip', 'rar', '7z', 'tar', 'gz', 'pdf', 'doc', 'docx',
         'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'md', 'csv',
         'mp3', 'mp4', 'avi', 'mov', 'wmv', 'flv', 'webm',
         'json', 'xml',
     ];
 
+    /** 需要做图片内容嗅探的扩展名 */
+    private const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'ico'];
+
+    /**
+     * 黑名单：即使后台「upload.extensions」里显式配置了这些后缀也不予放行，
+     * 避免管理员配置失误导致可执行脚本/活动内容被写入可直接访问的目录。
+     */
+    private const FORBIDDEN_EXTENSIONS = [
+        'svg', 'htm', 'html', 'js', 'mjs', 'htaccess',
+        'php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar', 'pht',
+        'asp', 'aspx', 'jsp', 'cgi', 'pl', 'py', 'rb',
+        'exe', 'dll', 'sh', 'bat', 'cmd', 'com',
+    ];
+
     function image()
     {
         if (Request::isPost()) {
-            $this->saveUpload('images');
+            $this->saveUpload('images', '', '', true);
         }
     }
 
@@ -39,8 +58,9 @@ class UploadController extends AdminController
      * @param string $subDir 子目录（如 images），为空时使用 path 参数
      * @param string $path   文件管理器指定目录
      * @param string $fullPath 目录上传时的相对完整路径（仅用于提取子目录结构）
+     * @param bool   $imageOnly 是否强制要求上传内容为真实图片
      */
-    private function saveUpload(string $subDir, string $path = '', string $fullPath = '')
+    private function saveUpload(string $subDir, string $path = '', string $fullPath = '', bool $imageOnly = false)
     {
         $file = Request::file('file');
         if (!isset($file['error']) || $file['error'] != UPLOAD_ERR_OK) {
@@ -53,6 +73,14 @@ class UploadController extends AdminController
         if (!in_array($ext, $this->allowedExtensions(), true)) {
             Response::json(['code' => 1, 'msg' => '不支持的文件类型: .' . $ext]);
             return;
+        }
+
+        // 内容校验：只看扩展名不足以判断文件真实类型
+        if ($imageOnly || in_array($ext, self::IMAGE_EXTENSIONS, true)) {
+            if (@getimagesize($file['tmp_name']) === false) {
+                Response::json(['code' => 1, 'msg' => '文件内容不是有效的图片']);
+                return;
+            }
         }
 
         // 单文件大小限制（后台「文件上传」配置，单位 MB）
@@ -84,7 +112,9 @@ class UploadController extends AdminController
 
         $targetDir = $relPath === '' ? storage_path() : storage_path($relPath);
         if (!is_dir($targetDir)) {
-            mkdir($targetDir, 0777, true);
+            // 0775 而非 0777：目录只需属主与属组可写，不应开放 other-write
+            mkdir($targetDir, 0775, true);
+            @chmod($targetDir, 0775);
         }
 
         // 按后台配置的命名规则生成文件名（original 规则下会自动规避重名）
@@ -112,7 +142,8 @@ class UploadController extends AdminController
                 static fn($v) => $v !== ''
             ));
             if (!empty($exts)) {
-                return $exts;
+                // 黑名单优先级高于后台配置
+                return array_values(array_diff($exts, self::FORBIDDEN_EXTENSIONS));
             }
         }
         return self::ALLOWED_EXTENSIONS;
@@ -152,10 +183,11 @@ class UploadController extends AdminController
                 return $candidate;
             case 'date':
                 // 日期 + 随机后缀，便于按时间归类排序
-                return date('YmdHis') . '_' . substr(uniqid(), -5) . '.' . $ext;
+                return date('YmdHis') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
             case 'random':
             default:
-                return uniqid() . '.' . $ext;
+                // 文件名必须不可预测，避免攻击者枚举已上传文件
+                return bin2hex(random_bytes(12)) . '.' . $ext;
         }
     }
 

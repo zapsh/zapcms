@@ -7,6 +7,7 @@ use \zap\facades\Url;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php echo $this->e($title ?? 'ZAP CMS');?></title>
+    <?php echo \zapcms\support\Csrf::meta(); ?>
     <script>
         /* 主题引导：必须在样式表之前执行，避免暗色主题闪白 */
         (function () {
@@ -29,6 +30,61 @@ use \zap\facades\Url;
     <script>
         window.ZAP_BASE_URL = '<?php echo base_url(Z_ADMIN_PREFIX);?>';
         window.ZAP_ASSETS_URL = '<?php echo base_url();?>/assets/admin';
+        window.ZAP_CSRF_TOKEN = '<?php echo \zapcms\support\Csrf::token(); ?>';
+
+        /**
+         * CSRF 统一注入：
+         *  1. jQuery AJAX、原生 fetch/XHR 在同域请求上自动附带 X-CSRF-Token；
+         *  2. 跨域请求一律不加，以免触发无谓的预检或被第三方站点记录凭证。
+         */
+        (function (token) {
+            function sameOrigin(url) {
+                try {
+                    return new URL(url, window.location.href).origin === window.location.origin;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            if (window.jQuery) {
+                jQuery.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!settings.crossDomain && sameOrigin(settings.url || '')) {
+                            xhr.setRequestHeader('X-CSRF-Token', token);
+                        }
+                    }
+                });
+            }
+
+            var rawXhrOpen = window.XMLHttpRequest ? window.XMLHttpRequest.prototype.open : null;
+            if (rawXhrOpen) {
+                window.XMLHttpRequest.prototype.open = function (method, url) {
+                    var res = rawXhrOpen.apply(this, arguments);
+                    try {
+                        if (sameOrigin(String(url))) {
+                            this.setRequestHeader('X-CSRF-Token', token);
+                        }
+                    } catch (e) {}
+                    return res;
+                };
+            }
+
+            if (window.fetch) {
+                var rawFetch = window.fetch;
+                window.fetch = function (input, init) {
+                    init = init || {};
+                    var target = (typeof input === 'string') ? input : (input && input.url);
+                    if (sameOrigin(String(target || ''))) {
+                        var headers = new Headers(init.headers || (input && input.headers) || {});
+                        if (!headers.has('X-CSRF-Token')) {
+                            headers.set('X-CSRF-Token', token);
+                        }
+                        init.headers = headers;
+                    }
+                    return rawFetch(input, init);
+                };
+            }
+        })(window.ZAP_CSRF_TOKEN);
     </script>
     <?php print_styles(); ?>
     <?php print_scripts(ASSETS_HEAD); ?>
@@ -229,6 +285,43 @@ use \zap\facades\Url;
                 });
             });
         }
+    </script>
+
+    <script>
+        /**
+         * 自动为所有 POST 表单注入 CSRF 隐藏字段。
+         * 后台视图为原生 PHP 输出、表单数量多，统一在此注入可避免逐个遗漏。
+         */
+        (function (token) {
+            var FIELD = '_token';
+
+            function fill(form) {
+                if (!form || form.tagName !== 'FORM') {
+                    return;
+                }
+                if (form.method && form.method.toUpperCase() !== 'POST') {
+                    return;
+                }
+                if (form.querySelector('input[name="' + FIELD + '"]')) {
+                    return;
+                }
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = FIELD;
+                input.value = token;
+                form.appendChild(input);
+            }
+
+            function fillAll() {
+                Array.prototype.forEach.call(document.querySelectorAll('form'), fill);
+            }
+
+            document.addEventListener('DOMContentLoaded', fillAll);
+            // 动态创建的表单在提交瞬间兜底注入
+            document.addEventListener('submit', function (e) {
+                fill(e.target);
+            }, true);
+        })(window.ZAP_CSRF_TOKEN);
     </script>
     <?php echo $this->block('page_scripts'); ?>
     <?php print_scripts(ASSETS_BODY); ?>
