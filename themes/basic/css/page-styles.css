@@ -216,10 +216,97 @@ ul.list-inline.post-meta li i { color: #1e6bff; }
 /* ─── 文章列表页：产品卡片适配 article_list ─── */
 .content-wrap { margin-top: 10px; }
 
-/* 列表页：右侧内容区与左侧栏顶端对齐
-   （冲掉外层 .content-wrap 的 10px 与网格卡片自身的 30px 上边距） */
-.col-sm-9 > .content-wrap { margin-top: 0; }
-.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content { margin-top: 0; }
+/* 列表页：右侧内容区与左侧栏顶端对齐（冲掉外层 .content-wrap 的 10px），
+   底部留白避免卡片与页脚贴在一起 */
+.col-sm-9 > .content-wrap {
+    margin-top: 0;
+    padding-bottom: 56px;
+}
+
+/* ─── 新闻 / 内容列表：等高卡片 + 统一图片比例 ─── */
+.col-sm-9 > .content-wrap > .row {
+    row-gap: 24px;
+}
+
+.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border-radius: 16px;
+}
+
+/* 图片：统一 16:10 裁切，避免竖图把卡片撑变形 */
+.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content > a {
+    display: block;
+    overflow: hidden;
+    background: #f4f7fb;
+}
+
+.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content > a > img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content:hover > a > img {
+    transform: scale(1.05);
+}
+
+/* 文字区：占满剩余高度，让日期沉到卡片底部 */
+.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content > .content-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    margin-top: 0;
+    padding: 18px 20px 20px;
+}
+
+.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content .content-wrap h4,
+.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content .content-wrap h5 {
+    margin: 0 0 10px;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.6;
+    color: #0f2947;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content .content-wrap h4 a,
+.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content .content-wrap h5 a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content:hover .content-wrap h4 a,
+.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content:hover .content-wrap h5 a {
+    color: #1e6bff;
+}
+
+/* 摘要（可选，最多两行） */
+.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content .card-excerpt {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #7b8798;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.col-sm-9 > .content-wrap > .row > [class*="col-"] > .post-content .content-wrap ul.list-inline.post-meta {
+    margin-top: auto;
+    margin-bottom: 0;
+    font-size: 12px;
+    color: #9aa5b5;
+}
 
 /* ─── 面包屑 ─── */
 .bread_area {
@@ -303,6 +390,7 @@ ul.list-inline.post-meta li i { color: #1e6bff; }
     .section-title + .desc { font-size: 12px; margin-bottom: 30px; }
     .services { padding: 40px 0; }
     .bread_area { margin-bottom: 20px; padding: 15px 0; }
+    .col-sm-9 > .content-wrap { padding-bottom: 36px; }
 }
 
 /* ─── 响应式：小屏手机 ─── */

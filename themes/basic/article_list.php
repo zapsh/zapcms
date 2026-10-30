@@ -22,6 +22,10 @@ $this->extend('layout/default');
                             </a>
                             <div class="content-wrap">
                                 <h5><a href="<?php echo node_url($node['id'], $node['node_type']); ?>"><?php echo htmlspecialchars($node['title']); ?></a></h5>
+                                <?php $excerpt = trim(strip_tags((string)($node['excerpt'] ?? ''))); ?>
+                                <?php if ($excerpt !== ''): ?>
+                                <p class="card-excerpt"><?php echo htmlspecialchars(mb_substr($excerpt, 0, 80)); ?></p>
+                                <?php endif; ?>
                                 <ul class="list-inline post-meta">
                                     <li><i class="fa fa-calendar"></i> <?php echo date('Y-m-d', intval($node['pub_time'] ?: 0)); ?></li>
                                 </ul>
