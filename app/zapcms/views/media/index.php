@@ -175,7 +175,6 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
     <h2 class="fs-5 fw-bold mb-0">
         <i class="fa-regular fa-images me-2 text-info"></i>媒体库
     </h2>
-    <div class="text-muted small" id="media-storage-info"></div>
 </div>
 
 <div class="row g-3">
@@ -191,18 +190,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
                     <i class="fa-solid fa-folder-plus me-1"></i>新建文件夹
                 </button>
             </div>
-            <div class="card-body p-2 overflow-auto media-tree" id="media-tree" style="max-height: 62vh;"></div>
-            <div class="card-footer bg-white py-2 small text-muted">
-                <div id="media-storage-bar">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span><i class="fa-solid fa-database me-1"></i>存储空间</span>
-                        <span id="media-storage-used">-</span>
-                    </div>
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar" id="media-storage-progress" style="width: 0%;"></div>
-                    </div>
-                </div>
-            </div>
+            <div class="card-body p-2 overflow-auto media-tree" id="media-tree" style="max-height: 68vh;"></div>
         </div>
     </div>
 
@@ -232,7 +220,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
 
             <div class="card-body p-3">
                 <div id="mediaDropHint" class="text-center text-muted py-2 mb-2">
-                    <i class="fa-solid fa-cloud-arrow-down me-1"></i>支持拖拽文件到此处上传，也可点击「上传文件」选择
+                    <i class="fa-solid fa-cloud-arrow-down me-1"></i>支持拖拽文件或整个文件夹到此处上传，也可点击「上传文件」选择
                 </div>
                 <div class="progress mb-2 d-none" style="height: 3px;" id="media-progress-wrap">
                     <div class="progress-bar" id="media-progress" style="width: 0%;"></div>
@@ -267,7 +255,8 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <input type="text" class="form-control" id="mkdir-name" placeholder="文件夹名称">
+                <input type="text" class="form-control" id="mkdir-name" placeholder="如：test1/test2/test3">
+                <div class="form-text">支持多级目录，用 <code>/</code> 分隔，例如 <code>test1/test2/test3</code></div>
             </div>
             <div class="modal-footer py-2">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">取消</button>
@@ -725,9 +714,17 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
     }
     $('#btn-mkdir').on('click', openMkdir);
     $('#btn-mkdir-ok').on('click', function () {
-        const name = $.trim($('#mkdir-name').val());
+        // 支持多级目录：统一分隔符、去掉首尾与重复斜杠
+        const name = $.trim($('#mkdir-name').val())
+            .replace(/\\/g, '/')
+            .replace(/\/{2,}/g, '/')
+            .replace(/^\/+|\/+$/g, '');
         if (name === '') { ZapToast.alert('请输入文件夹名称', {bgColor: bgWarning}); return; }
-        if (/[\/\\:*?"<>|]/.test(name)) { ZapToast.alert('名称不能包含 \\ / : * ? " < > | 等字符', {bgColor: bgWarning}); return; }
+        const badSegment = name.split('/').some(function (s) { return s === '' || s === '.' || s === '..'; });
+        if (/[:*?"<>|]/.test(name) || badSegment) {
+            ZapToast.alert('名称不能包含 : * ? " < > | 等字符，也不能有空层级或 ..', {bgColor: bgWarning});
+            return;
+        }
         const $btn = $(this);
         $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>创建中...');
         $.post(MediaApi.createDir, {path: media.path, dir_name: name}, function (data) {
@@ -903,15 +900,30 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         if (this.files.length) uploadFiles(this.files);
         this.value = '';
     });
+
+    // 普通文件列表 → 统一的上传项（dir 为空）
     function uploadFiles(fileList) {
-        const files = Array.from(fileList);
-        const total = files.length;
+        uploadItems(Array.prototype.map.call(fileList, function (file) {
+            return {file: file, dir: ''};
+        }));
+    }
+
+    /**
+     * 逐个上传；item = {file: File, dir: '相对子目录（可为空）'}
+     * 目录上传时通过 fullPath 让后端保留目录结构。
+     */
+    function uploadItems(items) {
+        const total = items.length;
+        if (total === 0) {
+            ZapToast.alert('没有可上传的文件（或文件夹为空）', {bgColor: bgWarning});
+            return;
+        }
         let done = 0, failed = 0;
         $('#media-progress-wrap').removeClass('d-none');
         $('#media-progress').css('width', '0%');
 
         function next() {
-            if (files.length === 0) {
+            if (items.length === 0) {
                 $('#media-progress').css('width', '100%');
                 setTimeout(function () { $('#media-progress-wrap').addClass('d-none'); }, 500);
                 if (failed > 0) {
@@ -923,10 +935,13 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
                 loadTree();
                 return;
             }
-            const file = files.shift();
+            const item = items.shift();
             const fd = new FormData();
-            fd.append('file', file);
+            fd.append('file', item.file);
             fd.append('path', media.path);
+            if (item.dir) {
+                fd.append('fullPath', '/' + item.dir + '/' + item.file.name);
+            }
             $.ajax({
                 url: MediaApi.upload,
                 method: 'post',
@@ -960,41 +975,109 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         next();
     }
 
-    // 拖拽上传
+    // ============ 拖拽上传（支持文件与文件夹） ============
     const $contentBox = $('#mediaContent');
-    $contentBox[0].addEventListener('dragover', function (e) {
+    const dropZone = $contentBox.closest('.card')[0] || $contentBox[0];
+    let dragDepth = 0;
+
+    function readAllEntries(dirEntry) {
+        return new Promise(function (resolve) {
+            const reader = dirEntry.createReader();
+            let all = [];
+            (function read() {
+                reader.readEntries(function (batch) {
+                    if (!batch.length) { resolve(all); return; }
+                    all = all.concat(Array.prototype.slice.call(batch));
+                    read();
+                }, function () { resolve(all); });
+            })();
+        });
+    }
+
+    function walkEntry(entry, dir, out) {
+        if (entry.isFile) {
+            return new Promise(function (resolve) {
+                entry.file(function (file) {
+                    // 跳过隐藏文件（.DS_Store、Thumbs.db 等）
+                    if (file.name.charAt(0) !== '.') {
+                        out.push({file: file, dir: dir});
+                    }
+                    resolve();
+                }, function () { resolve(); });
+            });
+        }
+        if (entry.isDirectory) {
+            const childDir = dir ? dir + '/' + entry.name : entry.name;
+            return readAllEntries(entry).then(function (children) {
+                return children.reduce(function (p, child) {
+                    return p.then(function () { return walkEntry(child, childDir, out); });
+                }, Promise.resolve());
+            });
+        }
+        return Promise.resolve();
+    }
+
+    function collectDropItems(dataTransfer) {
+        const out = [];
+        const items = dataTransfer.items;
+        const hasEntries = items && items.length && typeof items[0].webkitGetAsEntry === 'function';
+        if (!hasEntries) {
+            return Promise.resolve(Array.prototype.map.call(dataTransfer.files || [], function (file) {
+                return {file: file, dir: ''};
+            }));
+        }
+        const entries = [];
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].kind !== 'file') continue;
+            const entry = items[i].webkitGetAsEntry();
+            if (entry) entries.push(entry);
+        }
+        return entries.reduce(function (p, entry) {
+            return p.then(function () { return walkEntry(entry, '', out); });
+        }, Promise.resolve()).then(function () { return out; });
+    }
+
+    dropZone.addEventListener('dragenter', function (e) {
         e.preventDefault();
         e.stopPropagation();
+        dragDepth++;
         $contentBox.addClass('highlight');
     }, false);
-    $contentBox[0].addEventListener('dragleave', function (e) {
+
+    dropZone.addEventListener('dragover', function (e) {
         e.preventDefault();
         e.stopPropagation();
-        $contentBox.removeClass('highlight');
-    }, false);
-    $contentBox[0].addEventListener('drop', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        $contentBox.removeClass('highlight');
-        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
-            uploadFiles(e.dataTransfer.files);
+        if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = 'copy';
         }
     }, false);
 
-    // ============ 存储统计 ============
-    // 通过 tree 接口顺带统计（或由服务端注入）
-    function loadStorageInfo() {
-        $.get(MediaApi.tree, function (data) {
-            if (!data || data.code !== 0) return;
-            const $bar = $('#media-storage-progress');
-            const $used = $('#media-storage-used');
-            $bar.css('width', '0%');
-            $used.text('已加载目录树');
+    dropZone.addEventListener('dragleave', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (dragDepth === 0) $contentBox.removeClass('highlight');
+    }, false);
+
+    dropZone.addEventListener('drop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragDepth = 0;
+        $contentBox.removeClass('highlight');
+        if (!e.dataTransfer) return;
+        collectDropItems(e.dataTransfer).then(function (list) {
+            if (list.length) {
+                uploadItems(list);
+            } else {
+                ZapToast.alert('没有可上传的文件（或文件夹为空）', {bgColor: bgWarning});
+            }
         });
-    }
+    }, false);
+
+    // 防止拖到窗口其他区域时浏览器直接打开文件
+    $(document).on('dragover drop', function (e) { e.preventDefault(); });
 
     // ============ 初始化 ============
     loadTree();
     loadBrowse();
-    loadStorageInfo();
 </script>

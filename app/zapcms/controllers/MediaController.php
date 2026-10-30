@@ -125,7 +125,7 @@ class MediaController extends UploadController
     }
 
     /**
-     * 新建文件夹
+     * 新建文件夹（支持多级目录，如 test1/test2/test3）
      */
     public function createDir()
     {
@@ -133,18 +133,41 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '请求方式错误']);
             return;
         }
-        $path    = $this->cleanPath((string)Request::post('path', ''));
-        $dirName = trim((string)Request::post('dir_name', ''));
+        $path = $this->cleanPath((string)Request::post('path', ''));
 
-        if ($dirName === '' || preg_match('/[\/\\\\:*?"<>|]/', $dirName)) {
-            Response::json(['code' => 1, 'msg' => '文件夹名称不合法']);
+        // 允许用 / 分隔层级；反斜杠统一转换，去掉首尾与重复斜杠
+        $dirName = str_replace('\\', '/', (string)Request::post('dir_name', ''));
+        $dirName = (string)preg_replace('#/+#', '/', $dirName);
+        $dirName = trim($dirName, "/ \t\n\r\0\x0B");
+
+        if ($dirName === '') {
+            Response::json(['code' => 1, 'msg' => '请输入文件夹名称']);
             return;
         }
-        if ($this->isForbiddenPath($path)) {
+
+        // 逐级校验目录名
+        foreach (explode('/', $dirName) as $segment) {
+            if ($segment === '.' || $segment === '..') {
+                Response::json(['code' => 1, 'msg' => '文件夹名称不合法']);
+                return;
+            }
+            if (preg_match('/[:*?"<>|]/', $segment)) {
+                Response::json(['code' => 1, 'msg' => '名称不能包含 : * ? " < > | 等字符']);
+                return;
+            }
+            if (mb_strlen($segment) > 100) {
+                Response::json(['code' => 1, 'msg' => '单级目录名过长（最多 100 字符）']);
+                return;
+            }
+        }
+
+        $relTarget = $path === '' ? $dirName : $path . '/' . $dirName;
+        if ($this->isForbiddenPath($relTarget)) {
             Response::json(['code' => 1, 'msg' => '系统缩略图缓存目录禁止操作']);
             return;
         }
-        $target = $path === '' ? storage_path($dirName) : storage_path($path . '/' . $dirName);
+
+        $target = storage_path($relTarget);
         if (file_exists($target)) {
             Response::json(['code' => 1, 'msg' => '同名文件或文件夹已存在']);
             return;
@@ -153,7 +176,7 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '创建失败，请检查目录权限']);
             return;
         }
-        Response::json(['code' => 0, 'msg' => '创建成功']);
+        Response::json(['code' => 0, 'msg' => '创建成功', 'path' => $relTarget]);
     }
 
     /**
