@@ -40,6 +40,6 @@
     "phpstan/phpstan": "^2.3"
   },
   "scripts": {
-    "analyse": "phpstan analyse --memory-limit=1G"
+    "analyse": "@php vendor/phpstan/phpstan/phpstan analyse --memory-limit=1G"
   }
 }

@@ -1,7 +1,2 @@
 parameters:
-	ignoreErrors:
-		-
-			message: '#^Static call to instance method zap\\facades\\Cache\:\:increment\(\)\.$#'
-			identifier: method.staticCall
-			count: 1
-			path: d:\apps\zapdev\www\zapcms\app\zapcms\auth\RBAC.php
+	ignoreErrors: []

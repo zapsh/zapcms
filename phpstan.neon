@@ -31,6 +31,10 @@ parameters:
         # bootstrap.php / App.php 在运行时定义的常量
         -
             message: '#^Constant (APP_ROOT|IS_AJAX|ROOT_PATH|BASE_PATH|ZAP_SRC|VAR_PATH|ZAP_CMS_VERSION|IN_ZAPCMS_ADMIN|Z_ADMIN_PREFIX) not found\.$#'
+        # Facade 经 __callStatic 转发到驱动实例方法（如 Cache::increment()）
+        -
+            message: '#^Static call to instance method#'
+            path: app
         # PageState 继承 ArrayObject 并声明了完整的 @property 列表，
         # 运行时以 ARRAY_AS_PROPS 读写，PHPStan 对 ArrayObject 子类的
         # 属性检查会误报 undefined property

@@ -32,7 +32,11 @@ jobs:
 
       - name: Install dependencies
         working-directory: zapcms
-        run: composer install --prefer-dist --no-interaction --no-progress
+        # 仓库里误提交过 vendor/，Windows 下的文件在 Linux 上缺少执行位，
+        # 会让 vendor/bin/* 出现 Permission denied，因此先清掉再由 composer 生成
+        run: |
+          rm -rf vendor
+          composer install --prefer-dist --no-interaction --no-progress
 
       - name: PHP syntax check
         working-directory: zapcms
