@@ -25,6 +25,11 @@ $total     = count($items);
                         <span class="check-pass" title="通过">&#10003;</span>
                     <?php else: ?>
                         <span class="check-fail" title="<?= htmlspecialchars($item['failMsg']) ?>">&#10007;</span>
+                        <?php if (!empty($item['autofix'])): ?>
+                            <div class="mt-1">
+                                <button type="button" class="btn btn-sm btn-outline-warning" data-autofix="<?= htmlspecialchars($item['autofix']) ?>">一键生成 .htaccess</button>
+                            </div>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </td>
             </tr>
@@ -43,3 +48,22 @@ $total     = count($items);
         <?php endif; ?>
     </div>
 </div>
+
+<?php if ($allPass === false): ?>
+<script>
+document.querySelectorAll('[data-autofix]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var url = btn.getAttribute('data-autofix');
+        btn.disabled = true;
+        btn.textContent = '生成中…';
+        fetch(url, {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                alert(d.msg || (d.code === 0 ? '已生成' : '操作失败'));
+                location.reload();
+            })
+            .catch(function () { alert('请求失败，请手动创建'); location.reload(); });
+    });
+});
+</script>
+<?php endif; ?>

@@ -43,7 +43,7 @@ $app = new \zap\App(realpath('../'));
 $action = $_GET['action'] ?? 'index';
 
 // 纯 API 端点不走视图布局
-$apiActions = ['checkDatabaseConnection', 'createDBSchema', 'importBaseData'];
+$apiActions = ['checkDatabaseConnection', 'createDBSchema', 'importBaseData', 'installHtaccess'];
 $isApi = in_array($action, $apiActions, true);
 
 if (!$isApi) {
@@ -302,6 +302,49 @@ function importBaseDataAction()
     }
 }
 
+/**
+ * 一键生成根目录 .htaccess（仅 Apache 且尚未存在时）。
+ * 用于「伪静态未开启」时当场补齐必要条件；Nginx 需在 vhost 配置 try_files，无法自动生成。
+ */
+function installHtaccessAction()
+{
+    if (install_is_complete()) {
+        json_response(['code' => 1, 'msg' => '系统已安装完成，无需生成']);
+    }
+
+    $path = base_path('.htaccess');
+    if (is_file($path)) {
+        json_response(['code' => 1, 'msg' => '根目录已存在 .htaccess，请检查其内容或虚拟主机 AllowOverride 配置']);
+    }
+
+    $parts       = parse_url(installBaseUrl());
+    $rewriteBase = rtrim((string) ($parts['path'] ?? ''), '/') . '/';
+    if ($rewriteBase === '' || $rewriteBase === '//') {
+        $rewriteBase = '/';
+    }
+
+    $content = "Options +FollowSymLinks -Indexes\n"
+        . "RewriteEngine On\n"
+        . "RewriteBase {$rewriteBase}\n\n"
+        . "# 禁止访问敏感目录\n"
+        . "RewriteRule ^(app|config|vendor|var|\\.git|\\.idea)/ - [R=403,L]\n\n"
+        . "# 禁止下载敏感文件\n"
+        . "RewriteRule ^(composer\\.(json|lock)|Dockerfile|console|README\\.md|LICENSE|CHANGELOG\\.md|\\.env|\\.env\\..*)$ - [R=403,L]\n\n"
+        . "# 禁止执行 storage/ 下的 PHP\n"
+        . "RewriteCond %{REQUEST_URI} ^/storage/\n"
+        . "RewriteRule \\.php$ - [R=403,L]\n\n"
+        . "# 主路由规则\n"
+        . "RewriteCond %{REQUEST_FILENAME} !-d\n"
+        . "RewriteCond %{REQUEST_FILENAME} !-f\n"
+        . "RewriteRule ^ index.php [QSA,PT,L]\n";
+
+    if (@file_put_contents($path, $content) === false) {
+        json_response(['code' => 1, 'msg' => '写入 .htaccess 失败，请检查根目录写权限']);
+    }
+
+    json_response(['code' => 0, 'msg' => '已生成 .htaccess，请刷新本页重新检测']);
+}
+
 // ───────────────────────────────────────────────────────────
 //  辅助函数
 // ───────────────────────────────────────────────────────────
@@ -344,6 +387,151 @@ function writeTempDbConfig(
     }
 }
 
+/**
+ * 是否已完成安装（与 app/bootstrap.php 的 app_is_installed() 同判定，安装脚本不加载 bootstrap）
+ */
+function install_is_complete(): bool
+{
+    return is_file(base_path('var/install.lock')) && is_file(base_path('config/database.php'));
+}
+
+/**
+ * 当前站点基础 URL（用于伪静态探测），兼容子目录部署。
+ */
+function installBaseUrl(): string
+{
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host   = $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_NAME'] ?? 'localhost');
+    $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? '/install/index.php'));
+    $base   = dirname(dirname($script)); // /cms/install/index.php → /cms
+    if ($base === '/' || $base === '\\' || $base === '.' || $base === '') {
+        $base = '';
+    }
+    return $scheme . '://' . $host . $base;
+}
+
+/**
+ * 探测一条「干净 URL」的 HTTP 状态码，用于判断伪静态是否生效。
+ * 返回：0=无法探测；404=未生效；其它（含 200/302 重定向）= 已生效。
+ */
+function probeHttpStatus(string $url): int
+{
+    // 1) cURL
+    if (function_exists('curl_init')) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_CUSTOMREQUEST  => 'GET',
+            CURLOPT_NOBODY         => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADER         => true,
+            CURLOPT_TIMEOUT        => 5,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false,
+        ]);
+        @curl_exec($ch);
+        $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        return $code;
+    }
+
+    // 2) file_get_contents（HEAD）
+    if (filter_var(ini_get('allow_url_fopen'), FILTER_VALIDATE_BOOLEAN)) {
+        $ctx = stream_context_create([
+            'http'  => ['method' => 'HEAD', 'timeout' => 5, 'ignore_errors' => true],
+            'https' => ['method' => 'HEAD', 'timeout' => 5, 'ignore_errors' => true],
+        ]);
+        $headers = @get_headers($url, 1, $ctx);
+        if (is_array($headers) && isset($headers[0])
+            && preg_match('#HTTP/\d\.\d\s+(\d{3})#i', (string) $headers[0], $m)) {
+            return (int) $m[1];
+        }
+    }
+
+    // 3) fsockopen 兜底
+    $parts = parse_url($url);
+    if ($parts === false || empty($parts['host'])) {
+        return 0;
+    }
+    $scheme = (($parts['scheme'] ?? 'http') === 'https') ? 'ssl' : 'tcp';
+    $host   = $parts['host'];
+    $port   = (int) ($parts['port'] ?? ($scheme === 'ssl' ? 443 : 80));
+    $path   = ($parts['path'] ?? '/') . (!empty($parts['query']) ? '?' . $parts['query'] : '');
+    $fp     = @fsockopen(($scheme === 'ssl' ? 'ssl://' : '') . $host, $port, $errno, $errstr, 5);
+    if ($fp === false) {
+        return 0;
+    }
+    fwrite($fp, "GET {$path} HTTP/1.1\r\nHost: {$host}\r\nConnection: close\r\n\r\n");
+    $line = fgets($fp, 1024);
+    fclose($fp);
+    if (is_string($line) && preg_match('#HTTP/\d\.\d\s+(\d{3})#i', $line, $m)) {
+        return (int) $m[1];
+    }
+    return 0;
+}
+
+/**
+ * 伪静态（URL 重写）检测。
+ *
+ * 通过向一条「不存在的干净 URL」发起请求来判断：
+ *   - 若被 Web 服务器路由到 index.php（未安装站点会 302 跳转到安装页），说明伪静态生效；
+ *   - 若返回 404，说明未配置 try_files / mod_rewrite，安装后前台路由将无法工作。
+ * 同时辅以 .htaccess 存在性与重写规则检查（仅 Apache）。
+ *
+ * @return array{pass:bool,value:string,failMsg:string,autofix:string}
+ */
+function checkRewrite(): array
+{
+    $server   = strtolower((string) ($_SERVER['SERVER_SOFTWARE'] ?? ''));
+    $isApache = str_contains($server, 'apache');
+    $isNginx  = str_contains($server, 'nginx');
+    $name     = $isNginx ? 'Nginx' : ($isApache ? 'Apache' : '未知');
+
+    // .htaccess（仅 Apache 相关）
+    $htPath           = base_path('.htaccess');
+    $htExists         = is_file($htPath);
+    $htHasRewrite     = false;
+    if ($htExists) {
+        $c = (string) @file_get_contents($htPath);
+        $htHasRewrite = stripos($c, 'RewriteEngine') !== false
+            || stripos($c, 'try_files') !== false;
+    }
+
+    // 现场探测干净 URL 是否抵达 index.php
+    $status  = probeHttpStatus(installBaseUrl() . '/zapcms-rewrite-probe-' . bin2hex(random_bytes(4)));
+    $probeOk = ($status !== 0) && ($status !== 404);
+    $pass    = $probeOk;
+
+    $value = $name;
+    if ($status === 0) {
+        $value .= '（无法探测，请确认 allow_url_fopen / curl 可用）';
+    } else {
+        $value .= '（探测 HTTP ' . $status . '）';
+    }
+    if ($isApache) {
+        $value .= $htExists
+            ? ($htHasRewrite ? ' · .htaccess 已配置' : ' · .htaccess 缺少重写规则')
+            : ' · 缺少 .htaccess';
+    }
+
+    if ($pass) {
+        $failMsg = '';
+    } elseif ($status === 0) {
+        $failMsg = '无法自动探测伪静态，请确认服务器已配置 URL 重写（Nginx try_files / Apache mod_rewrite + .htaccess）后再继续。';
+    } elseif ($isApache && !$htExists) {
+        $failMsg = 'Apache 环境缺少 .htaccess（或虚拟主机 AllowOverride 未开启），伪静态未生效。可点击下方「生成 .htaccess」后刷新本页。';
+    } elseif ($isApache && !$htHasRewrite) {
+        $failMsg = '.htaccess 未包含重写规则，或虚拟主机 AllowOverride 未开启，伪静态未生效。';
+    } else {
+        $failMsg = '伪静态未开启：Nginx 请在 server 段配置 try_files $uri $uri/ /index.php?$query_string; Apache 请开启 mod_rewrite 并在根目录放置 .htaccess。';
+    }
+
+    // 仅当 Apache 且根目录无 .htaccess 时才提供一键生成
+    $autofix = ($isApache && !$htExists) ? 'index.php?action=installHtaccess' : '';
+
+    return ['pass' => $pass, 'value' => $value, 'failMsg' => $failMsg, 'autofix' => $autofix];
+}
+
 function buildEnvChecks(): array
 {
     $allDrivers  = PDO::getAvailableDrivers();
@@ -379,12 +567,20 @@ function buildEnvChecks(): array
         return is_file(base_path($path)) ? '可写' : '不存在（将自动生成）';
     };
 
+    $rewrite = checkRewrite();
     $items = [
         [
             'label'   => 'PHP 版本 ≥ 8.2',
             'value'   => PHP_VERSION,
             'pass'    => version_compare(PHP_VERSION, '8.2.0') >= 0,
             'failMsg' => '需要 PHP 8.2 或更高版本',
+        ],
+        [
+            'label'   => '伪静态（URL 重写）已开启',
+            'value'   => $rewrite['value'],
+            'pass'    => $rewrite['pass'],
+            'failMsg' => $rewrite['failMsg'],
+            'autofix' => $rewrite['autofix'],
         ],
         [
             'label'   => 'PDO 扩展',

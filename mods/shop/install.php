@@ -24,6 +24,8 @@ if (!Schema::hasTable('shop_product')) {
         $table->text('content')->nullable()->comment('详情');
         $table->timestamp('created_at');
         $table->timestamp('updated_at');
+
+        $table->addPrimaryKey('id');
     });
 }
 
@@ -40,6 +42,8 @@ if (!Schema::hasTable('shop_order')) {
         $table->string('status', 20)->default('pending')->comment('pending/paid/shipped/done/cancel');
         $table->timestamp('created_at');
         $table->timestamp('updated_at');
+
+        $table->addPrimaryKey('id');
     });
 }
 
@@ -53,6 +57,8 @@ if (!Schema::hasTable('shop_order_item')) {
         $table->decimal('price', 10, 2)->comment('快照：单价');
         $table->integer('quantity')->default(1)->comment('数量');
         $table->timestamp('created_at');
+
+        $table->addPrimaryKey('id');
     });
 }
 
