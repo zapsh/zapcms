@@ -17,6 +17,16 @@ use LimitIterator;
 use RegexIterator;
 use SplFileInfo;
 
+/**
+ * 目录迭代器：支持按 SplFileInfo 的属性排序。
+ * sortByXxx()（如 sortByType/sortByName/sortBySize）由 __call 动态提供。
+ *
+ * @method SortingFilesystemIterator sortByType()
+ * @method SortingFilesystemIterator sortByName()
+ * @method SortingFilesystemIterator sortBySize()
+ * @method SortingFilesystemIterator sortByMTime()
+ * @method SortingFilesystemIterator sortByCTime()
+ */
 class SortingFilesystemIterator extends ArrayIterator
 {
     public function __construct(string $path, int $flags = FilesystemIterator::KEY_AS_PATHNAME | FilesystemIterator::CURRENT_AS_FILEINFO | FilesystemIterator::SKIP_DOTS)
@@ -42,11 +52,14 @@ class SortingFilesystemIterator extends ArrayIterator
 
     public function limit(int $offset = 0, int $limit = -1)
     {
-        return parent::__construct(iterator_to_array(new LimitIterator($this, $offset, $limit))) ?? $this;
+        // 构造函数返回 void，原写法 `parent::__construct(...) ?? $this` 依赖其隐式 null，可读性差
+        parent::__construct(iterator_to_array(new LimitIterator($this, $offset, $limit)));
+        return $this;
     }
 
     public function match(string $regex, int $mode = RegexIterator::MATCH, int $flags = 0, int $preg_flags = 0)
     {
-        return parent::__construct(iterator_to_array(new RegexIterator($this, $regex, $mode, $flags, $preg_flags))) ?? $this;
+        parent::__construct(iterator_to_array(new RegexIterator($this, $regex, $mode, $flags, $preg_flags)));
+        return $this;
     }
 }

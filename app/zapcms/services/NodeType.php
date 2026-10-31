@@ -99,7 +99,7 @@ class NodeType
     /**
      * 分组配置在 options 表中的键前缀（按内容模型区分）
      */
-    private const GROUP_OPTION_PREFIX = 'node_field_group.';
+    protected const GROUP_OPTION_PREFIX = 'node_field_group.';
 
     /**
      * 获取内容模型的字段分组列表（按 sort_order 排序）
@@ -173,7 +173,7 @@ class NodeType
     /**
      * 内容模型显示配置在 options 表中的键前缀（按内容模型区分）
      */
-    private const CONFIG_OPTION_PREFIX = 'node_type_config.';
+    protected const CONFIG_OPTION_PREFIX = 'node_type_config.';
 
     /**
      * 内容模型显示配置默认值

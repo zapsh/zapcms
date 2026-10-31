@@ -1154,7 +1154,9 @@ class MobileDetect
     /**
      * Magic overloading method.
      *
-     * @method boolean is[...]()
+     * 支持形如 isMobile()/isTablet() 的动态判断（原注释写作 `@method boolean is[...]()`，
+     * 该写法不是合法 PHPDoc 语法，会干扰静态分析，改为文字说明）。
+     *
      * @param string $name
      * @param array $arguments
      * @return bool

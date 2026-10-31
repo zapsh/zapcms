@@ -133,19 +133,19 @@ class CommentController extends AdminController
     {
         $id = (int)Request::post('comment_id', 0);
         if ($id <= 0) {
-            return Response::json(['code' => 1, 'msg' => '参数错误']);
+            Response::json(['code' => 1, 'msg' => '参数错误']);
         }
 
         $comment = DB::table('comments')->where('comment_id', $id)->fetch(FETCH_ASSOC);
         if (!$comment) {
-            return Response::json(['code' => 1, 'msg' => '评论不存在']);
+            Response::json(['code' => 1, 'msg' => '评论不存在']);
         }
 
         $content = trim(Request::post('content', ''));
         $author  = trim(Request::post('author', ''));
         $approved = (int)Request::post('approved', Comment::APPROVED_PENDING);
         if ($content === '') {
-            return Response::json(['code' => 1, 'msg' => '评论内容不能为空']);
+            Response::json(['code' => 1, 'msg' => '评论内容不能为空']);
         }
         if (!in_array($approved, [Comment::APPROVED_PENDING, Comment::APPROVED_YES, Comment::APPROVED_SPAM], true)) {
             $approved = Comment::APPROVED_PENDING;
@@ -165,7 +165,7 @@ class CommentController extends AdminController
             $this->syncObjectCount($comment['object_type'], (int)$comment['object_id']);
         }
 
-        return Response::json(['code' => 0, 'msg' => '保存成功']);
+        Response::json(['code' => 0, 'msg' => '保存成功']);
     }
 
     /**
@@ -176,10 +176,10 @@ class CommentController extends AdminController
         $ids    = Request::post('ids', []);
         $status = (int)Request::post('status', -1);
         if (empty($ids) || !is_array($ids)) {
-            return Response::json(['code' => 1, 'msg' => '请选择评论']);
+            Response::json(['code' => 1, 'msg' => '请选择评论']);
         }
         if (!in_array($status, [Comment::APPROVED_PENDING, Comment::APPROVED_YES, Comment::APPROVED_SPAM], true)) {
-            return Response::json(['code' => 1, 'msg' => '状态无效']);
+            Response::json(['code' => 1, 'msg' => '状态无效']);
         }
 
         $ids = array_map('intval', $ids);
@@ -199,7 +199,7 @@ class CommentController extends AdminController
             $this->syncObjectCount($row['object_type'], (int)$row['object_id']);
         }
 
-        return Response::json(['code' => 0, 'msg' => '操作成功']);
+        Response::json(['code' => 0, 'msg' => '操作成功']);
     }
 
     /**
@@ -209,7 +209,7 @@ class CommentController extends AdminController
     {
         $ids = Request::post('ids', []);
         if (empty($ids) || !is_array($ids)) {
-            return Response::json(['code' => 1, 'msg' => '请选择评论']);
+            Response::json(['code' => 1, 'msg' => '请选择评论']);
         }
 
         $ids = array_map('intval', $ids);
@@ -228,7 +228,7 @@ class CommentController extends AdminController
             $this->syncObjectCount($row['object_type'], (int)$row['object_id']);
         }
 
-        return Response::json(['code' => 0, 'msg' => '删除成功']);
+        Response::json(['code' => 0, 'msg' => '删除成功']);
     }
 
     /**

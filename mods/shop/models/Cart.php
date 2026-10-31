@@ -26,7 +26,7 @@ class Cart
         if (isset($cart[$productId])) {
             $cart[$productId]['quantity'] += $quantity;
         } else {
-            $product = Product::creteQuery()->where('id', $productId)->first();
+            $product = Product::createQuery()->where('id', $productId)->first();
             if (!$product) return;
 
             $cart[$productId] = [

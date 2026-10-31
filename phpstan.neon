@@ -20,6 +20,26 @@ parameters:
             # 框架经 composer path repository 以符号链接进入 vendor，
             # 真实路径不在 vendor/ 下，需要显式排除（框架由其自身仓库单独分析）
             - ../zap-php-framework
+        # 视图模板依赖运行时注入变量（extract/$this），静态分析误报过多且价值有限
+        analyse:
+            - app/zapcms/views
+            - app/zapcms/node/views
+            - install/views
+            - mods/shop/views
+
+    ignoreErrors:
+        # bootstrap.php / App.php 在运行时定义的常量
+        -
+            message: '#^Constant (APP_ROOT|IS_AJAX|ROOT_PATH|BASE_PATH|ZAP_SRC|VAR_PATH|ZAP_CMS_VERSION|IN_ZAPCMS_ADMIN|Z_ADMIN_PREFIX) not found\.$#'
+        # PageState 继承 ArrayObject 并声明了完整的 @property 列表，
+        # 运行时以 ARRAY_AS_PROPS 读写，PHPStan 对 ArrayObject 子类的
+        # 属性检查会误报 undefined property
+        -
+            message: '#^Access to an undefined property app\\PageState::\$#'
+            path: app
+        # View 通过 __set/__get 提供动态属性，供控制器向模板传值
+        -
+            message: '#^Access to an undefined property zap\\view\\View::\$#'
 
     tmpDir: var/tmp/phpstan
 

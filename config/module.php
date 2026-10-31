@@ -1,18 +1,29 @@
 <?php
 /**
- * 模块路由配置
+ * 模块路由配置 —— 由系统根据已启用模块的 mod.json "route" 自动生成。
+ * 生成时间：2026-10-31 07:58:23
  *
- * prefixes: URL 前缀 → 模块目录名
- *   配置后即可用无 /mod/ 的简洁 URL，例如：
- *     'shop' => 'shopv2'     →  /shop/product/view/123 → mods/shopv2/
- *     'cart' => 'shopv2'     →  /cart/checkout        → mods/shopv2/
- *     'mall' => 'shopv2'     →  /mall/order/create    → mods/shopv2/
+ * 请勿手改本文件：模块安装 / 卸载 / 启用 / 禁用 / 更新时会重新生成。
+ * 需要手动新增或覆盖前缀映射时，请创建 config/module.overrides.php：
  *
- * 多个前缀可指向同一个模块目录。
- * 不在此列表中的路径不会触发模块分发，完全不影响 CMS 路由。
+ *   <?php
+ *   return ['mall' => 'shopv2', 'cart' => 'shopv2'];
+ *
+ * prefixes 语义：URL 前缀 => 模块目录名。
  */
-return [
-    'prefixes' => [
-        // 'shop' => 'shopv2',
-    ],
-];
+
+$prefixes = array (
+  'mall' => 'shop',
+  'shop' => 'shop',
+);
+
+// 站点级手动覆盖（可选），优先级高于自动生成结果
+$overrideFile = __DIR__ . '/module.overrides.php';
+if (is_file($overrideFile)) {
+    $overrides = include $overrideFile;
+    if (is_array($overrides)) {
+        $prefixes = array_merge($prefixes, $overrides);
+    }
+}
+
+return ['prefixes' => $prefixes];

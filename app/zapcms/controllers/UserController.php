@@ -116,7 +116,7 @@ class UserController extends AdminController
     public function saveUser()
     {
         if (!Request::isPost()) {
-            return Response::json(['code' => 1, 'msg' => '非法请求']);
+            Response::json(['code' => 1, 'msg' => '非法请求']);
         }
 
         $adminId   = (int)Request::post('admin_id', 0);
@@ -129,28 +129,28 @@ class UserController extends AdminController
 
         // 验证
         if ($username === '') {
-            return Response::json(['code' => 1, 'msg' => '用户名不能为空']);
+            Response::json(['code' => 1, 'msg' => '用户名不能为空']);
         }
         $len = mb_strlen($username);
         if ($len < 3 || $len > 20) {
-            return Response::json(['code' => 1, 'msg' => '用户名长度须在 3~20 位之间']);
+            Response::json(['code' => 1, 'msg' => '用户名长度须在 3~20 位之间']);
         }
 
         // 检查用户名唯一性
         $exist = DB::table('admin')->where('username', $username)->fetch(FETCH_ASSOC);
         if ($exist && (int)$exist['id'] !== $adminId) {
-            return Response::json(['code' => 1, 'msg' => '用户名已被占用']);
+            Response::json(['code' => 1, 'msg' => '用户名已被占用']);
         }
 
         // 新增时必须填写密码
         if ($adminId === 0 && $password === '') {
-            return Response::json(['code' => 1, 'msg' => '密码不能为空']);
+            Response::json(['code' => 1, 'msg' => '密码不能为空']);
         }
         if ($password !== '' && mb_strlen($password) < 6) {
-            return Response::json(['code' => 1, 'msg' => '密码至少需要 6 个字符']);
+            Response::json(['code' => 1, 'msg' => '密码至少需要 6 个字符']);
         }
         if ($password !== $newPassword) {
-            return Response::json(['code' => 1, 'msg' => '两次输入的密码不一致']);
+            Response::json(['code' => 1, 'msg' => '两次输入的密码不一致']);
         }
 
         $now = time();
@@ -194,7 +194,7 @@ class UserController extends AdminController
         // 失效该用户的权限缓存
         RBAC::invalidateUser($adminId);
 
-        return Response::json(['code' => 0, 'msg' => '保存成功']);
+        Response::json(['code' => 0, 'msg' => '保存成功']);
     }
 
     /**
@@ -203,12 +203,12 @@ class UserController extends AdminController
     public function remove()
     {
         if (!Request::isPost()) {
-            return Response::json(['code' => 1, 'msg' => '非法请求']);
+            Response::json(['code' => 1, 'msg' => '非法请求']);
         }
 
         $items = Request::post('admin', []);
         if (empty($items)) {
-            return Response::json(['code' => 1, 'msg' => '请选择需要删除的用户']);
+            Response::json(['code' => 1, 'msg' => '请选择需要删除的用户']);
         }
 
         $ids = [];
@@ -221,18 +221,18 @@ class UserController extends AdminController
         $ids = array_unique($ids);
 
         if (empty($ids)) {
-            return Response::json(['code' => 1, 'msg' => '没有有效的用户 ID']);
+            Response::json(['code' => 1, 'msg' => '没有有效的用户 ID']);
         }
 
         // 保护超级管理员 (id=1)
         if (in_array(1, $ids, true)) {
-            return Response::json(['code' => 1, 'msg' => '不能删除超级管理员']);
+            Response::json(['code' => 1, 'msg' => '不能删除超级管理员']);
         }
 
         // 禁止删除自己
         $currentId = (int)Auth::user('id');
         if (in_array($currentId, $ids, true)) {
-            return Response::json(['code' => 1, 'msg' => '不能删除当前登录的账号']);
+            Response::json(['code' => 1, 'msg' => '不能删除当前登录的账号']);
         }
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
@@ -241,7 +241,7 @@ class UserController extends AdminController
 
         AdminLog::log('删除管理员', '删除了 ' . count($ids) . ' 个管理员');
 
-        return Response::json(['code' => 0, 'msg' => '删除成功']);
+        Response::json(['code' => 0, 'msg' => '删除成功']);
     }
 
     /**
@@ -497,7 +497,7 @@ class UserController extends AdminController
     public function saveRole()
     {
         if (!Request::isPost()) {
-            return Response::json(['code' => 1, 'msg' => '非法请求']);
+            Response::json(['code' => 1, 'msg' => '非法请求']);
         }
 
         $roleId    = (int)Request::post('role_id', 0);
@@ -507,7 +507,7 @@ class UserController extends AdminController
 
         $name = trim($data['name'] ?? '');
         if ($name === '') {
-            return Response::json(['code' => 1, 'msg' => '角色名称不能为空']);
+            Response::json(['code' => 1, 'msg' => '角色名称不能为空']);
         }
 
         $now = time();
@@ -550,7 +550,7 @@ class UserController extends AdminController
         // 角色权限变更，全局失效
         RBAC::invalidate();
 
-        return Response::json(['code' => 0, 'msg' => '保存成功']);
+        Response::json(['code' => 0, 'msg' => '保存成功']);
     }
 
     /**
@@ -559,12 +559,12 @@ class UserController extends AdminController
     public function removeRole()
     {
         if (!Request::isPost()) {
-            return Response::json(['code' => 1, 'msg' => '非法请求']);
+            Response::json(['code' => 1, 'msg' => '非法请求']);
         }
 
         $items = Request::post('data', []);
         if (empty($items)) {
-            return Response::json(['code' => 1, 'msg' => '请选择需要删除的角色']);
+            Response::json(['code' => 1, 'msg' => '请选择需要删除的角色']);
         }
 
         $ids = [];
@@ -577,12 +577,12 @@ class UserController extends AdminController
         $ids = array_unique($ids);
 
         if (empty($ids)) {
-            return Response::json(['code' => 1, 'msg' => '没有有效的角色 ID']);
+            Response::json(['code' => 1, 'msg' => '没有有效的角色 ID']);
         }
 
         // 保护超级管理员角色
         if (in_array(1, $ids, true)) {
-            return Response::json(['code' => 1, 'msg' => '不能删除超级管理员角色']);
+            Response::json(['code' => 1, 'msg' => '不能删除超级管理员角色']);
         }
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
@@ -594,7 +594,7 @@ class UserController extends AdminController
 
         RBAC::invalidate();
 
-        return Response::json(['code' => 0, 'msg' => '删除成功']);
+        Response::json(['code' => 0, 'msg' => '删除成功']);
     }
 
     // ================================================================
@@ -669,7 +669,7 @@ class UserController extends AdminController
     public function savePermission()
     {
         if (!Request::isPost()) {
-            return Response::json(['code' => 1, 'msg' => '非法请求']);
+            Response::json(['code' => 1, 'msg' => '非法请求']);
         }
 
         $permId = (int)Request::post('perm_id', 0);
@@ -681,7 +681,7 @@ class UserController extends AdminController
         $pid     = (int)($data['pid'] ?? 0);
 
         if ($title === '') {
-            return Response::json(['code' => 1, 'msg' => '权限名称不能为空']);
+            Response::json(['code' => 1, 'msg' => '权限名称不能为空']);
         }
 
         // 构建 path 和 level
@@ -734,7 +734,7 @@ class UserController extends AdminController
 
         RBAC::invalidate();
 
-        return Response::json(['code' => 0, 'msg' => '保存成功']);
+        Response::json(['code' => 0, 'msg' => '保存成功']);
     }
 
     /**
@@ -743,12 +743,12 @@ class UserController extends AdminController
     public function removePermission()
     {
         if (!Request::isPost()) {
-            return Response::json(['code' => 1, 'msg' => '非法请求']);
+            Response::json(['code' => 1, 'msg' => '非法请求']);
         }
 
         $items = Request::post('data', []);
         if (empty($items)) {
-            return Response::json(['code' => 1, 'msg' => '请选择需要删除的权限']);
+            Response::json(['code' => 1, 'msg' => '请选择需要删除的权限']);
         }
 
         $ids = [];
@@ -761,7 +761,7 @@ class UserController extends AdminController
         $ids = array_unique($ids);
 
         if (empty($ids)) {
-            return Response::json(['code' => 1, 'msg' => '没有有效的权限 ID']);
+            Response::json(['code' => 1, 'msg' => '没有有效的权限 ID']);
         }
 
         // 删除前收集所有被删除的 perm_key（含子权限）
@@ -803,7 +803,7 @@ class UserController extends AdminController
 
         RBAC::invalidate();
 
-        return Response::json(['code' => 0, 'msg' => '删除成功']);
+        Response::json(['code' => 0, 'msg' => '删除成功']);
     }
 
     // ================================================================

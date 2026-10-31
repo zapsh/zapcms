@@ -201,9 +201,7 @@ class Database
             $offset += static::BATCH_SIZE;
         }
 
-        if (!empty($batch)) {
-            fwrite($fp, implode("\n", $batch) . "\n");
-        }
+        // 每批已在循环内落盘并清空 $batch，此处无需再写一茬（原代码为死分支）
 
         fwrite($fp, "\n");
         return $exported;

@@ -22,7 +22,8 @@ class CreateSchema extends Command
         $connection = $this->input->getParam('c','my_test');
         Schema::connection($connection);
         Schema::setOutput($output);
-        $schema = new CreateTables($this->out->getVerbose());
+        // CreateTables 没有构造函数，原先传入的 verbose 参数会被静默丢弃
+        $schema = new CreateTables();
         $schema->createSchema();
 
         if($this->input->getParam('b')){

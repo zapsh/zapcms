@@ -41,8 +41,10 @@ class Sitemap
 
     /**
      * 获取带表前缀的 node 表名
+     *
+     * 说明：用 static:: 调用，子类也可能需要访问，因此不能是 private
      */
-    private static function nodeTable(): string
+    protected static function nodeTable(): string
     {
         return Node::tableName();
     }
@@ -50,7 +52,7 @@ class Sitemap
     /**
      * 获取带表前缀的 catalog 表名
      */
-    private static function catalogTable(): string
+    protected static function catalogTable(): string
     {
         return 'catalog';
     }

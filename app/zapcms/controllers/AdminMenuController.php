@@ -38,7 +38,8 @@ class AdminMenuController extends AdminController
             if($menu_id){
                 AdminMenu::instance()->update($data,$menu_id);
             }else{
-                AdminMenu::instance()->add($data,$data['pid']);
+                // add() 只接收 $data，父级 id 由 $data['pid'] 提供
+                AdminMenu::instance()->add($data);
             }
 
             Response::json(['code'=>0,'msg'=>'保存成功']);

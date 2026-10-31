@@ -33,7 +33,8 @@ class Mailer
         if (!empty($encryption) && $encryption !== 'none') {
             $mail->SMTPSecure = $encryption;
         } else {
-            $mail->SMTPSecure = false;
+            // PHPMailer 7 中 SMTPSecure 为 string，'' 表示不使用加密（等价于旧的 false）
+            $mail->SMTPSecure = '';
             $mail->SMTPAutoTLS = false;
         }
 

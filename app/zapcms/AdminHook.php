@@ -15,7 +15,7 @@ namespace zapcms;
 
 class AdminHook
 {
-    /** @var array<string, array<callable>> 钩子注册表 */
+    /** @var array<string, array<int, array<int, callable>>> 钩子注册表：hook => 优先级 => 回调列表 */
     private static array $hooks = [];
 
     /**
