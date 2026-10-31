@@ -16,7 +16,7 @@ $spamCnt     = $spamCnt ?? 0;
     <div class="col-lg-3 col-6">
         <div class="small-box text-bg-primary">
             <div class="inner">
-                <h3><?php echo $totalAll; ?></h3>
+                <h3><?php echo e($totalAll); ?></h3>
                 <p>评论总数</p>
             </div>
             <i class="fa fa-comments small-box-icon fs-1"></i>
@@ -25,7 +25,7 @@ $spamCnt     = $spamCnt ?? 0;
     <div class="col-lg-3 col-6">
         <a class="small-box text-bg-warning text-decoration-none" href="<?php echo url_action('Comment@index', ['status' => Comment::APPROVED_PENDING]); ?>" style="cursor:pointer">
             <div class="inner">
-                <h3><?php echo $pendingCnt; ?></h3>
+                <h3><?php echo e($pendingCnt); ?></h3>
                 <p>待审核</p>
             </div>
             <i class="fa fa-hourglass-half small-box-icon fs-1"></i>
@@ -34,7 +34,7 @@ $spamCnt     = $spamCnt ?? 0;
     <div class="col-lg-3 col-6">
         <a class="small-box text-bg-success text-decoration-none" href="<?php echo url_action('Comment@index', ['status' => Comment::APPROVED_YES]); ?>" style="cursor:pointer">
             <div class="inner">
-                <h3><?php echo $approvedCnt; ?></h3>
+                <h3><?php echo e($approvedCnt); ?></h3>
                 <p>已通过</p>
             </div>
             <i class="fa fa-circle-check small-box-icon fs-1"></i>
@@ -43,7 +43,7 @@ $spamCnt     = $spamCnt ?? 0;
     <div class="col-lg-3 col-6">
         <a class="small-box text-bg-danger text-decoration-none" href="<?php echo url_action('Comment@index', ['status' => Comment::APPROVED_SPAM]); ?>" style="cursor:pointer">
             <div class="inner">
-                <h3><?php echo $spamCnt; ?></h3>
+                <h3><?php echo e($spamCnt); ?></h3>
                 <p>垃圾评论</p>
             </div>
             <i class="fa fa-biohazard small-box-icon fs-1"></i>
@@ -59,7 +59,7 @@ $spamCnt     = $spamCnt ?? 0;
             <div class="card-header d-flex align-items-center flex-wrap gap-2">
                 <h3 class="card-title flex-grow-1">
                     <i class="fa fa-comments card-header-icon text-primary"></i> 评论列表
-                    <span class="badge text-bg-primary ms-2"><?php echo $total; ?></span>
+                    <span class="badge text-bg-primary ms-2"><?php echo e($total); ?></span>
                 </h3>
                 <!-- 搜索表单 -->
                 <form class="d-flex flex-wrap gap-2" method="get" action="<?php echo url_action('Comment@index'); ?>">
@@ -68,13 +68,13 @@ $spamCnt     = $spamCnt ?? 0;
                     <select name="status" class="form-select form-select-sm" style="width:120px">
                         <option value="">全部状态</option>
                         <?php foreach ($statusOptions as $val => $label): ?>
-                        <option value="<?php echo $val; ?>" <?php echo (string)$status === (string)$val ? 'selected' : ''; ?>><?php echo $label; ?></option>
+                        <option value="<?php echo e($val); ?>" <?php echo (string)$status === (string)$val ? 'selected' : ''; ?>><?php echo e($label); ?></option>
                         <?php endforeach; ?>
                     </select>
                     <select name="object_type" class="form-select form-select-sm" style="width:130px">
                         <option value="">全部模块</option>
                         <?php foreach ($objectTypes as $val => $label): ?>
-                        <option value="<?php echo $val; ?>" <?php echo $objectType === $val ? 'selected' : ''; ?>><?php echo $label; ?></option>
+                        <option value="<?php echo e($val); ?>" <?php echo $objectType === $val ? 'selected' : ''; ?>><?php echo e($label); ?></option>
                         <?php endforeach; ?>
                     </select>
                     <button type="submit" class="btn btn-sm btn-outline-primary">
@@ -114,10 +114,10 @@ $spamCnt     = $spamCnt ?? 0;
                             ?>
                             <tr>
                                 <td class="text-center">
-                                    <input name="ids[]" value="<?php echo $comment['comment_id']; ?>"
+                                    <input name="ids[]" value="<?php echo e($comment['comment_id']); ?>"
                                            class="form-check-input comments_list" type="checkbox"/>
                                 </td>
-                                <td><span class="badge text-bg-light"><?php echo $comment['comment_id']; ?></span></td>
+                                <td><span class="badge text-bg-light"><?php echo e($comment['comment_id']); ?></span></td>
                                 <td>
                                     <div class="d-flex align-items-start gap-2">
                                         <span class="avatar avatar-sm bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;font-size:0.85rem;flex-shrink:0;margin-top:2px;">
@@ -147,7 +147,7 @@ $spamCnt     = $spamCnt ?? 0;
                                         <span class="text-danger"><?php echo htmlspecialchars($obj['title'] ?? '已删除'); ?></span>
                                         <?php endif; ?>
                                     </div>
-                                    <small class="text-muted">#<?php echo $comment['object_id']; ?></small>
+                                    <small class="text-muted">#<?php echo e($comment['object_id']); ?></small>
                                 </td>
                                 <td class="text-center">
                                     <span class="badge text-bg-<?php echo Comment::getStatusBadge($comment['approved']); ?> rounded-pill">
@@ -156,20 +156,20 @@ $spamCnt     = $spamCnt ?? 0;
                                 </td>
                                 <td><small><?php echo date('Y-m-d H:i', (int)$comment['created_at']); ?></small></td>
                                 <td class="text-center text-nowrap">
-                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addOrEdit(<?php echo $comment['comment_id']; ?>)" title="编辑">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addOrEdit(<?php echo e($comment['comment_id']); ?>)" title="编辑">
                                         <i class="fa fa-edit"></i>
                                     </button>
                                     <?php if ((int)$comment['approved'] !== Comment::APPROVED_YES): ?>
-                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="setStatus([<?php echo $comment['comment_id']; ?>], <?php echo Comment::APPROVED_YES; ?>)" title="通过">
+                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="setStatus([<?php echo e($comment['comment_id']); ?>], <?php echo Comment::APPROVED_YES; ?>)" title="通过">
                                         <i class="fa fa-check"></i>
                                     </button>
                                     <?php endif; ?>
                                     <?php if ((int)$comment['approved'] !== Comment::APPROVED_SPAM): ?>
-                                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="setStatus([<?php echo $comment['comment_id']; ?>], <?php echo Comment::APPROVED_SPAM; ?>)" title="标记垃圾">
+                                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="setStatus([<?php echo e($comment['comment_id']); ?>], <?php echo Comment::APPROVED_SPAM; ?>)" title="标记垃圾">
                                         <i class="fa fa-ban"></i>
                                     </button>
                                     <?php endif; ?>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeOne(<?php echo $comment['comment_id']; ?>)" title="删除">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeOne(<?php echo e($comment['comment_id']); ?>)" title="删除">
                                         <i class="fa fa-trash"></i>
                                     </button>
                                 </td>

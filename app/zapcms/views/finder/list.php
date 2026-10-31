@@ -73,8 +73,8 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         <div id="finderContent">
             <div class="row row-cols-2 row-cols-sm-3 row-cols-lg-5 zapFinderFileList">
 
-                <input type="hidden" name="path" value="<?php echo $path; ?>" id="cur-path">
-                <input type="hidden" name="parent_path" value="<?php echo $parent_path; ?>" id="parent-path">
+                <input type="hidden" name="path" value="<?php echo e($path); ?>" id="cur-path">
+                <input type="hidden" name="parent_path" value="<?php echo e($parent_path); ?>" id="parent-path">
                 <?php
                 foreach ($data as $i => $file) { ?>
                     <div class="col mb-3">
@@ -82,25 +82,25 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
                             <a href="<?php echo url_action('finder@list', ['path' => $file['path']]); ?>"
                                class="mb-1 dirList"
                                data-is-image="<?php echo $file['is_image'] ? 'true' : 'false'; ?>"
-                               data-type="<?php echo $file['type']; ?>"
-                               data-ext="<?php echo $file['ext']; ?>"
+                               data-type="<?php echo e($file['type']); ?>"
+                               data-ext="<?php echo e($file['ext']); ?>"
                                data-original="<?php echo storage_url($file['path']); ?>"
                             >
                                 <?php if ($file['is_image']) { ?>
-                                    <img src="<?php echo $file['thumb_url']; ?>" alt="<?php echo $file['filename']; ?>"
-                                         title="<?php echo $file['filename']; ?>" class="img-thumbnail"
+                                    <img src="<?php echo e($file['thumb_url']); ?>" alt="<?php echo e($file['filename']); ?>"
+                                         title="<?php echo e($file['filename']); ?>" class="img-thumbnail"
                                          data-original="<?php echo storage_url($file['path']); ?>"
                                     >
                                 <?php } else { ?>
-                                    <i class="<?php echo $file['icon']; ?> fa-9x"></i>
+                                    <i class="<?php echo e($file['icon']); ?> fa-9x"></i>
                                 <?php } ?>
                             </a>
                         </div>
                         <div class="form-check">
-                            <label for="input-path-<?php echo $i; ?>" class="form-check-label"
-                                   style="overflow-wrap: anywhere;"><?php echo $file['filename']; ?></label>
-                            <input type="checkbox" name="finder_item[]" value="<?php echo $file['filename']; ?>"
-                                   id="input-path-<?php echo $i; ?>"
+                            <label for="input-path-<?php echo e($i); ?>" class="form-check-label"
+                                   style="overflow-wrap: anywhere;"><?php echo e($file['filename']); ?></label>
+                            <input type="checkbox" name="finder_item[]" value="<?php echo e($file['filename']); ?>"
+                                   id="input-path-<?php echo e($i); ?>"
                                    class="form-check-input">
                         </div>
                     </div>
@@ -110,7 +110,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
             </div>
             <div class="row justify-content-center mt-2">
                 <div class="col-12">
-                    <?php echo $pagination; ?>
+                    <?php echo e($pagination); ?>
                 </div>
             </div>
         </div>

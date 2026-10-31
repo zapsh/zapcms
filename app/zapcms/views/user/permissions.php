@@ -12,7 +12,7 @@ $permCount = count($data);
             <div class="card-header d-flex align-items-center flex-wrap gap-2">
                 <h3 class="card-title flex-grow-1">
                     <i class="fa fa-shield-halved card-header-icon text-danger"></i> 权限列表
-                    <span class="badge text-bg-danger ms-2"><?php echo $permCount; ?></span>
+                    <span class="badge text-bg-danger ms-2"><?php echo e($permCount); ?></span>
                 </h3>
                 <div class="d-flex gap-2">
                     <a href="<?php echo url_action('User@roles') ?>" class="btn btn-sm btn-outline-secondary">
@@ -52,8 +52,8 @@ $permCount = count($data);
                             ?>
                             <tr>
                                 <td class="text-center">
-                                    <input name="data[<?php echo $item['perm_id']; ?>][perm_id]"
-                                           value="<?php echo $item['perm_id']; ?>"
+                                    <input name="data[<?php echo e($item['perm_id']); ?>][perm_id]"
+                                           value="<?php echo e($item['perm_id']); ?>"
                                            class="form-check-input zap_catalog" type="checkbox"/>
                                 </td>
                                 <td>
@@ -62,7 +62,7 @@ $permCount = count($data);
                                         <span class="text-muted me-2">&#9492;</span>
                                         <?php endif; ?>
                                         <span class="fw-semibold"><?php echo htmlspecialchars($item['title']); ?></span>
-                                        <small class="text-muted ms-2">ID:<?php echo $item['perm_id']; ?></small>
+                                        <small class="text-muted ms-2">ID:<?php echo e($item['perm_id']); ?></small>
                                         <?php if (!empty($item['perm_key'])): ?>
                                         <code class="ms-2 small"><?php echo htmlspecialchars($item['perm_key']); ?></code>
                                         <?php endif; ?>
@@ -80,11 +80,11 @@ $permCount = count($data);
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm">
                                         <button type="button" class="btn btn-outline-primary"
-                                                onclick="addOrEdit(<?php echo $item['perm_id']; ?>,<?php echo $item['pid']; ?>)" title="编辑">
+                                                onclick="addOrEdit(<?php echo e($item['perm_id']); ?>,<?php echo e($item['pid']); ?>)" title="编辑">
                                             <i class="fa fa-edit"></i>
                                         </button>
                                         <button type="button" class="btn btn-outline-success"
-                                                onclick="addOrEdit(0,<?php echo $item['perm_id']; ?>)" title="添加子权限">
+                                                onclick="addOrEdit(0,<?php echo e($item['perm_id']); ?>)" title="添加子权限">
                                             <i class="fa fa-plus"></i>
                                         </button>
                                     </div>

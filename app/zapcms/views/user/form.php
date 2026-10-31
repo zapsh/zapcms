@@ -4,7 +4,7 @@
  */
 ?>
 <form>
-    <input type="hidden" name="admin_id" value="<?php echo $user['id'] ?? 0; ?>" />
+    <input type="hidden" name="admin_id" value="<?php echo e($user['id'] ?? 0); ?>" />
     <div class="row g-3">
         <div class="col-sm-6">
             <label for="data_username" class="form-label fw-semibold">用户名 <span class="text-danger">*</span></label>
@@ -68,9 +68,9 @@
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" name="user_roles[]"
                            <?php echo in_array($row['role_id'], $user_roles) ? 'checked' : ''; ?>
-                           id="roles_<?php echo $row['role_id']; ?>"
-                           value="<?php echo $row['role_id']; ?>">
-                    <label class="form-check-label" for="roles_<?php echo $row['role_id']; ?>">
+                           id="roles_<?php echo e($row['role_id']); ?>"
+                           value="<?php echo e($row['role_id']); ?>">
+                    <label class="form-check-label" for="roles_<?php echo e($row['role_id']); ?>">
                         <?php echo htmlspecialchars($row['name']); ?>
                         <?php if (!empty($row['description'])): ?>
                         <small class="text-muted d-block"><?php echo htmlspecialchars($row['description']); ?></small>
@@ -85,8 +85,8 @@
             <label for="data_status" class="form-label fw-semibold">状态</label>
             <select class="form-select" id="data_status" name="data[status]">
                 <?php foreach (\zapcms\models\Admin::getStatus() as $key => $title): ?>
-                <option value="<?php echo $key; ?>" <?php echo $key == $user['status'] ? 'selected' : ''; ?>>
-                    <?php echo $title; ?>
+                <option value="<?php echo e($key); ?>" <?php echo $key == $user['status'] ? 'selected' : ''; ?>>
+                    <?php echo e($title); ?>
                 </option>
                 <?php endforeach; ?>
             </select>

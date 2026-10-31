@@ -10,7 +10,7 @@ IS_AJAX !== true && $this->layout('layouts/common');
         <h6 class="card-title mb-0">
             <i class="fa fa-th-list me-1 text-success"></i>栏目列表
             <?php if (!empty($menu)): ?>
-            <span class="badge text-bg-success ms-1 rounded-pill"><?php echo $catalog_count; ?></span>
+            <span class="badge text-bg-success ms-1 rounded-pill"><?php echo e($catalog_count); ?></span>
             <?php endif; ?>
         </h6>
         <div class="card-tools ms-auto">
@@ -61,24 +61,24 @@ IS_AJAX !== true && $this->layout('layouts/common');
                         ?>
                         <tr class="catalog-row" data-level="<?php echo $level > 0 ? $level : ''; ?>">
                             <td class="text-center align-middle">
-                                <input name="catalog[<?php echo $admin_menu['id']; ?>][id]"
-                                       value="<?php echo $admin_menu['id']; ?>"
+                                <input name="catalog[<?php echo e($admin_menu['id']); ?>][id]"
+                                       value="<?php echo e($admin_menu['id']); ?>"
                                        class="form-check-input zap_catalog" type="checkbox"/>
                             </td>
                             <td class="align-middle">
-                                <input name="catalog[<?php echo $admin_menu['id']; ?>][sort_order]"
-                                       value="<?php echo $admin_menu['sort_order']; ?>"
+                                <input name="catalog[<?php echo e($admin_menu['id']); ?>][sort_order]"
+                                       value="<?php echo e($admin_menu['sort_order']); ?>"
                                        class="form-control form-control-sm sort-input"
                                        data-bs-toggle="tooltip" data-bs-placement="right"
                                        data-bs-title="数值越小越靠前" />
                             </td>
                             <td class="align-middle title-cell">
-                                <div class="catalog-title" style="padding-left:<?php echo $paddingLeft; ?>rem;">
-                                    <i class="<?php echo $admin_menu['icon']; ?> menu-icon"></i>
-                                    <input name="catalog[<?php echo $admin_menu['id']; ?>][title]"
-                                           value="<?php echo $admin_menu['title']; ?>"
+                                <div class="catalog-title" style="padding-left:<?php echo e($paddingLeft); ?>rem;">
+                                    <i class="<?php echo e($admin_menu['icon']); ?> menu-icon"></i>
+                                    <input name="catalog[<?php echo e($admin_menu['id']); ?>][title]"
+                                           value="<?php echo e($admin_menu['title']); ?>"
                                            class="d-inline form-control form-control-sm title-input"/>
-                                    <small class="menu-id d-none d-sm-inline">#<?php echo $admin_menu['id'];?></small>
+                                    <small class="menu-id d-none d-sm-inline">#<?php echo e($admin_menu['id']); ?></small>
                                     <?php if($admin_menu['node_type']=='link-url'): ?>
                                     <i class="fa fa-external-link-alt text-muted" title="快捷链接"></i>
                                     <?php endif; ?>
@@ -91,7 +91,7 @@ IS_AJAX !== true && $this->layout('layouts/common');
                                 <span class="badge text-bg-light"><?php echo \zapcms\services\NodeType::getTitle($admin_menu['node_type']); ?></span>
                             </td>
                             <td class="align-middle">
-                                <button type="button" class="btn btn-outline-success btn-sm" onclick="addOrEdit(<?php echo $admin_menu['id']; ?>)">
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="addOrEdit(<?php echo e($admin_menu['id']); ?>)">
                                     <i class="fa fa-cog"></i>
                                 </button>
                             </td>

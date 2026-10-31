@@ -8,7 +8,7 @@ $statusOptions = Comment::getStatusOptions();
 
 <div class="p-3">
     <form>
-        <input type="hidden" name="comment_id" value="<?php echo $comment['comment_id'] ?? 0; ?>"/>
+        <input type="hidden" name="comment_id" value="<?php echo e($comment['comment_id'] ?? 0); ?>"/>
 
         <!-- 评论信息 -->
         <div class="row mb-2">
@@ -46,7 +46,7 @@ $statusOptions = Comment::getStatusOptions();
             <div class="border rounded bg-light p-2 small">
                 <span class="badge text-bg-light me-1"><?php echo $objectInfo['type_title'] ?? $comment['object_type'] ?? ''; ?></span>
                 <span><?php echo htmlspecialchars($objectInfo['title'] ?? '#' . ($comment['object_id'] ?? '')); ?></span>
-                <span class="text-muted">#<?php echo $comment['object_id'] ?? ''; ?></span>
+                <span class="text-muted">#<?php echo e($comment['object_id'] ?? ''); ?></span>
             </div>
         </div>
         <?php endif; ?>
@@ -67,10 +67,10 @@ $statusOptions = Comment::getStatusOptions();
             <label class="form-label">审核状态</label>
             <div class="btn-group" role="group">
                 <?php foreach ($statusOptions as $val => $label): ?>
-                <input type="radio" class="btn-check" name="approved" id="data_approved_<?php echo $val; ?>"
-                       value="<?php echo $val; ?>" <?php echo (int)($comment['approved'] ?? 0) === (int)$val ? 'checked' : ''; ?>/>
+                <input type="radio" class="btn-check" name="approved" id="data_approved_<?php echo e($val); ?>"
+                       value="<?php echo e($val); ?>" <?php echo (int)($comment['approved'] ?? 0) === (int)$val ? 'checked' : ''; ?>/>
                 <label class="btn btn-outline-<?php echo $val === 1 ? 'success' : ($val === 2 ? 'danger' : 'warning'); ?>"
-                       for="data_approved_<?php echo $val; ?>"><?php echo $label; ?></label>
+                       for="data_approved_<?php echo e($val); ?>"><?php echo e($label); ?></label>
                 <?php endforeach; ?>
             </div>
         </div>

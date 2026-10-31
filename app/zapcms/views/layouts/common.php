@@ -21,7 +21,7 @@ use \zap\facades\Url;
             document.documentElement.setAttribute('data-zap-theme', mode);
         })();
     </script>
-    <link href="<?php echo base_url();?>/assets/admin/css/zap-admin.css" rel="stylesheet">
+    <link href="<?php echo \zapcms\support\Vite::css('zap-admin'); ?>" rel="stylesheet">
     
     <script src="<?php echo base_url();?>/assets/sweetalert2.all.min.js"></script>
     <script src="<?php echo base_url();?>/assets/jquery/jquery-3.6.4.min.js"></script>
@@ -92,7 +92,7 @@ use \zap\facades\Url;
     <?php \zapcms\AdminHook::echo('admin_head'); ?>
 </head>
 
-<body class="<?php echo $body_class ?? 'layout-fixed sidebar-expand-lg bg-body-tertiary'; ?>">
+<body class="<?php echo e($body_class ?? 'layout-fixed sidebar-expand-lg bg-body-tertiary'); ?>">
     <div class="app-wrapper">
         <!-- 顶部导航栏 -->
         <nav class="app-header navbar navbar-expand bg-body shadow-sm">
@@ -235,7 +235,7 @@ use \zap\facades\Url;
     <div class="toast-container p-3 bottom-0 end-0" id="bottomRightToast" data-original-class="toast-container p-3"></div>
  
     
-    <script src="<?php echo base_url();?>/assets/admin/js/bootstrap.bundle.js"></script>
+    <script src="<?php echo \zapcms\support\Vite::js('bootstrap.bundle'); ?>"></script>
     <script src="<?php echo base_url();?>/assets/admin/js/zap-admin.js"></script>
     
 

@@ -12,7 +12,7 @@ $roleCount = count($data);
             <div class="card-header d-flex align-items-center flex-wrap gap-2">
                 <h3 class="card-title flex-grow-1">
                     <i class="fa fa-user-gear card-header-icon text-warning"></i> 角色列表
-                    <span class="badge text-bg-warning ms-2"><?php echo $roleCount; ?></span>
+                    <span class="badge text-bg-warning ms-2"><?php echo e($roleCount); ?></span>
                 </h3>
                 <div class="d-flex gap-2">
                     <a href="<?php echo url_action('User@permissions') ?>" class="btn btn-sm btn-outline-secondary">
@@ -51,14 +51,14 @@ $roleCount = count($data);
                             <tr>
                                 <td class="text-center">
                                     <?php if ($item['role_id'] != 1): ?>
-                                    <input name="data[<?php echo $item['role_id']; ?>][role_id]"
-                                           value="<?php echo $item['role_id']; ?>"
+                                    <input name="data[<?php echo e($item['role_id']); ?>][role_id]"
+                                           value="<?php echo e($item['role_id']); ?>"
                                            class="form-check-input roles_list" type="checkbox"/>
                                     <?php endif; ?>
                                 </td>
                                 <td>
                                     <span class="fw-semibold"><?php echo htmlspecialchars($item['name']); ?></span>
-                                    <small class="text-muted ms-1">ID:<?php echo $item['role_id']; ?></small>
+                                    <small class="text-muted ms-1">ID:<?php echo e($item['role_id']); ?></small>
                                 </td>
                                 <td class="d-none d-md-table-cell text-muted">
                                     <?php echo htmlspecialchars($item['description']) ?: '-'; ?>
@@ -70,7 +70,7 @@ $roleCount = count($data);
                                     <?php echo date('Y-m-d H:i', $item['created_at']); ?>
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addOrEdit(<?php echo $item['role_id']; ?>)" title="编辑">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addOrEdit(<?php echo e($item['role_id']); ?>)" title="编辑">
                                         <i class="fa fa-edit"></i>
                                     </button>
                                 </td>

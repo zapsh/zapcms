@@ -225,8 +225,8 @@
                                             $active = ($p === $log_page) ? ' active' : '';
                                             $url = $baseUrl . '&page=' . $p;
                                         ?>
-                                            <li class="page-item<?php echo $active; ?>">
-                                                <a class="page-link" href="<?php echo $url; ?>"><?php echo $p; ?></a>
+                                            <li class="page-item<?php echo e($active); ?>">
+                                                <a class="page-link" href="<?php echo e($url); ?>"><?php echo e($p); ?></a>
                                             </li>
                                         <?php endfor; ?>
                                     </ul>

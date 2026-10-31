@@ -45,6 +45,8 @@ export default defineConfig({
     outDir: resolve(root, 'assets/admin'),
     // 输出目录中还包含手工维护的 admin.js / zap-admin.js / 图片，禁止清空
     emptyOutDir: false,
+    // 生成 .vite/manifest.json，供 PHP 侧解析带 hash 的产物文件名
+    manifest: true,
     cssCodeSplit: true,
     target: 'es2020',
     rollupOptions: {
@@ -59,8 +61,9 @@ export default defineConfig({
         editor: resolve(root, 'resources/admin/js/editor.js'),
       },
       output: {
-        entryFileNames: 'js/[name].js',
-        assetFileNames: 'css/[name][extname]',
+        // 文件名带 hash：内容变化即产生新文件名，可安全地设置长期缓存
+        entryFileNames: 'js/[name]-[hash].js',
+        assetFileNames: 'css/[name]-[hash][extname]',
         // 动态 import 产生的 chunk（CodeMirror 语言包）：按包名命名并带 hash
         chunkFileNames(chunkInfo) {
           const ids = chunkInfo.moduleIds || [];

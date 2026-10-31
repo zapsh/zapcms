@@ -8,7 +8,7 @@ use zapcms\services\NodeType;
 
 ?>
 <form id="catalogForm">
-    <input type="hidden" name="catalog_id" value="<?php echo $catalog['id'] ?? 0; ?>" />
+    <input type="hidden" name="catalog_id" value="<?php echo e($catalog['id'] ?? 0); ?>" />
 
     <div class="row g-2">
         <div class="col-md-6">
@@ -18,10 +18,10 @@ use zapcms\services\NodeType;
                 <?php
                 Catalog::instance()->forEachAll(function ($row) use ($catalog) {
                     ?>
-                    <option value="<?php echo $row['id']; ?>"
+                    <option value="<?php echo e($row['id']); ?>"
                         <?php echo $catalog['pid'] == $row['id'] ? 'selected' : ''; ?>
                         <?php echo !empty($catalog['path']) && \zap\util\Str::startsWith($row['path'], $catalog['path']) ? 'disabled' : null; ?>>
-                        <?php echo str_repeat('— ', max(0, intval($row['level']) - 1)); ?><?php echo $row['title']; ?>
+                        <?php echo str_repeat('— ', max(0, intval($row['level']) - 1)); ?><?php echo e($row['title']); ?>
                     </option>
                 <?php
                 });
@@ -32,8 +32,8 @@ use zapcms\services\NodeType;
             <label for="catalog_node_type" class="form-label small">内容模型</label>
             <select class="form-select form-select-sm" id="catalog_node_type" name="catalog[node_type]" onchange="chNodeType(this)">
                 <?php foreach (NodeType::getNodeTypes() as $key => $row): ?>
-                    <option value="<?php echo $row['type_name']; ?>" <?php echo $row['type_name'] == $catalog['node_type'] ? 'selected' : null; ?>>
-                        <?php echo $row['title']; ?>
+                    <option value="<?php echo e($row['type_name']); ?>" <?php echo $row['type_name'] == $catalog['node_type'] ? 'selected' : null; ?>>
+                        <?php echo e($row['title']); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -54,7 +54,7 @@ use zapcms\services\NodeType;
         <div class="col-md-6">
             <label for="catalog_sort_order" class="form-label small">排序</label>
             <input type="number" class="form-control form-control-sm" id="catalog_sort_order" name="catalog[sort_order]"
-                   value="<?php echo $catalog['sort_order'] ?? 0; ?>" placeholder="数值越小越靠前">
+                   value="<?php echo e($catalog['sort_order'] ?? 0); ?>" placeholder="数值越小越靠前">
         </div>
 
         <div class="col-12">
@@ -65,10 +65,10 @@ use zapcms\services\NodeType;
                 ?>
                 <div class="form-check form-check-inline">
                     <input class="form-check-input form-check-input-sm" type="checkbox"
-                           name="catalog[show_position][<?php echo $id; ?>]"
+                           name="catalog[show_position][<?php echo e($id); ?>]"
                         <?php echo in_array($id, $positions) ? 'checked' : ''; ?>
-                           id="catalog_show_position<?php echo $id; ?>" value="<?php echo $id; ?>">
-                    <label class="form-check-label small" for="catalog_show_position<?php echo $id; ?>"><?php echo $title; ?></label>
+                           id="catalog_show_position<?php echo e($id); ?>" value="<?php echo e($id); ?>">
+                    <label class="form-check-label small" for="catalog_show_position<?php echo e($id); ?>"><?php echo e($title); ?></label>
                 </div>
             <?php endforeach; ?>
         </div>

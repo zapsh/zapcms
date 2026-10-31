@@ -28,14 +28,14 @@ $this->layout('layouts/common');
         $icon_idx++;
     ?>
     <div class="col-lg-3 col-6">
-        <div class="small-box <?php echo $color; ?>">
+        <div class="small-box <?php echo e($color); ?>">
             <div class="inner">
-                <h3><?php echo $count; ?></h3>
-                <p><?php echo $title; ?></p>
+                <h3><?php echo e($count); ?></h3>
+                <p><?php echo e($title); ?></p>
             </div>
-            <i class="<?php echo $icon; ?> small-box-icon fs-1"></i>
+            <i class="<?php echo e($icon); ?> small-box-icon fs-1"></i>
             <a href="<?php echo url_action("Node@{$type}"); ?>" class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover">
-                管理 <?php echo $title; ?> <i class="fa fa-chevron-right"></i>
+                管理 <?php echo e($title); ?> <i class="fa fa-chevron-right"></i>
             </a>
         </div>
     </div>
@@ -197,9 +197,9 @@ if ($driver === 'mysql') {
                         </tr>
                         <tr>
                             <td class="fw-semibold">
-                                <i class="fa fa-database me-2 text-warning"></i><?php echo $driver; ?>
+                                <i class="fa fa-database me-2 text-warning"></i><?php echo e($driver); ?>
                             </td>
-                            <td>v<?php echo $dbVer; ?></td>
+                            <td>v<?php echo e($dbVer); ?></td>
                             <td class="fw-semibold">
                                 <i class="fa fa-shield-alt me-2 text-info"></i>OpenSSL
                             </td>

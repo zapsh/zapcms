@@ -19,7 +19,7 @@
         })();
     </script>
 
-    <link rel="stylesheet" href="<?php echo base_url();?>/assets/admin/css/zap-admin.css">
+    <link rel="stylesheet" href="<?php echo \zapcms\support\Vite::css('zap-admin'); ?>">
 <script src="<?php echo base_url();?>/assets/jquery/jquery-3.6.4.min.js"></script>
     <link href="<?php echo base_url();?>/assets/fontawesome/6.4.2/css/all.css" rel="stylesheet">
     <!-- 动态样式 -->
@@ -134,7 +134,7 @@
     </div>
 
     <!-- Bootstrap 5 Bundle JS（Vite 构建产物） -->
-    <script src="<?php echo base_url();?>/assets/admin/js/bootstrap.bundle.js"></script>
+    <script src="<?php echo \zapcms\support\Vite::js('bootstrap.bundle'); ?>"></script>
 
     <!-- ZAP Admin JS -->
     <script src="<?php echo base_url();?>/assets/admin/js/admin.js"></script>

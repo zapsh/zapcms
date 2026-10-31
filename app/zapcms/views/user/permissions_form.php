@@ -1,15 +1,15 @@
 <?php
 ?>
 <form>
-    <input type="hidden" name="perm_id" value="<?php echo $data['perm_id'] ?? 0; ?>" />
-    <input type="hidden" name="data[pid]" value="<?php echo $pid ?? 0; ?>" />
+    <input type="hidden" name="perm_id" value="<?php echo e($data['perm_id'] ?? 0); ?>" />
+    <input type="hidden" name="data[pid]" value="<?php echo e($pid ?? 0); ?>" />
     <div class="mb-3">
         <label for="data_title" class="form-label">权限名称</label>
-        <input type="text" class="form-control" id="data_title" name="data[title]" value="<?php echo $data['title'];?>" placeholder="请输入权限名称" />
+        <input type="text" class="form-control" id="data_title" name="data[title]" value="<?php echo e($data['title']); ?>" placeholder="请输入权限名称" />
     </div>
     <div class="mb-3">
         <label for="data_perm_key" class="form-label">权限值</label>
-        <input type="text" class="form-control" id="data_perm_key" name="data[perm_key]" value="<?php echo $data['perm_key'];?>" placeholder="权限值 controller/method" />
+        <input type="text" class="form-control" id="data_perm_key" name="data[perm_key]" value="<?php echo e($data['perm_key']); ?>" placeholder="权限值 controller/method" />
     </div>
     <div class="mb-3">
         <label class="form-label">扩展</label>
@@ -30,9 +30,9 @@
             <?php foreach ($extras as $key => $title){ ?>
                 <div class="input-group mb-2">
                     <span class="input-group-text">名称</span>
-                    <input type="text" class="form-control" placeholder="请输入名称" name="extras[<?php echo $key;?>][title]" value="<?php echo $title;?>">
+                    <input type="text" class="form-control" placeholder="请输入名称" name="extras[<?php echo e($key); ?>][title]" value="<?php echo e($title); ?>">
                     <span class="input-group-text">值</span>
-                    <input type="text" class="form-control" placeholder="请输入值" name="extras[<?php echo $key;?>][key]" value="<?php echo $key;?>">
+                    <input type="text" class="form-control" placeholder="请输入值" name="extras[<?php echo e($key); ?>][key]" value="<?php echo e($key); ?>">
                     <button class="btn btn-outline-secondary" type="button" onclick="$(this).parent().remove()">删除</button>
                 </div>
             <?php } ?>
@@ -40,7 +40,7 @@
     </div>
     <div class="mb-3">
         <label for="data_description" class="form-label">权限描述</label>
-        <input type="text" class="form-control" id="data_description" name="data[description]" value="<?php echo $data['description'];?>" placeholder="请输入权限描述" />
+        <input type="text" class="form-control" id="data_description" name="data[description]" value="<?php echo \zapcms\support\HtmlXss::clean($data['description']); ?>" placeholder="请输入权限描述" />
     </div>
 
 </form>

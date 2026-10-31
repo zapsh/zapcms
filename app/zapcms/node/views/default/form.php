@@ -24,7 +24,7 @@ $metaDefaultFields = $metaGroups[''] ?? [];
 unset($metaGroups['']);
 ?>
 <form id="zapForm" method="post">
-    <input type="hidden" value="<?php echo $node->id; ?>" name="node_id">
+    <input type="hidden" value="<?php echo e($node->id); ?>" name="node_id">
     <input type="hidden" name="node[pub_time]" value="<?php echo $node->getPubTimeToDate(); ?>" />
     <input name="node[status]" id="node_status" type="hidden" value="<?php echo $node->status ?: \zapcms\models\Node::STATUS_PUBLISH;?>" />
     <input type="hidden" id="node_author_id" name="node[author_id]" value="<?php echo \zapcms\services\Auth::user('id') ?>">
@@ -64,7 +64,7 @@ unset($metaGroups['']);
                             <div class="mb-2">
                                 <label for="node_title" class="form-label">标题 <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control form-control-sm" name="node[title]" id="node_title"
-                                       placeholder="请输入标题" required value="<?php echo $node->title; ?>">
+                                       placeholder="请输入标题" required value="<?php echo e($node->title); ?>">
                             </div>
                             <div class="mb-2 row g-2">
                                 <div class="col">
@@ -74,7 +74,7 @@ unset($metaGroups['']);
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text text-muted small"><?php echo site_url('/'); ?></span>
                                         <input type="text" class="form-control form-control-sm font-monospace" name="node[slug]"
-                                               id="node_slug" placeholder="自动生成" value="<?php echo $node->slug; ?>">
+                                               id="node_slug" placeholder="自动生成" value="<?php echo e($node->slug); ?>">
                                         <button class="btn btn-outline-secondary btn-sm" type="button" onclick="generateSlug()" title="根据标题自动生成">
                                             <i class="fa fa-magic"></i>
                                         </button>
@@ -87,18 +87,18 @@ unset($metaGroups['']);
                             <div class="mb-2">
                                 <label for="node_content" class="form-label">内容</label>
                                 <textarea name="node[content]" id="node_content"
-                                          class="form-control summernote"><?php echo $node->content; ?></textarea>
+                                          class="form-control summernote"><?php echo e($node->content); ?></textarea>
                             </div>
                             <div class="row g-2">
                                 <div class="col-auto">
                                     <label for="node_hits" class="form-label">点击量</label>
                                     <input type="number" class="form-control form-control-sm" name="node[hits]" id="node_hits"
-                                           value="<?php echo $node->hits ?? 0; ?>" style="width:100px;">
+                                           value="<?php echo e($node->hits ?? 0); ?>" style="width:100px;">
                                 </div>
                                 <div class="col-auto">
                                     <label for="node_sort_order" class="form-label">排序</label>
                                     <input type="number" class="form-control form-control-sm" name="node[sort_order]" id="node_sort_order"
-                                           value="<?php echo $node->sort_order ?? 0; ?>" style="width:100px;">
+                                           value="<?php echo e($node->sort_order ?? 0); ?>" style="width:100px;">
                                 </div>
                             </div>
 
@@ -114,13 +114,13 @@ unset($metaGroups['']);
                             <div class="mb-2">
                                 <label for="node_keywords" class="form-label">关键词</label>
                                 <input type="text" class="form-control form-control-sm" name="node[keywords]" id="node_keywords"
-                                       placeholder="多个用逗号分隔" value="<?php echo $node->keywords; ?>"/>
+                                       placeholder="多个用逗号分隔" value="<?php echo e($node->keywords); ?>"/>
                             </div>
                             <div class="mb-2">
                                 <label for="node_description" class="form-label">页面描述</label>
                                 <textarea class="form-control form-control-sm" name="node[description]"
                                           id="node_description" rows="3"
-                                          placeholder="建议控制在150字以内"><?php echo $node->description; ?></textarea>
+                                          placeholder="建议控制在150字以内"><?php echo e($node->description); ?></textarea>
                             </div>
                         </div>
                         <?php foreach ($metaGroups as $gname => $gfields): ?>
@@ -161,7 +161,7 @@ unset($metaGroups['']);
                         <select class="form-select form-select-sm" name="node[status]" id="node_status_select">
                             <?php foreach($node->getStatus() as $id => $title){
                                 if($id == \zapcms\models\Node::STATUS_SOFT_DELETE or $id == \zapcms\models\Node::STATUS_TRASH){ continue; } ?>
-                                <option value="<?php echo $id;?>" <?php echo $node->status==$id?'selected':null ;?> ><?php echo $title;?></option>
+                                <option value="<?php echo e($id); ?>" <?php echo $node->status==$id?'selected':null ;?> ><?php echo e($title); ?></option>
                             <?php } ?>
                         </select>
                     </div>
@@ -187,12 +187,12 @@ unset($metaGroups['']);
                         $indent = $catalog['level'] * 1;
                         ?>
                         <div class="form-check mb-1" style="padding-left: <?php echo $indent + 1.5; ?>em;">
-                            <input class="form-check-input" type="checkbox" name="catalog[<?php echo $catalog['id']; ?>]"
+                            <input class="form-check-input" type="checkbox" name="catalog[<?php echo e($catalog['id']); ?>]"
                                    <?php echo !empty($node_relations[$catalog['id']]) ? 'checked' : '' ?>
-                                   value="<?php echo $catalog['level'];?>"
-                                   id="catalog-<?php echo $catalog['id'];?>">
-                            <label class="form-check-label small" for="catalog-<?php echo $catalog['id'];?>">
-                                <?php echo $catalog['title'];?>
+                                   value="<?php echo e($catalog['level']); ?>"
+                                   id="catalog-<?php echo e($catalog['id']); ?>">
+                            <label class="form-check-label small" for="catalog-<?php echo e($catalog['id']); ?>">
+                                <?php echo e($catalog['title']); ?>
                             </label>
                         </div>
                         <?php
@@ -213,7 +213,7 @@ unset($metaGroups['']);
                 <div class="card-body text-center p-2">
                     <img src="<?php echo \zapcms\helpers\ThumbHelper::thumb($node['image'],136,136); ?>"
                          class="img-thumbnail rounded" id="node-image-thumb" style="max-height:140px;" alt=""/>
-                    <input type="hidden" name="node[image]" id="node-image" value="<?php echo $node['image']; ?>" />
+                    <input type="hidden" name="node[image]" id="node-image" value="<?php echo e($node['image']); ?>" />
                 </div>
                 <div class="card-footer p-2 d-flex gap-1">
                     <button type="button" class="btn btn-outline-secondary btn-sm flex-fill"

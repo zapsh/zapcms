@@ -39,7 +39,13 @@ class ZapPackageManager
     /**
      * SSL 证书校验失败时是否允许降级重试（部分 PHP 环境缺少 CA 根证书）
      */
-    protected bool $insecureFallback = true;
+    /**
+     * SSL 证书校验失败时是否允许降级重试。
+     *
+     * 默认关闭：不校验证书等于允许中间人替换更新包，而更新包会被解压覆盖
+     * 站点代码。确有环境缺少 CA 根证书时，再显式调用 allowInsecureFallback() 开启。
+     */
+    protected bool $insecureFallback = false;
 
     /**
      * 最近一次请求是否发生了 SSL 降级
@@ -51,6 +57,14 @@ class ZapPackageManager
      */
     protected int $timeout = 30;
 
+    /**
+     * 允许下载更新包的主机白名单（小写，不含端口）
+     *
+     * 后台「website.api_url」可被管理员修改，若不加限制，一旦被篡改
+     * （或遭遇 CSRF/XSS 组合利用）就会从任意地址下载压缩包并覆盖站点代码。
+     */
+    protected array $allowedHosts = ['mirrors.zap.cn'];
+
     public function __construct()
     {
         $this->tmpDir    = APP_ROOT . '/var/tmp';
@@ -58,16 +72,71 @@ class ZapPackageManager
         $this->modsDir   = APP_ROOT . '/mods';
         $this->apiUrl    = Option::get('website.api_url', 'https://mirrors.zap.cn/zapcms');
 
+        // 合并配置文件中额外允许的更新源（自建镜像场景）
+        $extra = config('security.allowed_update_hosts', []);
+        if (is_array($extra) && $extra !== []) {
+            $this->allowedHosts = array_values(array_unique(array_merge(
+                $this->allowedHosts,
+                array_map(static fn($h) => strtolower(trim((string)$h)), $extra)
+            )));
+        }
+
         $this->ensureDirectory($this->tmpDir);
         $this->ensureDirectory($this->backupDir);
     }
 
     /**
      * 设置API地址
+     *
+     * 只允许白名单内的主机，避免更新源被指向任意地址后下载并覆盖站点代码。
+     *
+     * @throws \InvalidArgumentException 主机不在白名单时
      */
     public function setApiUrl(string $url): self
     {
-        $this->apiUrl = rtrim($url, '/');
+        $url = rtrim($url, '/');
+
+        if (!$this->isAllowedSource($url)) {
+            error_log('ZapPackageManager: 拒绝设置不在白名单内的更新源: ' . $url);
+            throw new \InvalidArgumentException(
+                '更新源不在允许列表中（' . implode(', ', $this->allowedHosts) . '），'
+                . '如需使用自建镜像请配置 security.allowed_update_hosts'
+            );
+        }
+
+        $this->apiUrl = $url;
+
+        return $this;
+    }
+
+    /**
+     * 允许的更新源主机列表
+     */
+    public function getAllowedHosts(): array
+    {
+        return $this->allowedHosts;
+    }
+
+    /**
+     * 判断下载地址是否来自受信任的更新源
+     */
+    public function isAllowedSource(string $url): bool
+    {
+        $host = strtolower((string)parse_url($url, PHP_URL_HOST));
+        if ($host === '') {
+            return false;
+        }
+
+        return in_array($host, $this->allowedHosts, true);
+    }
+
+    /**
+     * 允许 SSL 校验失败时降级重试（仅在目标环境缺少 CA 根证书时使用）
+     */
+    public function allowInsecureFallback(bool $allow = true): self
+    {
+        $this->insecureFallback = $allow;
+
         return $this;
     }
 
@@ -306,10 +375,16 @@ class ZapPackageManager
      * @param string $filename 保存的文件名
      * @return string|false 临时文件路径，失败返回false
      */
-    public function download(string $url, string $filename = '')
+    public function download(string $url, string $filename = '', ?string $expectedSha256 = null)
     {
+        // 供应链防护：更新包会被解压覆盖站点代码，来源必须是受信任的主机
+        if (!$this->isAllowedSource($url)) {
+            error_log('ZapPackageManager: 拒绝从非白名单地址下载更新包: ' . $url);
+            return false;
+        }
+
         if (empty($filename)) {
-            $filename = basename(parse_url($url, PHP_URL_PATH));
+            $filename = basename((string)parse_url($url, PHP_URL_PATH));
         }
 
         $tmpFile = $this->tmpDir . '/' . $filename;
@@ -345,6 +420,13 @@ class ZapPackageManager
             fclose($fp);
 
             if ($success && $httpCode < 400 && $error === '') {
+                // 提供了期望哈希时做完整性校验：即便传输被劫持也无法通过
+                if ($expectedSha256 !== null && !$this->verifyChecksum($tmpFile, $expectedSha256)) {
+                    error_log('ZapPackageManager: 更新包 SHA256 校验失败，已丢弃: ' . $url);
+                    @unlink($tmpFile);
+                    return false;
+                }
+
                 return $tmpFile;
             }
 
@@ -362,6 +444,24 @@ class ZapPackageManager
         }
 
         return false;
+    }
+
+    /**
+     * 校验文件的 SHA256 是否与期望值一致（大小写不敏感，恒定时间比较）
+     */
+    public function verifyChecksum(string $file, string $expectedSha256): bool
+    {
+        if (!is_file($file)) {
+            return false;
+        }
+
+        $expected = strtolower(trim($expectedSha256));
+        if (!preg_match('/^[0-9a-f]{64}$/', $expected)) {
+            error_log('ZapPackageManager: 期望的 SHA256 格式不合法，拒绝放行');
+            return false;
+        }
+
+        return hash_equals($expected, (string)hash_file('sha256', $file));
     }
 
     /**
@@ -466,6 +566,8 @@ class ZapPackageManager
         @unlink($zipFile);
 
         if (!$extractResult) {
+            // 清理解压产生的半成品目录，避免残留文件被误当作已安装模块加载
+            $this->deleteDirectory($pluginDir);
             return ['success' => false, 'message' => '解压插件失败'];
         }
 

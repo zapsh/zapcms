@@ -89,12 +89,12 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                             <div class="col-md-6">
                                 <label for="website.title" class="form-label small">站点名称 <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control form-control-sm" id="website.title" name="options[website.title]"
-                                       placeholder="网站名称" required value="<?php echo $options['website.title'];?>" />
+                                       placeholder="网站名称" required value="<?php echo e($options['website.title']); ?>" />
                             </div>
                             <div class="col-md-6">
                                 <label for="website.slogan" class="form-label small">网站副标题</label>
                                 <input type="text" class="form-control form-control-sm" id="website.slogan" name="options[website.slogan]"
-                                       placeholder="网站副标题" value="<?php echo $options['website.slogan'];?>" />
+                                       placeholder="网站副标题" value="<?php echo e($options['website.slogan']); ?>" />
                             </div>
                             <div class="col-md-6">
                                 <label for="website.url" class="form-label small">网站网址</label>
@@ -106,43 +106,43 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 <label for="website.keywords" class="form-label small">网站关键词</label>
                                 <input type="text" class="form-control form-control-sm" id="website.keywords"
                                        placeholder="网站关键词" name="options[website.keywords]"
-                                       value="<?php echo $options['website.keywords'];?>" />
+                                       value="<?php echo e($options['website.keywords']); ?>" />
                             </div>
                             <div class="col-12">
                                 <label for="website.description" class="form-label small">网站简介</label>
                                 <input type="text" class="form-control form-control-sm" id="website.description"
                                        placeholder="网站简介 (200字)" name="options[website.description]"
-                                       value="<?php echo $options['website.description'];?>" />
+                                       value="<?php echo e($options['website.description']); ?>" />
                             </div>
                             <div class="col-md-6">
                                 <label for="website.icp" class="form-label small">ICP备案信息</label>
                                 <input type="text" class="form-control form-control-sm" id="website.icp"
                                        placeholder="ICP备案号" name="options[website.icp]"
-                                       value="<?php echo $options['website.icp'];?>" />
+                                       value="<?php echo e($options['website.icp']); ?>" />
                             </div>
                             <div class="col-md-6">
                                 <label for="website.copyright" class="form-label small">版权信息</label>
                                 <input type="text" class="form-control form-control-sm" id="website.copyright"
                                        placeholder="网站版权信息" name="options[website.copyright]"
-                                       value="<?php echo $options['website.copyright'];?>" />
+                                       value="<?php echo e($options['website.copyright']); ?>" />
                             </div>
                             <div class="col-md-6">
                                 <label for="website.address" class="form-label small">公司地址</label>
                                 <input type="text" class="form-control form-control-sm" id="website.address"
                                        placeholder="公司地址" name="options[website.address]"
-                                       value="<?php echo $options['website.address'];?>" />
+                                       value="<?php echo e($options['website.address']); ?>" />
                             </div>
                             <div class="col-md-6">
                                 <label for="website.tel" class="form-label small">联系电话</label>
                                 <input type="text" class="form-control form-control-sm" id="website.tel"
                                        placeholder="联系电话" name="options[website.tel]"
-                                       value="<?php echo $options['website.tel'];?>" />
+                                       value="<?php echo e($options['website.tel']); ?>" />
                             </div>
                             <div class="col-md-6">
                                 <label for="website.api_url" class="form-label small">插件市场API地址</label>
                                 <input type="text" class="form-control form-control-sm" id="website.api_url"
                                        placeholder="https://api.zap.cn/api/v1" name="options[website.api_url]"
-                                       value="<?php echo $options['website.api_url'] ?? '';?>" />
+                                       value="<?php echo e($options['website.api_url'] ?? ''); ?>" />
                                 <div class="form-text">用于检查更新和获取插件市场数据</div>
                             </div>
                         </div>
@@ -154,13 +154,13 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                             <div class="col-12">
                                 <label for="website.head_script" class="form-label small">顶部代码</label>
                                 <textarea rows="4" class="form-control form-control-sm" id="website.head_script"
-                                          name="options[website.head_script]"><?php echo $options['website.head_script'];?></textarea>
+                                          name="options[website.head_script]"><?php echo e($options['website.head_script']); ?></textarea>
                                 <div class="form-text">代码会放在 <?php echo _e('</head>'); ?> 标签之前</div>
                             </div>
                             <div class="col-12">
                                 <label for="website.foot_script" class="form-label small">底部代码</label>
                                 <textarea rows="4" class="form-control form-control-sm" id="website.foot_script"
-                                          name="options[website.foot_script]"><?php echo $options['website.foot_script'];?></textarea>
+                                          name="options[website.foot_script]"><?php echo e($options['website.foot_script']); ?></textarea>
                                 <div class="form-text">代码会放在 <?php echo _e('</body>'); ?> 标签之前</div>
                             </div>
                         </div>
@@ -174,14 +174,14 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 <input type="text" class="form-control form-control-sm" id="website.smtp_host"
                                        name="options[website.smtp_host]"
                                        placeholder="例如 smtp.qq.com"
-                                       value="<?php echo $options['website.smtp_host'] ?? '';?>" />
+                                       value="<?php echo e($options['website.smtp_host'] ?? ''); ?>" />
                             </div>
                             <div class="col-md-3">
                                 <label for="website.smtp_port" class="form-label small">端口</label>
                                 <input type="number" class="form-control form-control-sm" id="website.smtp_port"
                                        name="options[website.smtp_port]"
                                        placeholder="587"
-                                       value="<?php echo $options['website.smtp_port'] ?? '587';?>" />
+                                       value="<?php echo e($options['website.smtp_port'] ?? '587'); ?>" />
                             </div>
                             <div class="col-md-3">
                                 <label for="website.smtp_encryption" class="form-label small">加密方式</label>
@@ -197,21 +197,21 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 <input type="text" class="form-control form-control-sm" id="website.smtp_user"
                                        name="options[website.smtp_user]"
                                        placeholder="yourname@example.com"
-                                       value="<?php echo $options['website.smtp_user'] ?? '';?>" />
+                                       value="<?php echo e($options['website.smtp_user'] ?? ''); ?>" />
                             </div>
                             <div class="col-md-6">
                                 <label for="website.smtp_pass" class="form-label small">邮箱密码 / 授权码</label>
                                 <input type="password" class="form-control form-control-sm" id="website.smtp_pass"
                                        name="options[website.smtp_pass]"
                                        placeholder="SMTP 授权码（非邮箱登录密码）"
-                                       value="<?php echo $options['website.smtp_pass'] ?? '';?>" />
+                                       value="<?php echo e($options['website.smtp_pass'] ?? ''); ?>" />
                             </div>
                             <div class="col-md-6">
                                 <label for="website.smtp_from" class="form-label small">发件人地址</label>
                                 <input type="email" class="form-control form-control-sm" id="website.smtp_from"
                                        name="options[website.smtp_from]"
                                        placeholder="noreply@example.com"
-                                       value="<?php echo $options['website.smtp_from'] ?? '';?>" />
+                                       value="<?php echo e($options['website.smtp_from'] ?? ''); ?>" />
                                 <div class="form-text">留空则使用邮箱账号作为发件人</div>
                             </div>
                             <div class="col-md-6">
@@ -219,7 +219,7 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 <input type="text" class="form-control form-control-sm" id="website.smtp_from_name"
                                        name="options[website.smtp_from_name]"
                                        placeholder="例如：网站名称"
-                                       value="<?php echo $options['website.smtp_from_name'] ?? '';?>" />
+                                       value="<?php echo e($options['website.smtp_from_name'] ?? ''); ?>" />
                             </div>
                             <div class="col-12">
                                 <hr class="my-2">
@@ -249,14 +249,14 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 <label for="upload.extensions" class="form-label small">允许上传的文件扩展名</label>
                                 <textarea rows="4" class="form-control form-control-sm" id="upload.extensions"
                                           name="options[upload.extensions]"
-                                          placeholder="jpg,jpeg,png,zip,pdf..."><?php echo $options['upload.extensions'] ?? 'jpg,jpeg,png,gif,webp,svg,bmp,ico,zip,rar,7z,tar,gz,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,md,csv,mp3,mp4,avi,mov,wmv,flv,webm,json,xml';?></textarea>
+                                          placeholder="jpg,jpeg,png,zip,pdf..."><?php echo e($options['upload.extensions'] ?? 'jpg,jpeg,png,gif,webp,svg,bmp,ico,zip,rar,7z,tar,gz,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,md,csv,mp3,mp4,avi,mov,wmv,flv,webm,json,xml'); ?></textarea>
                                 <div class="form-text">多个扩展名用英文逗号分隔，不需要带点；留空则使用系统默认白名单。</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="upload.max_size" class="form-label small">单个文件大小上限（MB）</label>
                                 <input type="number" min="1" class="form-control form-control-sm" id="upload.max_size"
                                        name="options[upload.max_size]"
-                                       placeholder="20" value="<?php echo $options['upload.max_size'] ?? '20';?>" />
+                                       placeholder="20" value="<?php echo e($options['upload.max_size'] ?? '20'); ?>" />
                                 <div class="form-text">仅限制单个文件大小，实际受服务器 PHP upload_max_filesize 限制。</div>
                             </div>
                             <div class="col-md-6">

@@ -83,23 +83,23 @@ $cacheModules = [
                     </div>
                     <div class="list-group-item d-flex justify-content-between align-items-center">
                         <span><i class="fa fa-globe me-2 text-info"></i>访问地址</span>
-                        <span class="fw-semibold"><?php echo $_SERVER['HTTP_HOST']; ?></span>
+                        <span class="fw-semibold"><?php echo e($_SERVER['HTTP_HOST']); ?></span>
                     </div>
                     <div class="list-group-item d-flex justify-content-between align-items-center">
                         <span><i class="fa fa-server me-2 text-secondary"></i>主机名称</span>
-                        <span class="fw-semibold"><?php echo $_SERVER['SERVER_NAME']; ?></span>
+                        <span class="fw-semibold"><?php echo e($_SERVER['SERVER_NAME']); ?></span>
                     </div>
                     <div class="list-group-item d-flex justify-content-between align-items-center">
                         <span><i class="fa fa-network-wired me-2 text-warning"></i>主机地址</span>
-                        <span class="fw-semibold"><?php echo $_SERVER['SERVER_ADDR']; ?></span>
+                        <span class="fw-semibold"><?php echo e($_SERVER['SERVER_ADDR']); ?></span>
                     </div>
                     <div class="list-group-item d-flex justify-content-between align-items-center">
                         <span><i class="fa fa-plug me-2 text-danger"></i>主机端口</span>
-                        <span class="fw-semibold"><?php echo $_SERVER['SERVER_PORT']; ?></span>
+                        <span class="fw-semibold"><?php echo e($_SERVER['SERVER_PORT']); ?></span>
                     </div>
                     <div class="list-group-item d-flex justify-content-between align-items-center">
                         <span><i class="fa fa-window-restore me-2 text-primary"></i>WEB 软件</span>
-                        <span class="fw-semibold"><?php echo $_SERVER['SERVER_SOFTWARE']; ?></span>
+                        <span class="fw-semibold"><?php echo e($_SERVER['SERVER_SOFTWARE']); ?></span>
                     </div>
                 </div>
             </div>
@@ -182,12 +182,12 @@ $cacheModules = [
                 <div class="list-group list-group-flush">
                     <div class="list-group-item d-flex justify-content-between align-items-center">
                         <span><i class="fa fa-database me-2 text-warning"></i>数据库驱动</span>
-                        <span class="fw-semibold"><?php echo $dbDriver; ?></span>
+                        <span class="fw-semibold"><?php echo e($dbDriver); ?></span>
                     </div>
                     <?php if (!empty($dbVersion)): ?>
                     <div class="list-group-item d-flex justify-content-between align-items-center">
                         <span><i class="fa fa-database me-2 text-success"></i>数据库版本</span>
-                        <span class="fw-semibold">v<?php echo $dbVersion; ?></span>
+                        <span class="fw-semibold">v<?php echo e($dbVersion); ?></span>
                     </div>
                     <?php endif; ?>
                     <div class="list-group-item d-flex justify-content-between align-items-center">
@@ -222,7 +222,7 @@ $cacheModules = [
                             <?php else: ?>
                             <i class="fa fa-times-circle text-danger me-2"></i>
                             <?php endif; ?>
-                            <?php echo $mod['name']; ?>
+                            <?php echo e($mod['name']); ?>
                         </span>
                         <?php if ($mod['check']): ?>
                         <span class="badge text-bg-success">已安装</span>
@@ -260,7 +260,7 @@ $cacheModules = [
                 <div class="d-flex flex-wrap gap-2">
                     <?php foreach ($extensions as $ext): ?>
                     <span class="badge text-bg-light border">
-                        <i class="fa fa-puzzle-piece text-muted me-1"></i><?php echo $ext; ?>
+                        <i class="fa fa-puzzle-piece text-muted me-1"></i><?php echo e($ext); ?>
                     </span>
                     <?php endforeach; ?>
                 </div>

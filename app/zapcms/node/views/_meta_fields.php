@@ -58,15 +58,15 @@ $meta_show_header   = $meta_show_header ?? true;
     ?>
     <div class="mb-2">
         <label class="form-label"<?php echo in_array($nfType, ['radio', 'checkbox', 'switch'], true) ? '' : ' for="' . $metaId . '"'; ?>>
-            <?php echo e($nfLabel); ?><?php echo $star; ?>
+            <?php echo e($nfLabel); ?><?php echo e($star); ?>
         </label>
 
         <?php if ($nfType === 'textarea'): ?>
-            <textarea class="form-control form-control-sm" name="<?php echo $metaName; ?>" id="<?php echo $metaId; ?>"
-                      rows="3" placeholder="<?php echo $nfPh; ?>"<?php echo $reqAttr; ?>><?php echo e($nfValue); ?></textarea>
+            <textarea class="form-control form-control-sm" name="<?php echo e($metaName); ?>" id="<?php echo e($metaId); ?>"
+                      rows="3" placeholder="<?php echo e($nfPh); ?>"<?php echo e($reqAttr); ?>><?php echo e($nfValue); ?></textarea>
 
         <?php elseif ($nfType === 'select'): ?>
-            <select class="form-select form-select-sm" name="<?php echo $metaName; ?>" id="<?php echo $metaId; ?>"<?php echo $reqAttr; ?>>
+            <select class="form-select form-select-sm" name="<?php echo e($metaName); ?>" id="<?php echo e($metaId); ?>"<?php echo e($reqAttr); ?>>
                 <option value="">请选择</option>
                 <?php foreach ($options as $opt): ?>
                     <option value="<?php echo e($opt['value']); ?>" <?php echo (string)$nfValue === $opt['value'] ? 'selected' : ''; ?>><?php echo e($opt['label']); ?></option>
@@ -74,24 +74,24 @@ $meta_show_header   = $meta_show_header ?? true;
             </select>
 
         <?php elseif ($nfType === 'number'): ?>
-            <input type="number" step="0.01" min="0" class="form-control form-control-sm" name="<?php echo $metaName; ?>"
-                   id="<?php echo $metaId; ?>" placeholder="<?php echo $nfPh; ?>" value="<?php echo e($nfValue); ?>"<?php echo $reqAttr; ?>>
+            <input type="number" step="0.01" min="0" class="form-control form-control-sm" name="<?php echo e($metaName); ?>"
+                   id="<?php echo e($metaId); ?>" placeholder="<?php echo e($nfPh); ?>" value="<?php echo e($nfValue); ?>"<?php echo e($reqAttr); ?>>
 
         <?php elseif ($nfType === 'date'): ?>
-            <input type="text" class="form-control form-control-sm datetimepicker" data-format="Y-m-d" name="<?php echo $metaName; ?>"
-                   id="<?php echo $metaId; ?>" placeholder="<?php echo $nfPh ?: 'Y-m-d'; ?>" value="<?php echo e($nfValue); ?>"<?php echo $reqAttr; ?>>
+            <input type="text" class="form-control form-control-sm datetimepicker" data-format="Y-m-d" name="<?php echo e($metaName); ?>"
+                   id="<?php echo e($metaId); ?>" placeholder="<?php echo $nfPh ?: 'Y-m-d'; ?>" value="<?php echo e($nfValue); ?>"<?php echo e($reqAttr); ?>>
 
         <?php elseif ($nfType === 'datetime'): ?>
-            <input type="text" class="form-control form-control-sm datetimepicker" data-format="Y-m-d H:i:s" name="<?php echo $metaName; ?>"
-                   id="<?php echo $metaId; ?>" placeholder="<?php echo $nfPh ?: 'Y-m-d H:i:s'; ?>" value="<?php echo e($nfValue); ?>"<?php echo $reqAttr; ?>>
+            <input type="text" class="form-control form-control-sm datetimepicker" data-format="Y-m-d H:i:s" name="<?php echo e($metaName); ?>"
+                   id="<?php echo e($metaId); ?>" placeholder="<?php echo $nfPh ?: 'Y-m-d H:i:s'; ?>" value="<?php echo e($nfValue); ?>"<?php echo e($reqAttr); ?>>
 
         <?php elseif ($nfType === 'radio'): ?>
             <div class="d-flex flex-wrap gap-3 pt-1">
                 <?php foreach ($options as $opt): ?>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="<?php echo $metaName; ?>" id="<?php echo $metaId; ?>_<?php echo e($opt['value']); ?>"
-                               value="<?php echo e($opt['value']); ?>" <?php echo (string)$nfValue === $opt['value'] ? 'checked' : ''; ?><?php echo $reqAttr; ?>>
-                        <label class="form-check-label small" for="<?php echo $metaId; ?>_<?php echo e($opt['value']); ?>"><?php echo e($opt['label']); ?></label>
+                        <input class="form-check-input" type="radio" name="<?php echo e($metaName); ?>" id="<?php echo e($metaId); ?>_<?php echo e($opt['value']); ?>"
+                               value="<?php echo e($opt['value']); ?>" <?php echo (string)$nfValue === $opt['value'] ? 'checked' : ''; ?><?php echo e($reqAttr); ?>>
+                        <label class="form-check-label small" for="<?php echo e($metaId); ?>_<?php echo e($opt['value']); ?>"><?php echo e($opt['label']); ?></label>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -100,38 +100,38 @@ $meta_show_header   = $meta_show_header ?? true;
             <div class="d-flex flex-wrap gap-3 pt-1">
                 <?php foreach ($options as $opt): ?>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="<?php echo $metaName; ?>[]" id="<?php echo $metaId; ?>_<?php echo e($opt['value']); ?>"
+                        <input class="form-check-input" type="checkbox" name="<?php echo e($metaName); ?>[]" id="<?php echo e($metaId); ?>_<?php echo e($opt['value']); ?>"
                                value="<?php echo e($opt['value']); ?>" <?php echo in_array($opt['value'], $checkedVals, true) ? 'checked' : ''; ?>>
-                        <label class="form-check-label small" for="<?php echo $metaId; ?>_<?php echo e($opt['value']); ?>"><?php echo e($opt['label']); ?></label>
+                        <label class="form-check-label small" for="<?php echo e($metaId); ?>_<?php echo e($opt['value']); ?>"><?php echo e($opt['label']); ?></label>
                     </div>
                 <?php endforeach; ?>
             </div>
 
         <?php elseif ($nfType === 'switch'): ?>
             <div class="form-check form-switch pt-1">
-                <input class="form-check-input" type="checkbox" role="switch" name="<?php echo $metaName; ?>" id="<?php echo $metaId; ?>"
-                       value="1" <?php echo (string)$nfValue === '1' ? 'checked' : ''; ?><?php echo $reqAttr; ?>>
-                <label class="form-check-label small" for="<?php echo $metaId; ?>"><?php echo $nfHelp ?: '开 / 关'; ?></label>
+                <input class="form-check-input" type="checkbox" role="switch" name="<?php echo e($metaName); ?>" id="<?php echo e($metaId); ?>"
+                       value="1" <?php echo (string)$nfValue === '1' ? 'checked' : ''; ?><?php echo e($reqAttr); ?>>
+                <label class="form-check-label small" for="<?php echo e($metaId); ?>"><?php echo $nfHelp ?: '开 / 关'; ?></label>
             </div>
 
         <?php elseif ($nfType === 'image'): ?>
             <div class="d-flex align-items-center gap-2">
                 <img src="<?php echo \zapcms\helpers\ThumbHelper::thumb($nfValue, 80, 80); ?>"
-                     class="img-thumbnail rounded" id="<?php echo $metaId; ?>_thumb" style="width:80px;height:80px;object-fit:cover;" alt="">
-                <input type="hidden" name="<?php echo $metaName; ?>" id="<?php echo $metaId; ?>" value="<?php echo e($nfValue); ?>">
+                     class="img-thumbnail rounded" id="<?php echo e($metaId); ?>_thumb" style="width:80px;height:80px;object-fit:cover;" alt="">
+                <input type="hidden" name="<?php echo e($metaName); ?>" id="<?php echo e($metaId); ?>" value="<?php echo e($nfValue); ?>">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-zap-toggle="image"
-                        data-zap-target="#<?php echo $metaId; ?>|#<?php echo $metaId; ?>_thumb">
+                        data-zap-target="#<?php echo e($metaId); ?>|#<?php echo e($metaId); ?>_thumb">
                     <i class="fa fa-upload me-1"></i>选择图片
                 </button>
                 <button type="button" class="btn btn-outline-danger btn-sm"
-                        onclick="$('#<?php echo $metaId; ?>').val('');$('#<?php echo $metaId; ?>_thumb').attr('src','').hide();">
+                        onclick="$('#<?php echo e($metaId); ?>').val('');$('#<?php echo e($metaId); ?>_thumb').attr('src','').hide();">
                     <i class="fa fa-trash"></i>
                 </button>
             </div>
 
         <?php else: ?>
-            <input type="text" class="form-control form-control-sm" name="<?php echo $metaName; ?>"
-                   id="<?php echo $metaId; ?>" placeholder="<?php echo $nfPh; ?>" value="<?php echo e($nfValue); ?>"<?php echo $reqAttr; ?>>
+            <input type="text" class="form-control form-control-sm" name="<?php echo e($metaName); ?>"
+                   id="<?php echo e($metaId); ?>" placeholder="<?php echo e($nfPh); ?>" value="<?php echo e($nfValue); ?>"<?php echo e($reqAttr); ?>>
         <?php endif; ?>
 
         <?php if ($nfHelp !== '' && $nfType !== 'switch'): ?>

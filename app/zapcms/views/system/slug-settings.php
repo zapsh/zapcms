@@ -80,7 +80,7 @@ $this->view->page_subtitle = '配置 URL 别名（Slug）的生成规则';
                                        name="options[slug.max_length]"
                                        placeholder="0 表示不限制"
                                        min="0" max="200"
-                                       value="<?php echo $slug_max_length ?? '0'; ?>" />
+                                       value="<?php echo e($slug_max_length ?? '0'); ?>" />
                                 <div class="form-text">超过限制的 Slug 将被截断。设置为 0 表示不限制长度。</div>
                             </div>
 

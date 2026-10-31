@@ -70,10 +70,10 @@ $this->layout('layouts/common');
                         <?php foreach ($presets as $key => $preset): ?>
                         <div class="form-check permalink-option mb-3">
                             <input class="form-check-input permalink-radio" type="radio"
-                                   name="permalink_preset" id="preset_<?php echo $key; ?>"
-                                   value="<?php echo $key; ?>"
+                                   name="permalink_preset" id="preset_<?php echo e($key); ?>"
+                                   value="<?php echo e($key); ?>"
                                    <?php echo $currentPreset === $key ? 'checked' : ''; ?>>
-                            <label class="form-check-label w-100" for="preset_<?php echo $key; ?>">
+                            <label class="form-check-label w-100" for="preset_<?php echo e($key); ?>">
                                 <strong><?php echo htmlspecialchars($preset['label']); ?></strong>
                                 <code class="ms-2 text-muted"><?php echo htmlspecialchars($preset['structure']); ?></code>
                                 <br>
@@ -111,9 +111,9 @@ $this->layout('layouts/common');
                                 <?php foreach ($structureTags as $tag => $desc): ?>
                                 <div class="col-md-6">
                                     <button type="button" class="btn btn-sm btn-outline-secondary tag-btn w-100 text-start"
-                                            data-tag="<?php echo $tag; ?>">
-                                        <code><?php echo $tag; ?></code>
-                                        <small class="d-block text-muted"><?php echo $desc; ?></small>
+                                            data-tag="<?php echo e($tag); ?>">
+                                        <code><?php echo e($tag); ?></code>
+                                        <small class="d-block text-muted"><?php echo e($desc); ?></small>
                                     </button>
                                 </div>
                                 <?php endforeach; ?>
@@ -200,11 +200,11 @@ document.addEventListener('DOMContentLoaded', function() {
     var presets = <?php echo json_encode(array_column($presets, 'structure', 'key')); ?>;
     // 重新映射为 key=>structure
     var presetMap = {
-        'plain': '<?php echo $presets['plain']['structure']; ?>',
-        'day_name': '<?php echo $presets['day_name']['structure']; ?>',
-        'month_name': '<?php echo $presets['month_name']['structure']; ?>',
-        'numeric': '<?php echo $presets['numeric']['structure']; ?>',
-        'post_name': '<?php echo $presets['post_name']['structure']; ?>'
+        'plain': '<?php echo e($presets['plain']['structure']); ?>',
+        'day_name': '<?php echo e($presets['day_name']['structure']); ?>',
+        'month_name': '<?php echo e($presets['month_name']['structure']); ?>',
+        'numeric': '<?php echo e($presets['numeric']['structure']); ?>',
+        'post_name': '<?php echo e($presets['post_name']['structure']); ?>'
     };
 
     var radios = document.querySelectorAll('.permalink-radio');

@@ -86,9 +86,9 @@ $relativePath = static function (string $path): string {
                         <tr>
                             <td>
                                 <div class="fw-semibold">
-                                    <i class="fa <?php echo $target['icon']; ?> me-2 text-primary"></i><?php echo $target['label']; ?>
+                                    <i class="fa <?php echo e($target['icon']); ?> me-2 text-primary"></i><?php echo e($target['label']); ?>
                                 </div>
-                                <div class="text-secondary small"><?php echo $target['desc']; ?></div>
+                                <div class="text-secondary small"><?php echo e($target['desc']); ?></div>
                                 <div class="text-secondary small">
                                     <code><?php echo $relativePath($target['path']); ?></code>
                                 </div>
@@ -99,7 +99,7 @@ $relativePath = static function (string $path): string {
                             <td class="text-end"><?php echo CacheManager::formatBytes($stat['bytes']); ?></td>
                             <td class="text-end">
                                 <button type="button" class="btn btn-outline-danger btn-sm"
-                                        onclick="zapCacheClear('<?php echo $key; ?>', '<?php echo $target['label']; ?>')">
+                                        onclick="zapCacheClear('<?php echo e($key); ?>', '<?php echo e($target['label']); ?>')">
                                     清理
                                 </button>
                             </td>

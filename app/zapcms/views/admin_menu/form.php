@@ -4,21 +4,21 @@ use zapcms\services\AdminMenu;
 
 ?>
 <form class="row g-2">
-    <input name="menu_id" value="<?php echo $menu['id'] ?? ''; ?>" type="hidden"/>
+    <input name="menu_id" value="<?php echo e($menu['id'] ?? ''); ?>" type="hidden"/>
     <div class="col-md-6">
         <label for="data_title" class="form-label small">菜单名称</label>
         <input type="text" class="form-control form-control-sm" name="zap_data[title]" id="data_title"
-               value="<?php echo $menu['title'] ?? ''; ?>" placeholder="菜单名称" autofocus/>
+               value="<?php echo e($menu['title'] ?? ''); ?>" placeholder="菜单名称" autofocus/>
     </div>
     <div class="col-md-6">
         <label for="data_icon" class="form-label small">图标</label>
         <div class="input-group input-group-sm">
             <input type="text" class="form-control" placeholder="点击选择图标"
                    name="zap_data[icon]" id="data_icon"
-                   value="<?php echo $menu['icon'] ?? 'fa fa-circle-notch'; ?>"
+                   value="<?php echo e($menu['icon'] ?? 'fa fa-circle-notch'); ?>"
                    onclick="ZapFaIcons(['#preview-icon-i','#data_icon']);"/>
             <span class="input-group-text" id="preview-icon">
-                <i class="<?php echo $menu['icon'] ?? 'fa fa-circle-notch'; ?>" id="preview-icon-i"></i>
+                <i class="<?php echo e($menu['icon'] ?? 'fa fa-circle-notch'); ?>" id="preview-icon-i"></i>
             </span>
         </div>
     </div>
@@ -31,7 +31,7 @@ use zapcms\services\AdminMenu;
             $selectedPid = isset($parent['id']) ? intval($parent['id']) : intval($menu['pid'] ?? 0);
             AdminMenu::instance()->forEachAll(function ($row) use ($menu, $selectedPid) {
                 ?>
-                <option value="<?php echo $row['id']; ?>"
+                <option value="<?php echo e($row['id']); ?>"
                     <?php echo $selectedPid === intval($row['id']) ? 'selected' : ''; ?>
                     <?php echo !empty($menu['path']) && \zap\util\Str::startsWith($row['path'], $menu['path']) ? 'disabled' : ''; ?>>
                     <?php echo str_repeat('&nbsp;&nbsp;', max(0, intval($row['level']) - 1)) . $row['title']; ?>
@@ -50,16 +50,16 @@ use zapcms\services\AdminMenu;
             <div class="form-check form-check-inline">
                 <input class="form-check-input" type="checkbox" name="zap_data[show_position][]"
                     <?php echo in_array($id, $positions) ? 'checked' : ''; ?>
-                       id="data_show_position<?php echo $id; ?>" value="<?php echo $id; ?>">
+                       id="data_show_position<?php echo e($id); ?>" value="<?php echo e($id); ?>">
                 <label class="form-check-label small"
-                       for="data_show_position<?php echo $id; ?>"><?php echo $title; ?></label>
+                       for="data_show_position<?php echo e($id); ?>"><?php echo e($title); ?></label>
             </div>
         <?php endforeach; ?>
     </div>
     <div class="col-md-6">
         <label for="data_link_to" class="form-label small">链接地址</label>
         <input type="text" class="form-control form-control-sm" name="zap_data[link_to]" id="data_link_to"
-               value="<?php echo $menu['link_to'] ?? ''; ?>" placeholder="例: System@settings"/>
+               value="<?php echo e($menu['link_to'] ?? ''); ?>" placeholder="例: System@settings"/>
     </div>
     <div class="col-md-6">
         <label for="data_link_type" class="form-label small">链接类型</label>
@@ -80,11 +80,11 @@ use zapcms\services\AdminMenu;
     <div class="col-md-6">
         <label for="data_active_rule" class="form-label small">选中规则</label>
         <input type="text" class="form-control form-control-sm" name="zap_data[active_rule]" id="data_active_rule"
-               value="<?php echo $menu['active_rule'] ?? ''; ?>" placeholder="匹配的路由规则"/>
+               value="<?php echo e($menu['active_rule'] ?? ''); ?>" placeholder="匹配的路由规则"/>
     </div>
     <div class="col-md-6">
         <label for="data_sort_order" class="form-label small">排序</label>
         <input type="text" class="form-control form-control-sm" name="zap_data[sort_order]" id="data_sort_order"
-               value="<?php echo $menu['sort_order'] ?? 0; ?>"/>
+               value="<?php echo e($menu['sort_order'] ?? 0); ?>"/>
     </div>
 </form>

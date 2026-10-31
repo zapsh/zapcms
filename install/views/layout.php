@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <title>安装向导 — ZAP CMS</title>
     <link rel="icon" href="../assets/admin/img/zap_logo_green.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="../assets/admin/css/bootstrap.css">
+    <link rel="stylesheet" href="../assets/admin/<?php echo \zapcms\support\Vite::cssPath('bootstrap'); ?>">
     <script src="../assets/jquery/jquery-3.7.1.min.js"></script>
     <style>
         :root {
@@ -168,6 +168,6 @@
     </footer>
 </div>
 
-<script src="../assets/admin/js/bootstrap.bundle.js"></script>
+<script src="../assets/admin/<?php echo \zapcms\support\Vite::jsPath('bootstrap.bundle'); ?>"></script>
 </body>
 </html>

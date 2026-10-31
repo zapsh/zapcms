@@ -134,9 +134,9 @@ body.sidebar-mini.sidebar-open .docs-btn-text {
                         $icon = 'fa ' . $icon;
                     }
                 ?>
-                    <li class="<?php echo $liClass; ?>">
+                    <li class="<?php echo e($liClass); ?>">
                         <?php if ($hasChildren): ?>
-                        <a href="#" class="<?php echo $linkClass; ?>" role="button">
+                        <a href="#" class="<?php echo e($linkClass); ?>" role="button">
                             <i class="nav-icon <?php echo htmlspecialchars($icon); ?>"></i>
                             <p>
                                 <?php echo htmlspecialchars($groupTitle); ?>
@@ -151,7 +151,7 @@ body.sidebar-mini.sidebar-open .docs-btn-text {
                                 $childIcon = $child['icon'] ?? 'far fa-circle';
                             ?>
                             <li class="nav-item">
-                                <a href="<?php echo $childAction === '#' ? '#' : $childAction; ?>" class="nav-link<?php echo $childActive; ?>">
+                                <a href="<?php echo $childAction === '#' ? '#' : $childAction; ?>" class="nav-link<?php echo e($childActive); ?>">
                                     <i class="nav-icon <?php echo htmlspecialchars($childIcon); ?>"></i>
                                     <p><?php echo htmlspecialchars($childTitle); ?></p>
                                 </a>
@@ -159,7 +159,7 @@ body.sidebar-mini.sidebar-open .docs-btn-text {
                             <?php endforeach; ?>
                         </ul>
                         <?php else: ?>
-                        <a href="<?php echo $groupAction === '#' ? '#' : $groupAction; ?>" class="<?php echo $linkClass; ?>">
+                        <a href="<?php echo $groupAction === '#' ? '#' : $groupAction; ?>" class="<?php echo e($linkClass); ?>">
                             <i class="nav-icon <?php echo htmlspecialchars($icon); ?>"></i>
                             <p><?php echo htmlspecialchars($groupTitle); ?></p>
                         </a>

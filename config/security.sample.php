@@ -25,4 +25,13 @@ return [
         // 'update@download',
     ],
 
+    /*
+     * 允许下载更新包/插件的主机白名单（小写主机名，不含端口）。
+     * 默认只允许官方镜像 mirrors.zap.cn；使用自建镜像时把主机名加到这里，
+     * 否则后台设置的更新源会被拒绝（更新包会被解压覆盖站点代码，必须限制来源）。
+     */
+    'allowed_update_hosts' => [
+        // 'mirror.example.com',
+    ],
+
 ];

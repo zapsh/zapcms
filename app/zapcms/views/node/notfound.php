@@ -22,7 +22,7 @@ $this->layout('layouts/common');
     <div class="my-3 p-3 bg-body rounded shadow-sm">
         <div class="alert alert-warning" role="alert">
             <h4 class="alert-heading border-bottom"><i class="fa fa-warning"></i> 系统错误!</h4>
-            <p><?php echo $error;?></p>
+            <p><?php echo e($error); ?></p>
             <hr/>
             <a href="<?php echo url_action('Node') ;?>" class="btn btn-outline-dark">返回</a>
         </div>

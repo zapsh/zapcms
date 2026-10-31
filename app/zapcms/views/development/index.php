@@ -424,7 +424,7 @@ $('#fileSearch').on('input', function() {
 });
 
 $(function() {
-    getDir('<?php echo $path;?>', null);
+    getDir('<?php echo e($path); ?>', null);
 
     // 文件树点击事件
     fileTreeView.on('click', '.list-group-item', function(e) {

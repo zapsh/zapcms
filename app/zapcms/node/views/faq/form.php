@@ -24,7 +24,7 @@ $this->view->page_title = !empty($sub_title) ? $sub_title : ($title ?? '编辑')
 $catalogId = (int)($catalog['id'] ?? $catalogId ?? 0);
 ?>
 <form id="zapForm" method="post">
-    <input type="hidden" value="<?php echo $node->id; ?>" name="node_id">
+    <input type="hidden" value="<?php echo e($node->id); ?>" name="node_id">
     <input type="hidden" name="node[pub_time]" value="<?php echo $node->getPubTimeToDate(); ?>" />
     <input name="node[status]" id="node_status" type="hidden" value="<?php echo $node->status ?: \zapcms\models\Node::STATUS_PUBLISH;?>" />
     <input type="hidden" id="node_author_id" name="node[author_id]" value="<?php echo \zapcms\services\Auth::user('id') ?>">
@@ -86,7 +86,7 @@ $catalogId = (int)($catalog['id'] ?? $catalogId ?? 0);
                             <div class="mb-2">
                                 <label for="node_title" class="form-label">问题 <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control form-control-sm" name="node[title]" id="node_title"
-                                       placeholder="请输入常见问题" required value="<?php echo $node->title; ?>">
+                                       placeholder="请输入常见问题" required value="<?php echo e($node->title); ?>">
                             </div>
                             <div class="mb-2 row g-2">
                                 <div class="col">
@@ -96,7 +96,7 @@ $catalogId = (int)($catalog['id'] ?? $catalogId ?? 0);
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text text-muted small"><?php echo site_url('/'); ?></span>
                                         <input type="text" class="form-control form-control-sm font-monospace" name="node[slug]"
-                                               id="node_slug" placeholder="自动生成" value="<?php echo $node->slug; ?>">
+                                               id="node_slug" placeholder="自动生成" value="<?php echo e($node->slug); ?>">
                                         <button class="btn btn-outline-secondary btn-sm" type="button" onclick="generateSlug()" title="根据标题自动生成">
                                             <i class="fa fa-magic"></i>
                                         </button>
@@ -109,7 +109,7 @@ $catalogId = (int)($catalog['id'] ?? $catalogId ?? 0);
                             <div class="mb-2">
                                 <label for="node_content" class="form-label">答案</label>
                                 <textarea name="node[content]" id="node_content"
-                                          class="form-control summernote"><?php echo $node->content; ?></textarea>
+                                          class="form-control summernote"><?php echo e($node->content); ?></textarea>
                             </div>
                         </div>
                         <div class="tab-pane" id="tab-attr">
@@ -120,7 +120,7 @@ $catalogId = (int)($catalog['id'] ?? $catalogId ?? 0);
                                         <select class="form-select form-select-sm" name="node[status]" id="node_status_select">
                                             <?php foreach($node->getStatus() as $id => $title){
                                                 if($id == \zapcms\models\Node::STATUS_SOFT_DELETE or $id == \zapcms\models\Node::STATUS_TRASH){ continue; } ?>
-                                                <option value="<?php echo $id;?>" <?php echo $node->status==$id?'selected':null ;?> ><?php echo $title;?></option>
+                                                <option value="<?php echo e($id); ?>" <?php echo $node->status==$id?'selected':null ;?> ><?php echo e($title); ?></option>
                                             <?php } ?>
                                         </select>
                                     </div>
@@ -142,14 +142,14 @@ $catalogId = (int)($catalog['id'] ?? $catalogId ?? 0);
                                     <div class="mb-2">
                                         <label for="node_hits" class="form-label">点击量</label>
                                         <input type="number" class="form-control form-control-sm" name="node[hits]" id="node_hits"
-                                               value="<?php echo $node->hits ?? 0; ?>">
+                                               value="<?php echo e($node->hits ?? 0); ?>">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-2">
                                         <label for="node_sort_order" class="form-label">排序</label>
                                         <input type="number" class="form-control form-control-sm" name="node[sort_order]" id="node_sort_order"
-                                               value="<?php echo $node->sort_order ?? 0; ?>">
+                                               value="<?php echo e($node->sort_order ?? 0); ?>">
                                     </div>
                                 </div>
                             </div>
@@ -158,13 +158,13 @@ $catalogId = (int)($catalog['id'] ?? $catalogId ?? 0);
                             <div class="mb-2">
                                 <label for="node_keywords" class="form-label">关键词</label>
                                 <input type="text" class="form-control form-control-sm" name="node[keywords]" id="node_keywords"
-                                       placeholder="多个用逗号分隔" value="<?php echo $node->keywords; ?>"/>
+                                       placeholder="多个用逗号分隔" value="<?php echo e($node->keywords); ?>"/>
                             </div>
                             <div class="mb-2">
                                 <label for="node_description" class="form-label">页面描述</label>
                                 <textarea class="form-control form-control-sm" name="node[description]"
                                           id="node_description" rows="3"
-                                          placeholder="建议控制在150字以内"><?php echo $node->description; ?></textarea>
+                                          placeholder="建议控制在150字以内"><?php echo e($node->description); ?></textarea>
                             </div>
                         </div>
                     </div>

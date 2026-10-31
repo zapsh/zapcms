@@ -70,7 +70,7 @@ if (!empty($catalogPaths)) {
                         <!-- 搜索框 -->
                         <form method="get" class="d-flex me-1" style="max-width:220px">
                             <?php if ($catalogId): ?>
-                            <input type="hidden" name="cid" value="<?php echo $catalogId; ?>">
+                            <input type="hidden" name="cid" value="<?php echo e($catalogId); ?>">
                             <?php endif; ?>
                             <div class="input-group input-group-sm">
                                 <input type="search" name="s" class="form-control" placeholder="搜索标题..."
@@ -110,7 +110,7 @@ if (!empty($catalogPaths)) {
                             <tbody>
                                 <?php foreach ($data as $row): ?>
                                 <tr>
-                                    <td class="text-muted small"><?php echo $row['id']; ?></td>
+                                    <td class="text-muted small"><?php echo e($row['id']); ?></td>
                                     <td>
                                         <a href="<?php echo Url::action("Node@{$_controller}/edit/{$row['id']}", ['cid' => $catalogId]); ?>"
                                            class="text-decoration-none fw-semibold">
@@ -152,7 +152,7 @@ if (!empty($catalogPaths)) {
                                                 <i class="fa fa-edit"></i>
                                             </a>
                                             <button type="button" class="btn btn-outline-danger"
-                                                    onclick="deleteNode(<?php echo $row['id']; ?>,'<?php echo htmlspecialchars(addslashes($row['title'])); ?>')"
+                                                    onclick="deleteNode(<?php echo e($row['id']); ?>,'<?php echo htmlspecialchars(addslashes($row['title'])); ?>')"
                                                     title="删除">
                                                 <i class="fa fa-trash"></i>
                                             </button>

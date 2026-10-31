@@ -95,15 +95,15 @@ $totalTables = count($tableData);
                 <div class="list-group list-group-flush">
                     <div class="list-group-item d-flex justify-content-between align-items-center">
                         <span><i class="fa fa-plug me-2 text-warning"></i>数据库驱动</span>
-                        <span class="badge text-bg-warning text-uppercase"><?php echo $driver; ?></span>
+                        <span class="badge text-bg-warning text-uppercase"><?php echo e($driver); ?></span>
                     </div>
                     <?php foreach ($dbInfoItems as $item): ?>
                     <div class="list-group-item d-flex justify-content-between align-items-center">
                         <span>
-                            <i class="fa <?php echo $item['icon']; ?> me-2 text-<?php echo $item['color']; ?>"></i>
-                            <?php echo $item['label']; ?>
+                            <i class="fa <?php echo e($item['icon']); ?> me-2 text-<?php echo e($item['color']); ?>"></i>
+                            <?php echo e($item['label']); ?>
                         </span>
-                        <span class="fw-semibold text-break" style="max-width: 60%;"><?php echo $item['value']; ?></span>
+                        <span class="fw-semibold text-break" style="max-width: 60%;"><?php echo e($item['value']); ?></span>
                     </div>
                     <?php endforeach; ?>
                 </div>
@@ -153,7 +153,7 @@ $totalTables = count($tableData);
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="fa fa-table card-header-icon text-success"></i> 数据库表
-                    <span class="badge text-bg-success ms-2">共 <?php echo $totalTables; ?> 张表</span>
+                    <span class="badge text-bg-success ms-2">共 <?php echo e($totalTables); ?> 张表</span>
                 </h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-zui-toggle="card-collapse" aria-label="折叠">
@@ -189,7 +189,7 @@ $totalTables = count($tableData);
                                 <td class="text-muted"><?php echo $idx + 1; ?></td>
                                 <td>
                                     <i class="fa fa-table me-2 text-success"></i>
-                                    <code><?php echo $table['name']; ?></code>
+                                    <code><?php echo e($table['name']); ?></code>
                                 </td>
                                 <?php if ($driver !== 'sqlite'): ?>
                                 <td class="text-end">
@@ -201,7 +201,7 @@ $totalTables = count($tableData);
                                 </td>
                                 <td class="text-end">
                                     <?php if ($table['size'] !== ''): ?>
-                                    <span class="fw-semibold"><?php echo $table['size']; ?></span>
+                                    <span class="fw-semibold"><?php echo e($table['size']); ?></span>
                                     <?php else: ?>
                                     <span class="text-muted">-</span>
                                     <?php endif; ?>

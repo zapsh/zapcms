@@ -93,7 +93,7 @@ $levels = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTICE', 'INFO
                         <select id="logLevel" class="form-select form-select-sm">
                             <option value="">全部级别</option>
                             <?php foreach ($levels as $level): ?>
-                                <option value="<?php echo $level; ?>"><?php echo $level; ?></option>
+                                <option value="<?php echo e($level); ?>"><?php echo e($level); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>

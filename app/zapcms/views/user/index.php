@@ -14,7 +14,7 @@ $latestUser  = $latestUser ?? '-';
     <div class="col-lg-4 col-6">
         <div class="small-box text-bg-primary">
             <div class="inner">
-                <h3><?php echo $totalUsers; ?></h3>
+                <h3><?php echo e($totalUsers); ?></h3>
                 <p>用户总数</p>
             </div>
             <i class="fa fa-users small-box-icon fs-1"></i>
@@ -23,7 +23,7 @@ $latestUser  = $latestUser ?? '-';
     <div class="col-lg-4 col-6">
         <div class="small-box text-bg-success">
             <div class="inner">
-                <h3><?php echo $activeCount; ?></h3>
+                <h3><?php echo e($activeCount); ?></h3>
                 <p>已激活用户</p>
             </div>
             <i class="fa fa-user-check small-box-icon fs-1"></i>
@@ -32,7 +32,7 @@ $latestUser  = $latestUser ?? '-';
     <div class="col-lg-4 col-6">
         <div class="small-box text-bg-info">
             <div class="inner">
-                <h3><?php echo $latestUser; ?></h3>
+                <h3><?php echo e($latestUser); ?></h3>
                 <p>最新注册用户</p>
             </div>
             <i class="fa fa-user-plus small-box-icon fs-1"></i>
@@ -48,7 +48,7 @@ $latestUser  = $latestUser ?? '-';
             <div class="card-header d-flex align-items-center flex-wrap gap-2">
                 <h3 class="card-title flex-grow-1">
                     <i class="fa fa-users card-header-icon text-primary"></i> 用户列表
-                    <span class="badge text-bg-primary ms-2"><?php echo $totalUsers; ?></span>
+                    <span class="badge text-bg-primary ms-2"><?php echo e($totalUsers); ?></span>
                 </h3>
                 <div class="d-flex gap-2">
                     <a href="<?php echo url_action('User@roles') ?>" class="btn btn-sm btn-outline-secondary">
@@ -92,12 +92,12 @@ $latestUser  = $latestUser ?? '-';
                             <tr>
                                 <td class="text-center">
                                     <?php if($user['id'] != 1): ?>
-                                    <input name="admin[<?php echo $user['id']; ?>][id]"
-                                           value="<?php echo $user['id']; ?>"
+                                    <input name="admin[<?php echo e($user['id']); ?>][id]"
+                                           value="<?php echo e($user['id']); ?>"
                                            class="form-check-input users_list" type="checkbox"/>
                                     <?php endif; ?>
                                 </td>
-                                <td><span class="badge text-bg-light"><?php echo $user['id']; ?></span></td>
+                                <td><span class="badge text-bg-light"><?php echo e($user['id']); ?></span></td>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="avatar avatar-sm bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;font-size:0.85rem;flex-shrink:0;">
@@ -117,7 +117,7 @@ $latestUser  = $latestUser ?? '-';
                                     <?php endif; ?>
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addOrEdit(<?php echo $user['id']; ?>)" title="编辑">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="addOrEdit(<?php echo e($user['id']); ?>)" title="编辑">
                                         <i class="fa fa-edit"></i>
                                     </button>
                                 </td>

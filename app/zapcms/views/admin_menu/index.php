@@ -50,35 +50,35 @@ $this->view->page_title = '系统菜单管理';
                 ?>
                 <tr>
                     <td>
-                        <input name="admin_menu[<?php echo $admin_menu['id']; ?>][id]"
-                               value="<?php echo $admin_menu['id']; ?>"
+                        <input name="admin_menu[<?php echo e($admin_menu['id']); ?>][id]"
+                               value="<?php echo e($admin_menu['id']); ?>"
                                class="form-check-input zap_catalog" type="checkbox"/>
                     </td>
                     <td>
-                        <input name="admin_menu[<?php echo $admin_menu['id']; ?>][sort_order]"
-                               value="<?php echo $admin_menu['sort_order']; ?>"
+                        <input name="admin_menu[<?php echo e($admin_menu['id']); ?>][sort_order]"
+                               value="<?php echo e($admin_menu['sort_order']); ?>"
                                class="form-control form-control-sm" size="2"
                                data-bs-toggle="tooltip" data-bs-placement="right"
                                data-bs-title="数值越小越靠前"/>
                     </td>
                     <td>
-                        <div style="padding-left:<?php echo $paddingLeft; ?>rem;">
-                            <i class="<?php echo $admin_menu['icon']; ?> me-1"
-                               onclick="ZapFaIcons(['#ami-<?php echo $admin_menu['id']; ?>','#amii-<?php echo $admin_menu['id']; ?>']);"
-                               id="ami-<?php echo $admin_menu['id']; ?>"></i>
-                            <input name="admin_menu[<?php echo $admin_menu['id']; ?>][icon]" type="hidden"
-                                   value="<?php echo $admin_menu['icon']; ?>"
-                                   id="amii-<?php echo $admin_menu['id']; ?>"/>
-                            <input name="admin_menu[<?php echo $admin_menu['id']; ?>][title]"
-                                   value="<?php echo $admin_menu['title']; ?>"
+                        <div style="padding-left:<?php echo e($paddingLeft); ?>rem;">
+                            <i class="<?php echo e($admin_menu['icon']); ?> me-1"
+                               onclick="ZapFaIcons(['#ami-<?php echo e($admin_menu['id']); ?>','#amii-<?php echo e($admin_menu['id']); ?>']);"
+                               id="ami-<?php echo e($admin_menu['id']); ?>"></i>
+                            <input name="admin_menu[<?php echo e($admin_menu['id']); ?>][icon]" type="hidden"
+                                   value="<?php echo e($admin_menu['icon']); ?>"
+                                   id="amii-<?php echo e($admin_menu['id']); ?>"/>
+                            <input name="admin_menu[<?php echo e($admin_menu['id']); ?>][title]"
+                                   value="<?php echo e($admin_menu['title']); ?>"
                                    class="d-inline form-control form-control-sm w-auto"/>
-                            <small class="text-muted ms-1">ID:<?php echo $admin_menu['id']; ?></small>
+                            <small class="text-muted ms-1">ID:<?php echo e($admin_menu['id']); ?></small>
                         </div>
                     </td>
-                    <td class="text-muted"><?php echo $admin_menu['link_to']; ?></td>
+                    <td class="text-muted"><?php echo e($admin_menu['link_to']); ?></td>
                     <td>
                         <button type="button" class="btn btn-outline-success btn-sm me-1"
-                                onclick="addOrEdit(<?php echo $admin_menu['id'];?>)"
+                                onclick="addOrEdit(<?php echo e($admin_menu['id']); ?>)"
                                 data-bs-toggle="tooltip" data-bs-title="添加子菜单">
                             <i class="fa fa-plus"></i>
                         </button>

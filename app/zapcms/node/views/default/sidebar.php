@@ -94,10 +94,10 @@ function renderTree($items, $catalogId, $expandIdsMap, $level = 0) {
         }
 ?>
     <div class="tree-node">
-        <a href="<?php echo $nodeUrl; ?>"
+        <a href="<?php echo e($nodeUrl); ?>"
            class="list-group-item list-group-item-action border-0 d-flex align-items-center <?php echo $isActive ? 'active' : ''; ?>"
-           data-catalog-id="<?php echo $item['id']; ?>"
-           style="padding-left: <?php echo $paddingLeft; ?>rem;">
+           data-catalog-id="<?php echo e($item['id']); ?>"
+           style="padding-left: <?php echo e($paddingLeft); ?>rem;">
             <?php if ($hasChildren): ?>
             <span class="tree-toggle me-2" onclick="toggleTreeNode(event, this)" style="cursor:pointer;width:16px;text-align:center;flex-shrink:0;">
                 <i class="fa fa-caret-<?php echo $isExpanded ? 'down' : 'right'; ?>"></i>
