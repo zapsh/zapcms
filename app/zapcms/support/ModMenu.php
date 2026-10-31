@@ -43,19 +43,59 @@ class ModMenu
     public const HASH_OPTION = 'mod.menus.hash.';
 
     /**
-     * 读取模块在 mod.json 中声明的后台菜单
+     * 读取模块声明的后台菜单
+     *
+     * 与系统其它模块信息读取器保持一致：优先 mod.json，回退 plugin.json，
+     * 因此使用 plugin.json 作为清单的模块（如打包分发的 zapcms 插件）也能注册菜单。
+     *
+     * 兼容两种 admin_menu 写法：
+     *   1) 数组：[{ "title":.., "icon":.., "children":[..] }]      （mod.json 规范格式）
+     *   2) 对象：{  "title":.., "icon":.., "items":[..] }          （plugin.json 常见写法）
+     * 子项键名同时兼容 children / items。
      */
     public static function definitions(string $module): array
     {
-        $file = APP_ROOT . '/mods/' . $module . '/mod.json';
-        if (!is_file($file)) {
+        $json = null;
+        foreach (['mod.json', 'plugin.json'] as $file) {
+            $path = APP_ROOT . '/mods/' . $module . '/' . $file;
+            if (!is_file($path)) {
+                continue;
+            }
+            $decoded = json_decode((string)@file_get_contents($path), true);
+            if (is_array($decoded) && !empty($decoded['admin_menu'])) {
+                $json = $decoded;
+                break;
+            }
+        }
+        if (!is_array($json)) {
             return [];
         }
-        $json = json_decode((string)@file_get_contents($file), true);
-        if (!is_array($json) || empty($json['admin_menu']) || !is_array($json['admin_menu'])) {
+
+        $menuDef = $json['admin_menu'];
+        // 单对象写法（自身带 title/items/name 等字符串键）→ 归一化为「组数组」
+        if (is_array($menuDef)) {
+            $isObjectForm = isset($menuDef['title']) || isset($menuDef['items']) || isset($menuDef['name']);
+            $groups       = $isObjectForm ? [$menuDef] : $menuDef;
+        } else {
             return [];
         }
-        return array_values(array_filter($json['admin_menu'], 'is_array'));
+
+        $out = [];
+        foreach ($groups as $group) {
+            if (!is_array($group)) {
+                continue;
+            }
+            $children = $group['children'] ?? $group['items'] ?? [];
+            if (!is_array($children)) {
+                $children = [];
+            }
+            $out[] = [
+                'title'    => $group['title'] ?? $group['name'] ?? '',
+                'icon'     => $group['icon'] ?? '',
+                'children' => $children,
+            ];
+        }
+        return $out;
     }
 
     /**

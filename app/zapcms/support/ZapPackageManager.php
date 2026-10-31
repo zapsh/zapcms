@@ -808,6 +808,11 @@ class ZapPackageManager
      */
     public function runPluginInstallScript(string $name): void
     {
+        // 模块安装/卸载脚本常以 defined('IN_ZAPCMS') 守卫防止被直接访问；
+        // 但此处是在后台（仅定义 IN_ZAPCMS_ADMIN）上下文中 require，需补齐该常量，否则会 die('No permission to access')。
+        defined('IN_ZAPCMS') or define('IN_ZAPCMS', true);
+        defined('IN_ZAPCMS_ADMIN') or define('IN_ZAPCMS_ADMIN', true);
+
         $installScript = $this->modsDir . '/' . $name . '/install.php';
         if (file_exists($installScript)) {
             try {
@@ -826,6 +831,9 @@ class ZapPackageManager
      */
     public function runPluginUninstallScript(string $name, bool $keepData = true): void
     {
+        defined('IN_ZAPCMS') or define('IN_ZAPCMS', true);
+        defined('IN_ZAPCMS_ADMIN') or define('IN_ZAPCMS_ADMIN', true);
+
         $uninstallScript = $this->modsDir . '/' . $name . '/uninstall.php';
         // 供被 require 的脚本读取（require 共享当前作用域；GLOBALS 便于跨函数取用）
         $GLOBALS['zap_mod_uninstall_keep_data'] = $keepData;
@@ -843,6 +851,9 @@ class ZapPackageManager
      */
     protected function runPluginUpdateScript(string $name, string $fromVersion, string $toVersion): void
     {
+        defined('IN_ZAPCMS') or define('IN_ZAPCMS', true);
+        defined('IN_ZAPCMS_ADMIN') or define('IN_ZAPCMS_ADMIN', true);
+
         $updateScript = $this->modsDir . '/' . $name . '/update.php';
         if (file_exists($updateScript)) {
             try {
