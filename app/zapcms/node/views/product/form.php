@@ -300,13 +300,11 @@ if (empty($galleryArr)) {
             <button type="button" class="btn btn-success btn-sm" onclick="save();">
                 <i class="fa fa-save me-1"></i>保存
             </button>
-            <?php if($node->update_time){ ?>
             <span class="float-end text-muted small pt-1">
-                <i class="fa fa-clock me-1"></i><?php echo date('Y-m-d H:i',$node->pub_time); ?>
+                <i class="fa fa-clock me-1"></i><span id="node_pub_time_label"><?php echo date('Y-m-d H:i', $node->pub_time ?: time()); ?></span>
                 &nbsp;|&nbsp;
-                <i class="fa fa-edit me-1"></i><?php echo date('Y-m-d H:i',$node->update_time); ?>
+                <i class="fa fa-edit me-1"></i><span id="node_update_time_label"><?php echo date('Y-m-d H:i', $node->update_time ?: time()); ?></span>
             </span>
-            <?php } ?>
                 </div>
             </div>
         </div>
@@ -338,21 +336,11 @@ $(function(){
     $('#zapForm').validate({ignore:'', messages:{"node[title]":"产品名称必须填写"}});
 });
 function save() {
-    const f = $('#zapForm');
-    if (!f.valid()) { ZapToast.alert('请修改错误项，重新提交', {bgColor: bgDanger}); return; }
-    const l = Zap.loading('正在保存，请稍后');
-    cleanGallery();
-    $.ajax({
-        url: '<?php echo Url::currentFull();?>',
-        method: 'post', data: f.serialize(), dataType: 'json',
-        success: function (d) {
-            if (d.code === 0) {
-                ZapToast.alert(d.msg, {bgColor: bgSuccess, callback: function(){
-                    <?php if($node->id){ ?>location.reload();<?php }else{ ?>location.href = d.redirect_to;<?php } ?>
-                }});
-            } else { ZapToast.alert(d.msg, {bgColor: bgDanger}); }
-        }
-    }).always(function(){ l.dispose(); });
+    // 保存成功后不刷新页面：新建会把地址 replaceState 到 edit/{id}，修改则就地更新时间
+    Zap.saveNodeForm({
+        isNew: <?php echo $node->id ? 'false' : 'true'; ?>,
+        beforeSerialize: function () { cleanGallery(); }
+    });
 }
 function removeImage() {
     $('#node-image').val('');

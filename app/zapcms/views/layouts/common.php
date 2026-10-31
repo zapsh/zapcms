@@ -180,7 +180,7 @@ use \zap\facades\Url;
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-sm-6">
-                            <h1 class="mb-0 fs-5"><?php echo htmlspecialchars($page_title); ?></h1>
+                            <h1 class="mb-0 fs-5" id="zapPageTitle"><?php echo htmlspecialchars($page_title); ?></h1>
                             <?php if (!empty($page_subtitle)): ?>
                             <small class="text-muted"><?php echo htmlspecialchars($page_subtitle); ?></small>
                             <?php endif; ?>
@@ -228,11 +228,13 @@ use \zap\facades\Url;
         </footer>
     </div>
 
-    <!-- Toast 消息容器 -->
-    <div class="toast-container p-3 top-0 start-50 translate-middle-x" id="topCenterToast" data-original-class="toast-container p-3"></div>
-    <div class="toast-container p-3 top-0 end-0" id="topRightToast" data-original-class="toast-container p-3"></div>
-    <div class="toast-container p-3 top-50 start-50 translate-middle" id="centerToast" data-original-class="toast-container p-3"></div>
-    <div class="toast-container p-3 bottom-0 end-0" id="bottomRightToast" data-original-class="toast-container p-3"></div>
+    <!-- Toast 消息容器
+         Bootstrap 的 .toast-container 默认是 position:absolute，长页面滚动后会定位到文档顶部
+         而看不见提示，这里统一用 position-fixed 固定在视口 -->
+    <div class="toast-container position-fixed p-3 top-0 start-50 translate-middle-x" id="topCenterToast" data-original-class="toast-container position-fixed p-3"></div>
+    <div class="toast-container position-fixed p-3 top-0 end-0" id="topRightToast" data-original-class="toast-container position-fixed p-3"></div>
+    <div class="toast-container position-fixed p-3 top-50 start-50 translate-middle" id="centerToast" data-original-class="toast-container position-fixed p-3"></div>
+    <div class="toast-container position-fixed p-3 bottom-0 end-0" id="bottomRightToast" data-original-class="toast-container position-fixed p-3"></div>
  
     
     <script src="<?php echo \zapcms\support\Vite::js('bootstrap.bundle'); ?>"></script>

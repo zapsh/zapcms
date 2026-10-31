@@ -134,7 +134,16 @@ class AbstractNodeType
             Node::updateAll($node,['id'=>$id]);
             // 保存自定义字段（node_meta）
             Node::findById($id)->saveMeta(Request::post('meta', []));
-            Response::json(['code'=>0,'msg'=>$this->getTitle("%s修改成功"),'id'=>$id]);
+            // slug 可能被唯一性校验改写（重名补 -id 后缀），一并返回给前端回写，
+            // 前端据此就地更新页面，不再整体刷新（见 Zap.saveNodeForm）
+            Response::json([
+                'code'=>0,
+                'msg'=>$this->getTitle("%s修改成功"),
+                'id'=>$id,
+                'slug'=>$node['slug'] ?? '',
+                'update_time'=>$node['update_time'] ?? time(),
+                'title'=>$this->getTitle("修改%s"),
+            ]);
         }
         $this->nodeId = $id;
         $data['title'] = $this->title;
@@ -177,7 +186,17 @@ class AbstractNodeType
             foreach ($catalogArray as $catalog_id=>$level){
                 NodeRelation::create(['node_id'=>$nodeModel->id,'catalog_id'=>$catalog_id,'level'=>$level]);
             }
-            Response::json(['code'=>0,'msg'=> $this->title . '创建成功','id'=>$nodeModel->id,'redirect_to'=>url_action("Node@{$this->controller}/edit/{$nodeModel->id}",$_GET)]);
+            // redirect_to：新建成功后前端用 history.replaceState 把地址切到 edit/{id}，
+            // 不再整体跳转，表单原地变成“修改”状态，连续保存不会产生重复内容
+            Response::json([
+                'code'=>0,
+                'msg'=> $this->title . '创建成功',
+                'id'=>$nodeModel->id,
+                'redirect_to'=>url_action("Node@{$this->controller}/edit/{$nodeModel->id}",$_GET),
+                'slug'=>$node['slug'] ?? '',
+                'update_time'=>$node['update_time'] ?? time(),
+                'title'=>$this->getTitle("修改%s"),
+            ]);
 
         }
         $data['title'] = $this->title;

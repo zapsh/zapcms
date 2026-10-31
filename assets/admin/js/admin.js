@@ -32,14 +32,34 @@ $(function(){
 
 
 
+// 各位置容器的默认 class，供页面缺少容器时按需创建
+const ToastContainerClass = {
+    topCenterToast:'toast-container position-fixed p-3 top-0 start-50 translate-middle-x',
+    topRightToast:'toast-container position-fixed p-3 top-0 end-0',
+    centerToast:'toast-container position-fixed p-3 top-50 start-50 translate-middle',
+    bottomRightToast:'toast-container position-fixed p-3 bottom-0 end-0'
+};
+
+/**
+ * 全局消息提示（Bootstrap Toast）
+ *   ZapToast.notify(msg, {bgColor:bgSuccess, position:Toast_Pos_TopCenter, delay:1500, callback:fn})
+ *   ZapToast.success(msg[, params]) / ZapToast.error(msg[, params])
+ *   ZapToast.alert(msg[, params])  旧调用方式，等价于 notify
+ */
 const ZapToast = {
-    alert:function(msg,params){
-        const defaultParams = {
-            delay:1000,
-            bgColor:bgSuccess,
-            position:Toast_Pos_TopCenter,
-            callback:function(){}
+    // 页面没有布局容器时（如 AJAX 载入的表单）自动创建，避免空引用导致提示丢失
+    container:function(position){
+        let el = document.getElementById(position);
+        if(el === null){
+            el = document.createElement('div');
+            el.id = position;
+            el.className = ToastContainerClass[position] || ToastContainerClass[Toast_Pos_TopRight];
+            el.setAttribute('data-original-class', el.className);
+            document.body.appendChild(el);
         }
+        return el;
+    },
+    notify:function(msg,params){
         // 兼容 alert({title:'msg', bg:...}) 对象调用方式
         if(msg !== null && typeof msg === 'object'){
             const obj = msg;
@@ -50,22 +70,57 @@ const ZapToast = {
                 params.bgColor = params.bg;
             }
         }
-        if(params === undefined){
-            params = {}
-        }
-        params = Object.assign(defaultParams,params);
-        const toastTpl = `<div class="toast align-items-center ${params.bgColor}" data-bs-config='{"delay":${params.delay}}'>
-            <div class="d-flex">
-            <div class="toast-body">${msg}</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-        </div>`;
-        const toastContainer = document.getElementById(params.position);
-        toastContainer.innerHTML = toastTpl;
+        const opt = Object.assign({
+            delay:1500,
+            bgColor:bgSuccess,
+            position:Toast_Pos_TopCenter,
+            icon:'',
+            title:'',
+            callback:null
+        }, params || {});
 
-        const toastBootstrap = bootstrap.Toast.getOrCreateInstance(toastContainer.firstChild)
-        toastBootstrap.show()
-        toastContainer.firstChild.addEventListener('hidden.bs.toast', params.callback)
+        const el = document.createElement('div');
+        el.className = 'toast align-items-center ' + opt.bgColor;
+        el.setAttribute('role','alert');
+        el.setAttribute('aria-live','assertive');
+        el.setAttribute('aria-atomic','true');
+        el.innerHTML = '<div class="d-flex"><div class="toast-body">'
+            + (opt.icon ? '<i class="' + opt.icon + ' me-2"></i>' : '')
+            + (opt.title ? '<strong class="me-2">' + opt.title + '</strong>' : '')
+            + (msg === undefined || msg === null ? '' : msg)
+            + '</div>'
+            + '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>'
+            + '</div>';
+
+        // 追加而不是覆盖 innerHTML，连续提示不会互相顶掉
+        this.container(opt.position).appendChild(el);
+
+        let finished = false;
+        const finish = function(){
+            if(finished){ return; }
+            finished = true;
+            if(el.parentNode){ el.parentNode.removeChild(el); }
+            if(typeof opt.callback === 'function'){ opt.callback(); }
+        };
+
+        if(typeof bootstrap !== 'undefined' && bootstrap.Toast){
+            el.addEventListener('hidden.bs.toast', finish);
+            bootstrap.Toast.getOrCreateInstance(el, {delay:opt.delay}).show();
+        }else{
+            // bootstrap 未加载时退化为静态提示，保证用户仍然看得到反馈
+            el.classList.add('show');
+            setTimeout(finish, opt.delay);
+        }
+        return el;
+    },
+    alert:function(msg,params){
+        return this.notify(msg, params);
+    },
+    success:function(msg,params){
+        return this.notify(msg, Object.assign({bgColor:bgSuccess, icon:'fa fa-check-circle'}, params || {}));
+    },
+    error:function(msg,params){
+        return this.notify(msg, Object.assign({bgColor:bgDanger, icon:'fa fa-times-circle'}, params || {}));
     }
 };
 
@@ -173,20 +228,160 @@ const ZapModal = {
 
 };
 
+/**
+ * 轻量加载提示：固定定位的半透明遮罩 + 转圈
+ *
+ * 之前用 Bootstrap Modal 实现，Modal 弹出时会给 body 加 .modal-open
+ * （overflow:hidden + 补偿滚动条宽度），页面宽度突变、内容重排，
+ * 短请求时一闪一闪非常明显。这里只用一层 fixed 覆盖层，
+ * 不改动 body、不影响滚动条，布局零位移。
+ *
+ * 用法不变：
+ *   const load = Zap.loading('正在保存，请稍后');
+ *   ...ajax... .always(function(){ load.dispose(); });
+ */
+const ZapLoading = {
+    styleId:'zapLoadingStyle',
+    maskId:'zapLoadingMask',
+    // 延迟出现：150ms 内就结束的请求不显示遮罩，避免一闪而过
+    delay:150,
+    showTimer:null,
+    hideTimer:null,
+    css:'.zap-loading-mask{position:fixed;top:0;right:0;bottom:0;left:0;z-index:1095;display:flex;'
+        + 'align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity .15s linear;'
+        + 'background:rgba(255,255,255,.5)}'
+        + '.zap-loading-mask.show{opacity:1;visibility:visible}'
+        + '[data-bs-theme=dark] .zap-loading-mask{background:rgba(0,0,0,.45)}'
+        + '.zap-loading-box{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1rem 1.5rem;'
+        + 'border-radius:.5rem;background:var(--bs-body-bg,#fff);box-shadow:0 .5rem 1rem rgba(0,0,0,.15)}'
+        + '.zap-loading-text{font-size:.875rem;color:var(--bs-body-color,#212529)}',
+    ensureStyle:function(){
+        if(document.getElementById(this.styleId) !== null){ return; }
+        const style = document.createElement('style');
+        style.id = this.styleId;
+        style.textContent = this.css;
+        document.head.appendChild(style);
+    },
+    mask:function(){
+        this.ensureStyle();
+        let el = document.getElementById(this.maskId);
+        if(el === null){
+            el = document.createElement('div');
+            el.id = this.maskId;
+            el.className = 'zap-loading-mask';
+            el.setAttribute('role','status');
+            el.setAttribute('aria-live','polite');
+            el.innerHTML = '<div class="zap-loading-box">'
+                + '<div class="spinner-border text-success" role="status"><span class="visually-hidden">Loading...</span></div>'
+                + '<div class="zap-loading-text"></div>'
+                + '</div>';
+            document.body.appendChild(el);
+        }
+        return el;
+    },
+    show:function(title){
+        const el = this.mask();
+        el.querySelector('.zap-loading-text').textContent = title || '加载中，请稍后...';
+        clearTimeout(this.showTimer);
+        clearTimeout(this.hideTimer);
+        const self = this;
+        this.showTimer = setTimeout(function(){
+            void el.offsetWidth; // 强制回流，保证 opacity 过渡生效
+            el.classList.add('show');
+        }, self.delay);
+        return {
+            element:el,
+            dispose:function(){ ZapLoading.hide(); },
+            hide:function(){ ZapLoading.hide(); }
+        };
+    },
+    hide:function(){
+        clearTimeout(this.showTimer);
+        const el = document.getElementById(this.maskId);
+        if(el === null){ return; }
+        el.classList.remove('show');
+        clearTimeout(this.hideTimer);
+        // 等淡出结束再移除节点，连续请求时复用同一个遮罩
+        this.hideTimer = setTimeout(function(){
+            if(el.parentNode){ el.parentNode.removeChild(el); }
+        }, 200);
+    }
+};
+
 var Zap = {
     loading:function(title){
-        if(title===undefined){
-            title = '加载中，请稍后...'
+        return ZapLoading.show(title);
+    },
+    /**
+     * 内容管理（节点）表单保存
+     *
+     *   Zap.saveNodeForm({
+     *       isNew: true,                              // 当前是否为新建页
+     *       beforeSerialize: function($form){},        // 可选，序列化前的清理（如 cleanGallery）
+     *       onSaved: function(data, isNew){}           // 可选，额外后处理
+     *   });
+     *
+     * 保存成功后不再 location.reload()：
+     *   1. 新建 → 写入真实 node_id，并用 history.replaceState 把地址切到 edit/{id}
+     *      （不发请求、不刷新），之后再次保存就是“修改”，不会重复创建内容；
+     *   2. 回写服务端修正过的 slug（重名时补 -id 后缀）、刷新“更新时间”、
+     *      把标题从“添加X”改成“修改X”。
+     * 这样滚动位置、编辑器光标、已展开的 tab 都不会丢。
+     */
+    saveNodeForm:function(options){
+        options = options || {};
+        const f = $(options.form || '#zapForm');
+        if(f.length === 0){ ZapToast.error('表单未找到，无法保存'); return; }
+        if(!f.valid()){ ZapToast.error(options.invalidMsg || '请修改错误项，重新提交'); return; }
+        if(typeof options.beforeSerialize === 'function'){ options.beforeSerialize(f); }
+        const l = Zap.loading(options.loadingMsg || '正在保存，请稍后');
+        const isNew = options.isNew === true;
+        $.ajax({
+            // 实时取当前地址：新建成功后地址已被 replaceState 改成 edit/{id}，
+            // 若用渲染时写死的地址，再次保存会又打回 add 从而重复创建
+            url: window.location.href,
+            method:'post', data:f.serialize(), dataType:'json',
+            success:function(d){
+                if(d && d.code === 0){
+                    Zap.applyNodeSaved(d, isNew);
+                    if(typeof options.onSaved === 'function'){ options.onSaved(d, isNew); }
+                    ZapToast.success(d.msg || '保存成功', {delay:1500});
+                }else{
+                    ZapToast.error((d && d.msg) || '保存失败，请稍后重试');
+                }
+            },
+            error:function(xhr){ ZapToast.error('保存失败：' + xhr.status); }
+        }).always(function(){ l.dispose(); });
+    },
+    /**
+     * 保存成功后就地更新页面状态（saveNodeForm 内部调用，也可单独调用）
+     */
+    applyNodeSaved:function(d, isNew){
+        if(!d){ return; }
+        if(d.id){
+            $('input[name=node_id]').val(d.id);
         }
-        const content = `<div class="d-flex justify-content-center">
-          <div class="spinner-border text-success" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-        </div>
-        <div class="text-center">${title}</div>`;
-        const loadModal = new ZapDialog({content:content,backdrop:true});
-        loadModal.show()
-        return loadModal;
+        if(isNew && d.redirect_to){
+            window.history.replaceState(null, '', d.redirect_to);
+        }
+        if(d.slug && $('#node_slug').length){
+            $('#node_slug').val(d.slug);
+            if(typeof updateSlugPreview === 'function'){ updateSlugPreview(); }
+        }
+        if(d.update_time){
+            $('#node_update_time_label').text(Zap.formatTime(d.update_time));
+        }
+        if(isNew && d.title){
+            $('#zapPageTitle').text(d.title);
+            $('.breadcrumb .breadcrumb-item.active').last().text(d.title);
+        }
+    },
+    formatTime:function(timestamp){
+        const d = new Date(parseInt(timestamp, 10) * 1000);
+        if(isNaN(d.getTime())){ return ''; }
+        const p = function(n){ return n < 10 ? '0' + n : String(n); };
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+            + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
     },
     EnableToolTip:function (){
         const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
