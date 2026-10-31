@@ -84,6 +84,9 @@ class Startup
     {
         define('IN_ZAPCMS', true);
 
+        // ──── 插件 / 模块统一引导（前台初始化阶段，注册 Hook 与 boot 脚本）────
+        \zapcms\support\PluginLoader::bootAll();
+
         // ──── 加载站点配置 ────
         $website = get_options('website', 'REGEXP');
         app()->set('options_website', $website);

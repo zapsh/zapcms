@@ -77,33 +77,9 @@ class Bootstrap
      */
     protected function loadModAutoloads(): void
     {
-        try {
-            $rows = Option::getArray('mod.installed.', 'REGEXP');
-        } catch (\Throwable $e) {
-            return; // options 表不可用时静默跳过
-        }
-        foreach ($rows as $key => $json) {
-            $name = substr($key, strlen('mod.installed.'));
-            $info = is_string($json) ? (json_decode($json, true) ?: []) : [];
-            if (empty($info['status'])) {
-                continue;
-            }
-
-            // 同步模块后台菜单：mod.json 的 admin_menu 有变化时才写库
-            try {
-                \zapcms\support\ModMenu::sync($name, $info);
-            } catch (\Throwable $e) {
-                // 菜单同步失败不影响后台启动
-            }
-
-            if (empty($info['autoload'])) {
-                continue;
-            }
-            $script = APP_ROOT . '/mods/' . $name . '/' . $info['autoload'];
-            if (is_file($script)) {
-                include_once $script;
-            }
-        }
+        // 统一引导逻辑已迁移至 zapcms\support\PluginLoader::bootAll()
+        // （前台 + 后台共用，支持 boot 脚本与统一 Hook 总线）。此处保留向后兼容入口。
+        \zapcms\support\PluginLoader::bootAll();
     }
 
     /**

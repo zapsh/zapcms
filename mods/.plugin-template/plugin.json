@@ -3,14 +3,22 @@
     "title": "示例插件",
     "version": "1.0.0",
     "author": "ZAP CMS",
-    "description": "这是一个示例插件，展示了插件开发的基本结构",
+    "description": "示例插件：展示插件基本结构，以及如何通过统一 Hook 总线在系统初始化时注册钩子。",
     "homepage": "https://zap.cn",
     "package_name": "zapcms/example-plugin",
     "requires": {
         "zapcms": ">=1.0.0"
     },
+    "boot": "boot.php",
     "route": {
         "prefix": "example",
         "aliases": ["example-alias"]
+    },
+    "admin_menu": {
+        "title": "示例插件",
+        "icon": "fa fa-puzzle-piece",
+        "items": [
+            { "title": "示例设置", "url": "mod/example-plugin/admin/settings" }
+        ]
     }
 }

@@ -1,28 +1,17 @@
 <?php
 /*
- * 插件管理 - 已安装列表
+ * 扩展管理 - 已安装列表
+ * 模块(mod)与插件(plugin)使用相同的分发方式，统一在此以「扩展」展示。
  */
 !IS_AJAX && $this->layout('layouts/common');
 
 use zap\facades\Url;
 
-$total        = count($plugins);
-$activeCount  = count(array_filter($plugins, fn($p) => ($p['status'] ?? 0) == 1));
-$disabledCnt  = $total - $activeCount;
-
-// loaded_mods 中每个元素是 ['name' => ..., 'title' => ..., ...]
-$loadedModNames = array_column($loaded_mods, 'name');
-$unregistered   = count(array_diff($loadedModNames, $registered_names));
-
-// 判断插件是否已注册到数据库
-$isRegistered = function($mod) use ($registered_names) {
-    return in_array($mod['name'], $registered_names);
-};
-
-// 获取插件状态
-$getStatus = function($plugin) {
-    return ($plugin['status'] ?? 0) == 1 ? 1 : 0;
-};
+$extensions  = $extensions ?? [];
+$total       = count($extensions);
+$activeCount = count(array_filter($extensions, fn($e) => ($e['status'] ?? 0) == 1));
+$disabledCnt = $total - $activeCount;
+$unregistered = count(array_filter($extensions, fn($e) => empty($e['registered'])));
 ?>
 
 <div class="container-fluid p-0">
@@ -82,11 +71,11 @@ $getStatus = function($plugin) {
                     <div class="flex-shrink-0 me-3">
                         <span class="fa-stack fa-lg text-info">
                             <i class="fa fa-circle fa-stack-2x opacity-25"></i>
-                            <i class="fa fa-plug fa-stack-1x"></i>
+                            <i class="fa fa-puzzle-piece fa-stack-1x"></i>
                         </span>
                     </div>
                     <div class="flex-grow-1">
-                        <div class="text-muted small text-uppercase fw-semibold">插件总数</div>
+                        <div class="text-muted small text-uppercase fw-semibold">扩展总数</div>
                         <div class="fs-3 fw-bold text-info"><?= $total ?></div>
                     </div>
                 </div>
@@ -94,11 +83,11 @@ $getStatus = function($plugin) {
         </div>
     </div>
 
-    <!-- 插件管理卡片 -->
+    <!-- 扩展管理卡片 -->
     <div class="card shadow-sm">
         <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
             <h5 class="card-title mb-0">
-                <i class="fa fa-puzzle-piece me-2 text-primary"></i>已安装插件
+                <i class="fa fa-puzzle-piece me-2 text-primary"></i>已安装扩展
                 <small class="text-muted fw-normal">(<?= $total ?>)</small>
             </h5>
             <div class="btn-group">
@@ -114,12 +103,12 @@ $getStatus = function($plugin) {
             </div>
         </div>
         <div class="card-body p-3">
-            <?php if (empty($plugins) && empty($loaded_mods)): ?>
+            <?php if (empty($extensions)): ?>
                 <!-- 空状态 -->
                 <div class="text-center py-5 text-muted">
                     <i class="fa fa-puzzle-piece fa-4x mb-3 d-block opacity-25"></i>
-                    <h5>还没有安装任何插件</h5>
-                    <p class="mb-3">前往插件市场发现和安装插件，或上传本地插件包</p>
+                    <h5>还没有安装任何扩展</h5>
+                    <p class="mb-3">前往插件市场发现和安装，或上传本地扩展包</p>
                     <div class="d-flex justify-content-center gap-2">
                         <a href="<?= Url::action('Plugin@market') ?>" class="btn btn-primary ajax-link">
                             <i class="fa fa-shopping-cart me-1"></i>浏览插件市场
@@ -130,8 +119,8 @@ $getStatus = function($plugin) {
                     </div>
                 </div>
             <?php else: ?>
-                <!-- 视图切换按钮 -->
-                <div class="d-flex justify-content-end mb-3">
+                <!-- 视图切换 + 类型过滤 -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                     <div class="btn-group btn-group-sm" role="group">
                         <button class="btn btn-outline-secondary active" id="viewGrid" onclick="switchView('grid')">
                             <i class="fa fa-th-large"></i>
@@ -140,27 +129,27 @@ $getStatus = function($plugin) {
                             <i class="fa fa-list"></i>
                         </button>
                     </div>
+                    <div class="btn-group btn-group-sm" id="typeFilter" role="group">
+                        <button class="btn btn-outline-secondary active" data-type="all">全部</button>
+                        <button class="btn btn-outline-secondary" data-type="module">模块</button>
+                        <button class="btn btn-outline-secondary" data-type="plugin">插件</button>
+                    </div>
                 </div>
 
                 <!-- 卡片网格视图 -->
-                <div class="row g-3" id="pluginGrid">
-                    <?php foreach ($plugins as $plugin): ?>
-                        <?= renderPluginCard($plugin, true) ?>
-                    <?php endforeach; ?>
-                    <?php foreach ($loaded_mods as $mod): ?>
-                        <?php if (!$isRegistered($mod)): ?>
-                            <?= renderPluginCard(['name' => $mod['name'], 'title' => $mod['title'], 'version' => $mod['version'] ?? '—', 'author' => $mod['author'] ?? '—', 'description' => $mod['description'] ?? '插件目录存在但未注册到数据库', 'status' => 0], false) ?>
-                        <?php endif; ?>
+                <div class="row g-3" id="extGrid">
+                    <?php foreach ($extensions as $ext): ?>
+                        <?= renderExtCard($ext) ?>
                     <?php endforeach; ?>
                 </div>
 
                 <!-- 表格列表视图（默认隐藏） -->
-                <div class="table-responsive d-none" id="pluginTable">
+                <div class="table-responsive d-none" id="extTable">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th style="width:40px"></th>
-                                <th>插件名称</th>
+                                <th>名称</th>
                                 <th>版本</th>
                                 <th>作者</th>
                                 <th>状态</th>
@@ -168,51 +157,8 @@ $getStatus = function($plugin) {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($plugins as $plugin): ?>
-                            <tr>
-                                <td class="text-center">
-                                    <span class="avatar avatar-sm rounded-circle d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary fw-bold" style="width:36px;height:36px;font-size:14px;">
-                                        <?= mb_strtoupper(mb_substr($plugin['title'] ?? $plugin['name'], 0, 1)) ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="fw-semibold"><?= htmlspecialchars($plugin['title'] ?? $plugin['name']) ?></div>
-                                    <small class="text-muted"><?= htmlspecialchars($plugin['name']) ?></small>
-                                </td>
-                                <td><span class="badge bg-light text-dark">v<?= htmlspecialchars($plugin['version'] ?? '—') ?></span></td>
-                                <td><?= htmlspecialchars($plugin['author'] ?? '—') ?></td>
-                                <td>
-                                    <?php if ($getStatus($plugin)): ?>
-                                        <span class="badge bg-success bg-opacity-10 text-success"><i class="fa fa-check-circle me-1"></i>已启用</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-warning bg-opacity-10 text-warning"><i class="fa fa-pause-circle me-1"></i>已禁用</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?= renderActionButtons($plugin['name'], $getStatus($plugin)) ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                            <?php foreach ($loaded_mods as $mod): ?>
-                            <?php if (!$isRegistered($mod)): ?>
-                            <tr class="table-secondary">
-                                <td class="text-center">
-                                    <span class="avatar avatar-sm rounded-circle d-inline-flex align-items-center justify-content-center bg-secondary text-white fw-bold" style="width:36px;height:36px;font-size:14px;">
-                                        <?= mb_strtoupper(mb_substr($mod['name'], 0, 1)) ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <div class="fw-semibold text-muted"><?= htmlspecialchars($mod['name']) ?></div>
-                                    <small class="text-muted">未注册到数据库</small>
-                                </td>
-                                <td><span class="badge bg-light text-muted">—</span></td>
-                                <td class="text-muted">—</td>
-                                <td><span class="badge bg-secondary bg-opacity-10 text-secondary"><i class="fa fa-question-circle me-1"></i>未注册</span></td>
-                                <td>
-                                    <button class="btn btn-outline-info btn-sm" onclick="registerPlugin('<?= htmlspecialchars($mod['name']) ?>')">
-                                        <i class="fa fa-plus me-1"></i>注册
-                                    </button>
-                                </td>
-                            </tr>
-                            <?php endif; ?>
+                            <?php foreach ($extensions as $ext): ?>
+                                <?= renderExtRow($ext) ?>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
@@ -231,7 +177,7 @@ $getStatus = function($plugin) {
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>确定要卸载插件 <strong id="uninstallPluginName">—</strong> 吗？</p>
+                <p>确定要卸载扩展 <strong id="uninstallPluginName">—</strong> 吗？</p>
                 <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" id="keepUninstallData" checked>
                     <label class="form-check-label" for="keepUninstallData">
@@ -264,15 +210,15 @@ $getStatus = function($plugin) {
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
-                <h5 class="modal-title"><i class="fa fa-upload me-2"></i>上传安装插件</h5>
+                <h5 class="modal-title"><i class="fa fa-upload me-2"></i>上传安装扩展</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="uploadForm" enctype="multipart/form-data">
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">选择插件 ZIP 包</label>
+                        <label class="form-label">选择扩展 ZIP 包</label>
                         <input type="file" class="form-control" name="plugin_zip" accept=".zip" required>
-                        <div class="form-text">支持 ZIP 格式的插件包，包内需包含 plugin.json 配置文件</div>
+                        <div class="form-text">支持 ZIP 格式的扩展包，包内需包含 plugin.json 或 mod.json 配置文件</div>
                     </div>
                     <div class="progress d-none" style="height:6px;">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" style="width:100%"></div>
@@ -292,7 +238,7 @@ $getStatus = function($plugin) {
 
 <script>
 // ==============================
-//  插件管理 - 前端交互逻辑
+//  扩展管理 - 前端交互逻辑
 // ==============================
 
 let currentUninstallName = '';
@@ -317,7 +263,7 @@ function updateUninstallTip() {
 
     if (keepData && keepFiles) {
         tip.className = 'alert alert-warning mb-0';
-        tip.innerHTML = '<i class="fa fa-exclamation-circle me-1"></i>相当于“注销”：清理后台菜单与安装登记，数据表和模块文件都保留，之后在“模块”列表点“注册”即可重新激活。';
+        tip.innerHTML = '<i class="fa fa-exclamation-circle me-1"></i>相当于“注销”：清理后台菜单与安装登记，数据表和模块文件都保留，之后在列表点“注册”即可重新激活。';
         btn.className = 'btn btn-warning';
         btn.innerHTML = '<i class="fa fa-power-off me-1"></i>注销（保留数据与文件）';
     } else if (keepData) {
@@ -395,7 +341,7 @@ function toggleStatus(name, currentStatus) {
     });
 }
 
-// —— 注册未注册插件 ——
+// —— 注册未注册扩展（目录已存在，仅缺失登记） ——
 function registerPlugin(name) {
     Zap.AjaxPost({
         url: '<?= Url::action('Plugin@uploadInstall') ?>',
@@ -466,9 +412,21 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
 function switchView(mode) {
     document.getElementById('viewGrid').classList.toggle('active', mode === 'grid');
     document.getElementById('viewList').classList.toggle('active', mode === 'list');
-    document.getElementById('pluginGrid').classList.toggle('d-none', mode !== 'grid');
-    document.getElementById('pluginTable').classList.toggle('d-none', mode !== 'list');
+    document.getElementById('extGrid').classList.toggle('d-none', mode !== 'grid');
+    document.getElementById('extTable').classList.toggle('d-none', mode !== 'list');
 }
+
+// —— 类型过滤（全部 / 模块 / 插件） ——
+document.querySelectorAll('#typeFilter button').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('#typeFilter button').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        const t = btn.dataset.type;
+        document.querySelectorAll('#extGrid [data-type], #extTable tr[data-type]').forEach(function(el) {
+            el.classList.toggle('d-none', t !== 'all' && el.dataset.type !== t);
+        });
+    });
+});
 
 // —— 刷新列表 ——
 function refreshPlugins() {
@@ -478,32 +436,41 @@ function refreshPlugins() {
 
 <?php
 // ==============================
-//  辅助函数：渲染插件卡片
+//  辅助函数：渲染扩展卡片 / 表格行
 // ==============================
-function renderPluginCard(array $plugin, bool $isRegistered): string
+
+function renderExtCard(array $ext): string
 {
-    $name    = htmlspecialchars($plugin['name']);
-    $title   = htmlspecialchars($plugin['title'] ?? $plugin['name']);
-    $version = htmlspecialchars($plugin['version'] ?? '—');
-    $author  = htmlspecialchars($plugin['author'] ?? '—');
-    $desc    = htmlspecialchars($plugin['description'] ?? '');
-    $status  = ($plugin['status'] ?? 0) == 1;
+    $name    = htmlspecialchars($ext['name']);
+    $title   = htmlspecialchars($ext['title'] ?? $ext['name']);
+    $version = htmlspecialchars($ext['version'] ?? '—');
+    $author  = htmlspecialchars($ext['author'] ?? '—');
+    $desc    = htmlspecialchars($ext['description'] ?? '');
+    $type    = $ext['type'] ?? 'module';
+    $status  = ($ext['status'] ?? 0) == 1;
+    $registered = !empty($ext['registered']);
+    $missing    = !empty($ext['missing']);
 
-    $iconLetter  = mb_strtoupper(mb_substr($title, 0, 1));
-    $statusBadge = $status
-        ? '<span class="badge bg-success bg-opacity-10 text-success"><i class="fa fa-check-circle me-1"></i>已启用</span>'
-        : '<span class="badge bg-warning bg-opacity-10 text-warning"><i class="fa fa-pause-circle me-1"></i>已禁用</span>';
+    $iconLetter = mb_strtoupper(mb_substr($title, 0, 1));
+    $typeBadge  = $type === 'plugin'
+        ? '<span class="badge bg-info bg-opacity-10 text-info"><i class="fa fa-plug me-1"></i>插件</span>'
+        : '<span class="badge bg-secondary bg-opacity-10 text-secondary"><i class="fa fa-cube me-1"></i>模块</span>';
 
-    $actions = renderActionButtons($plugin['name'], $status);
-
-    if (!$isRegistered) {
-        $iconLetter  = mb_strtoupper(mb_substr($plugin['name'], 0, 1));
+    if ($missing) {
+        $statusBadge = '<span class="badge bg-danger bg-opacity-10 text-danger"><i class="fa fa-exclamation-triangle me-1"></i>文件缺失</span>';
+        $actions = '<button class="btn btn-outline-danger btn-sm" onclick="confirmUninstall(\'' . $name . '\')"><i class="fa fa-trash me-1"></i>卸载</button>';
+    } elseif (!$registered) {
         $statusBadge = '<span class="badge bg-secondary"><i class="fa fa-question-circle me-1"></i>未注册</span>';
-        $actions     = '<button class="btn btn-outline-info btn-sm" onclick="registerPlugin(\'' . htmlspecialchars($plugin['name']) . '\')"><i class="fa fa-plus me-1"></i>注册</button>';
+        $actions = '<button class="btn btn-outline-info btn-sm" onclick="registerPlugin(\'' . $name . '\')"><i class="fa fa-plus me-1"></i>注册</button>';
+    } else {
+        $statusBadge = $status
+            ? '<span class="badge bg-success bg-opacity-10 text-success"><i class="fa fa-check-circle me-1"></i>已启用</span>'
+            : '<span class="badge bg-warning bg-opacity-10 text-warning"><i class="fa fa-pause-circle me-1"></i>已禁用</span>';
+        $actions = renderExtActions($name, $status);
     }
 
     return <<<CARD
-    <div class="col-xl-4 col-lg-6">
+    <div class="col-xl-4 col-lg-6" data-type="{$type}">
         <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-start mb-2">
@@ -515,36 +482,82 @@ function renderPluginCard(array $plugin, bool $isRegistered): string
                         <div class="d-flex align-items-center gap-2 flex-wrap">
                             <span class="badge bg-light text-dark">v{$version}</span>
                             <small class="text-muted text-truncate" title="{$author}"><i class="fa fa-user-o me-1"></i>{$author}</small>
-                            {$statusBadge}
+                            {$typeBadge}
                         </div>
                     </div>
                 </div>
                 <p class="text-muted small mb-3 text-truncate-2" style="min-height:2.5em;" title="{$desc}">{$desc}</p>
-                <div class="d-flex gap-1 flex-wrap">
+                <div class="d-flex gap-1 flex-wrap align-items-center">
+                    {$statusBadge}
+                    <span class="ms-auto"></span>
                     {$actions}
                 </div>
             </div>
         </div>
     </div>
-    CARD;
+CARD;
 }
 
-/**
- * 渲染操作按钮
- */
-function renderActionButtons(string $name, bool $isActive): string
+function renderExtRow(array $ext): string
+{
+    $name    = htmlspecialchars($ext['name']);
+    $title   = htmlspecialchars($ext['title'] ?? $ext['name']);
+    $version = htmlspecialchars($ext['version'] ?? '—');
+    $author  = htmlspecialchars($ext['author'] ?? '—');
+    $type    = $ext['type'] ?? 'module';
+    $status  = ($ext['status'] ?? 0) == 1;
+    $registered = !empty($ext['registered']);
+    $missing    = !empty($ext['missing']);
+    $iconLetter = mb_strtoupper(mb_substr($title, 0, 1));
+
+    $typeBadge = $type === 'plugin'
+        ? '<span class="badge bg-info bg-opacity-10 text-info"><i class="fa fa-plug me-1"></i>插件</span>'
+        : '<span class="badge bg-secondary bg-opacity-10 text-secondary"><i class="fa fa-cube me-1"></i>模块</span>';
+
+    if ($missing) {
+        $statusBadge = '<span class="badge bg-danger bg-opacity-10 text-danger"><i class="fa fa-exclamation-triangle me-1"></i>文件缺失</span>';
+        $actions = '<button class="btn btn-outline-danger btn-sm" onclick="confirmUninstall(\'' . $name . '\')"><i class="fa fa-trash me-1"></i>卸载</button>';
+    } elseif (!$registered) {
+        $statusBadge = '<span class="badge bg-secondary"><i class="fa fa-question-circle me-1"></i>未注册</span>';
+        $actions = '<button class="btn btn-outline-info btn-sm" onclick="registerPlugin(\'' . $name . '\')"><i class="fa fa-plus me-1"></i>注册</button>';
+    } else {
+        $statusBadge = $status
+            ? '<span class="badge bg-success bg-opacity-10 text-success"><i class="fa fa-check-circle me-1"></i>已启用</span>'
+            : '<span class="badge bg-warning bg-opacity-10 text-warning"><i class="fa fa-pause-circle me-1"></i>已禁用</span>';
+        $actions = renderExtActions($name, $status);
+    }
+
+    return <<<ROW
+        <tr data-type="{$type}">
+            <td class="text-center">
+                <span class="avatar avatar-sm rounded-circle d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary fw-bold" style="width:36px;height:36px;font-size:14px;">
+                    {$iconLetter}
+                </span>
+            </td>
+            <td>
+                <div class="fw-semibold">{$title}</div>
+                <small class="text-muted">{$name} {$typeBadge}</small>
+            </td>
+            <td><span class="badge bg-light text-dark">v{$version}</span></td>
+            <td>{$author}</td>
+            <td>{$statusBadge}</td>
+            <td>{$actions}</td>
+        </tr>
+ROW;
+}
+
+function renderExtActions(string $name, bool $isActive): string
 {
     $n = htmlspecialchars($name);
     $html = '';
 
     if ($isActive) {
-        $html .= '<button class="btn btn-outline-warning btn-sm" onclick="toggleStatus(\'' . $n . '\', 1)" title="禁用插件"><i class="fa fa-pause me-1"></i>禁用</button>';
+        $html .= '<button class="btn btn-outline-warning btn-sm" onclick="toggleStatus(\'' . $n . '\', 1)" title="禁用"><i class="fa fa-pause me-1"></i>禁用</button>';
     } else {
-        $html .= '<button class="btn btn-outline-success btn-sm" onclick="toggleStatus(\'' . $n . '\', 0)" title="启用插件"><i class="fa fa-play me-1"></i>启用</button>';
+        $html .= '<button class="btn btn-outline-success btn-sm" onclick="toggleStatus(\'' . $n . '\', 0)" title="启用"><i class="fa fa-play me-1"></i>启用</button>';
     }
 
-    $html .= ' <button class="btn btn-outline-danger btn-sm" onclick="confirmUninstall(\'' . $n . '\')" title="卸载插件"><i class="fa fa-trash me-1"></i>卸载</button>';
+    $html .= ' <button class="btn btn-outline-danger btn-sm" onclick="confirmUninstall(\'' . $n . '\')" title="卸载"><i class="fa fa-trash me-1"></i>卸载</button>';
 
     return $html;
 }
-?>

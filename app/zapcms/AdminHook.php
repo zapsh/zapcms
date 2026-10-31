@@ -1,30 +1,30 @@
 <?php
 /*
  * Copyright (c) 2023-2026.  ZAP.CN  - ZAP CMS
- * AdminHook - 主题后台钩子系统
+ * AdminHook - 主题后台钩子（兼容层，已桥接至统一钩子总线 zapcms\Hook）
  *
- * 用法:
+ * 用法（保持不变）:
  *   // 在主题 admin/functions.php 中注册
  *   \zapcms\AdminHook::on('admin_head', function() { echo '<link ...>'; });
  *
  *   // 在布局中触发出力
- *   \zapcms\AdminHook::fire('admin_head');
+ *   \zapcms\AdminHook::echo('admin_head');
+ *
+ * 说明：AdminHook 现仅作为 Hook 的便捷别称。AdminHook::on('admin_head', ...)
+ * 等价于 Hook::on('admin_head', ...)，主题与插件共用同一总线，且可在系统
+ * 初始化阶段（boot）注册，不再局限于后台视图层。
  */
 
 namespace zapcms;
 
 class AdminHook
 {
-    /** @var array<string, array<int, array<int, callable>>> 钩子注册表：hook => 优先级 => 回调列表 */
-    private static array $hooks = [];
-
     /**
-     * 注册一个钩子回调
-     * AdminHook::on('admin_head', function() { echo '<style>...</style>'; });
+     * 注册一个钩子回调（委托给统一 Hook 总线）
      */
     public static function on(string $hook, callable $callback, int $priority = 10): void
     {
-        self::$hooks[$hook][$priority][] = $callback;
+        Hook::on($hook, $callback, $priority);
     }
 
     /**
@@ -32,22 +32,7 @@ class AdminHook
      */
     public static function fire(string $hook): string
     {
-        $output = '';
-        if (empty(self::$hooks[$hook])) {
-            return $output;
-        }
-        // 按优先级排序
-        $callbacks = self::$hooks[$hook];
-        ksort($callbacks);
-        foreach ($callbacks as $group) {
-            foreach ($group as $callback) {
-                $result = $callback();
-                if (is_string($result)) {
-                    $output .= $result;
-                }
-            }
-        }
-        return $output;
+        return Hook::fire($hook);
     }
 
     /**
@@ -55,7 +40,7 @@ class AdminHook
      */
     public static function echo(string $hook): void
     {
-        echo self::fire($hook);
+        echo Hook::fire($hook);
     }
 
     /**
@@ -63,7 +48,7 @@ class AdminHook
      */
     public static function has(string $hook): bool
     {
-        return !empty(self::$hooks[$hook]);
+        return Hook::has($hook);
     }
 
     /**
@@ -71,6 +56,6 @@ class AdminHook
      */
     public static function clear(): void
     {
-        self::$hooks = [];
+        Hook::clear();
     }
 }

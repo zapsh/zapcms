@@ -26,27 +26,76 @@ class PluginController extends AdminController
     }
 
     /**
-     * 已安装插件列表
+     * 扩展管理（模块与插件统一列表）
      */
     public function index()
     {
-        $plugins = $this->pm->getInstalledPlugins();
-        $loadedMods = $this->pm->getLoadedMods();
-
-        // 标记已注册到数据库的插件
-        $registeredNames = array_column($plugins, 'name');
+        $extensions = $this->buildExtensions();
 
         view('plugin.index', [
-            'plugins'          => $plugins,
-            'loaded_mods'      => $loadedMods,
-            'registered_names' => $registeredNames,
-            'page_title'       => '插件管理',
-            'page_subtitle'    => '管理已安装的插件，启用、禁用、卸载及更新',
+            'extensions'     => $extensions,
+            'page_title'       => '插件',
+            'page_subtitle'    => '管理已安装的扩展（模块与插件使用相同的分发方式，统一在此维护），启用、禁用、卸载及更新',
             'breadcrumbs'      => [
                 ['title' => '控制台', 'url' => \zap\facades\Url::action('Index')],
-                ['title' => '插件管理'],
+                ['title' => '插件'],
             ],
         ]);
+    }
+
+    /**
+     * 合并「磁盘模块(mods/)」与「plugin 表(市场安装)」为一份扩展清单。
+     * 两者分发方式一致，按 name 归并；plugin 表有记录即视为「插件」，否则「模块」。
+     * 激活状态优先取 mod.installed.{name} 选项（plugin 表 status 作兜底）。
+     */
+    protected function buildExtensions(): array
+    {
+        $extensions = [];
+
+        // 1) 以磁盘目录为基底（物理存在的扩展：模块与插件都在 mods/ 下）
+        foreach ($this->pm->getLoadedMods() as $mod) {
+            $name = $mod['name'];
+            $ext  = $mod;
+            $ext['type']       = 'module';
+            $ext['status']     = 0;
+            $ext['registered'] = false;
+            $ext['missing']    = false;
+
+            if ($opt = $this->pm->getInstalledModOption($name)) {
+                $ext['status']     = (int)($opt['status'] ?? 0);
+                $ext['registered'] = true;
+            } elseif ($p = $this->pm->getPlugin($name)) {
+                $ext['status'] = (int)($p['status'] ?? 0);
+            }
+
+            if ($p = $this->pm->getPlugin($name)) {
+                $ext['type']         = 'plugin';
+                $ext['package_name'] = $p['package_name'] ?? '';
+            }
+
+            $extensions[$name] = $ext;
+        }
+
+        // 2) plugin 表有记录、但磁盘目录已缺失的项（文件被删，仍可卸载 / 重装）
+        foreach ($this->pm->getInstalledPlugins() as $p) {
+            if (isset($extensions[$p['name']])) {
+                continue;
+            }
+            $extensions[$p['name']] = [
+                'name'         => $p['name'],
+                'title'        => $p['title'] ?? $p['name'],
+                'version'      => $p['version'] ?? '1.0.0',
+                'author'       => $p['author'] ?? '',
+                'description'  => $p['description'] ?? '',
+                'type'         => 'plugin',
+                'status'       => (int)($p['status'] ?? 0),
+                'registered'   => true,
+                'missing'      => true,
+                'package_name' => $p['package_name'] ?? '',
+            ];
+        }
+
+        return array_values($extensions);
     }
 
     /**

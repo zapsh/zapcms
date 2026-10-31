@@ -1478,6 +1478,7 @@ class ZapPackageManager
             'description'  => $info['description'] ?? '',
             'homepage'     => $info['homepage'] ?? '',
             'autoload'     => $info['autoload'] ?? '',
+            'boot'         => $info['boot'] ?? '',
             'dependencies' => $info['dependencies'] ?? [],
             'status'       => (int)$status,
             'installed_at' => time(),
