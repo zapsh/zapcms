@@ -65,6 +65,14 @@ class ZapPackageManager
      */
     protected array $allowedHosts = ['mirrors.zap.cn'];
 
+    /**
+     * 插件市场下载源主机白名单（独立于核心更新源）
+     *
+     * 终端站点从自建的 zapsite 包管理市场拉取插件时，下载地址（zapsite 本身或
+     * 其对象存储）需在此放行。配置：security.allowed_market_hosts
+     */
+    protected array $allowedMarketHosts = [];
+
     public function __construct()
     {
         $this->tmpDir    = APP_ROOT . '/var/tmp';
@@ -78,6 +86,15 @@ class ZapPackageManager
             $this->allowedHosts = array_values(array_unique(array_merge(
                 $this->allowedHosts,
                 array_map(static fn($h) => strtolower(trim((string)$h)), $extra)
+            )));
+        }
+
+        // 插件市场下载源主机（zapsite 包管理及其对象存储）
+        $market = config('security.allowed_market_hosts', []);
+        if (is_array($market) && $market !== []) {
+            $this->allowedMarketHosts = array_values(array_unique(array_map(
+                static fn($h) => strtolower(trim((string)$h)),
+                $market
             )));
         }
 
@@ -127,7 +144,8 @@ class ZapPackageManager
             return false;
         }
 
-        return in_array($host, $this->allowedHosts, true);
+        return in_array($host, $this->allowedHosts, true)
+            || in_array($host, $this->allowedMarketHosts, true);
     }
 
     /**
@@ -249,7 +267,7 @@ class ZapPackageManager
             CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_CONNECTTIMEOUT => min(10, $this->timeout),
+            CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_TIMEOUT        => $this->timeout,
             CURLOPT_SSL_VERIFYPEER => $verify,
             CURLOPT_SSL_VERIFYHOST => $verify ? 2 : 0,

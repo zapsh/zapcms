@@ -213,6 +213,7 @@ class CreateBaseData
                 ['id' => 1061, 'option_name' => 'slug.baidu_key', 'option_value' => '', 'sort_order' => 0, 'autoload' => 1],
                 ['id' => 1062, 'option_name' => 'node_field_group.product', 'option_value' => '[{"name":"Data","sort_order":0}]', 'sort_order' => 0, 'autoload' => 0],
                 ['id' => 1063, 'option_name' => 'website.api_url', 'option_value' => '', 'sort_order' => 0, 'autoload' => 1],
+                ['id' => 1070, 'option_name' => 'website.market_api', 'option_value' => '', 'sort_order' => 0, 'autoload' => 1],
                 ['id' => 1064, 'option_name' => 'website.smtp_host', 'option_value' => '', 'sort_order' => 0, 'autoload' => 1],
                 ['id' => 1065, 'option_name' => 'website.smtp_port', 'option_value' => '587', 'sort_order' => 0, 'autoload' => 1],
                 ['id' => 1066, 'option_name' => 'website.smtp_encryption', 'option_value' => 'tls', 'sort_order' => 0, 'autoload' => 1],

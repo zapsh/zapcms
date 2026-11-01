@@ -446,6 +446,26 @@ class ZapUpdate
      */
     public function getMarketPlugins(int $page = 1, int $perPage = 12, string $search = '', string $category = ''): ?array
     {
+        $base = $this->marketApiBase();
+        if ($base !== '') {
+            $url  = $base . '/packages?' . http_build_query([
+                'page'     => $page,
+                'per_page' => $perPage,
+                'q'        => $search,
+                'category' => $category,
+                'version'  => ZAP_CMS_VERSION,
+            ]);
+            if (($cached = $this->marketCacheGet($url)) !== null) {
+                return $cached;
+            }
+            $resp   = $this->pm->httpGet($url);
+            $result = $this->normalizeV1List($resp, $page, $perPage);
+            if ($result !== null) {
+                $this->marketCacheSet($url, $result);
+            }
+            return $result;
+        }
+
         return $this->pm->apiGet('plugin/list', [
             'page'     => $page,
             'per_page' => $perPage,
@@ -460,6 +480,21 @@ class ZapUpdate
      */
     public function getMarketPluginDetail(string $packageName): ?array
     {
+        $base = $this->marketApiBase();
+        if ($base !== '') {
+            $url = $base . '/package?package=' . urlencode($packageName);
+            if (($cached = $this->marketCacheGet($url)) !== null) {
+                return $cached;
+            }
+            $resp = $this->pm->httpGet($url);
+            if (!$resp || ($resp['code'] ?? 1) !== 0 || empty($resp['package'])) {
+                return null;
+            }
+            $detail = $resp['package'];
+            $this->marketCacheSet($url, $detail);
+            return $detail;
+        }
+
         return $this->pm->apiGet('plugin/detail', [
             'package' => $packageName,
         ]);
@@ -486,6 +521,71 @@ class ZapUpdate
             $detail['download_url'],
             $detail['version'] ?? '1.0.0'
         );
+    }
+
+    // ==================== 市场数据源（V1） ====================
+
+    /**
+     * 插件市场数据源基址（packagemgr 的 V1 接口）。
+     * 留空则回退到旧版 website.api_url + plugin/list 接口。
+     *
+     * 例如：https://你的市场域名/zapcms/v1
+     */
+    private function marketApiBase(): string
+    {
+        return rtrim(trim((string) \zapcms\services\Option::get('website.market_api', '')), '/');
+    }
+
+    /**
+     * 将 packagemgr V1 的 packages 响应规范化为市场 UI 期望的结构。
+     */
+    private function normalizeV1List(?array $resp, int $page, int $perPage): ?array
+    {
+        if (!$resp || ($resp['code'] ?? 1) !== 0 || !isset($resp['packages'])) {
+            return null;
+        }
+        $packages = $resp['packages'];
+        $total    = (int) ($resp['total'] ?? count($packages));
+        $pp       = (int) ($resp['per_page'] ?? $perPage);
+        $pp       = $pp > 0 ? $pp : 12;
+
+        return [
+            'plugins'      => $packages,
+            'total'        => $total,
+            'total_pages'  => (int) ceil($total / $pp),
+            'current_page' => (int) ($resp['page'] ?? $page),
+        ];
+    }
+
+    /**
+     * 市场数据客户端缓存（默认 120s），避免每次刷新都走一次跨站网络请求。
+     * 仅在数据源为 V1（website.market_api 已配置）时启用。
+     */
+    private function marketCacheDir(): string
+    {
+        $dir = APP_ROOT . '/var/cache/market';
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        return $dir;
+    }
+
+    private function marketCacheGet(string $key): ?array
+    {
+        $file = $this->marketCacheDir() . '/m_' . md5($key) . '.json';
+        if (is_file($file) && (time() - filemtime($file)) < 120) {
+            $dec = json_decode((string) file_get_contents($file), true);
+            if (is_array($dec)) {
+                return $dec;
+            }
+        }
+        return null;
+    }
+
+    private function marketCacheSet(string $key, array $data): void
+    {
+        $file = $this->marketCacheDir() . '/m_' . md5($key) . '.json';
+        @file_put_contents($file, json_encode($data));
     }
 
     // ==================== 工具方法 ====================
