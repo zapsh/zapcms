@@ -101,6 +101,7 @@ if (empty($galleryArr)) {
                         </button>
                     </li>
                 <?php endforeach; ?>
+                <?php echo apply_filters('product_form_tabs', '', $node); ?>
             </ul>
             <div class="card-tools">
                 <a class="btn btn-tool btn-sm" href="<?php echo url_action("Node@{$_controller}", $_GET); ?>">
@@ -294,6 +295,7 @@ if (empty($galleryArr)) {
                         ?>
                     </div>
                 <?php endforeach; ?>
+                <?php echo apply_filters('product_form_tab_panes', '', $node); ?>
             </div>
         </div>
         <div class="card-footer">
