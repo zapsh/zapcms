@@ -272,7 +272,7 @@ class CreateTables
             $table->integer('autoload')->nullable()->default('0');
 
             $table->addPrimaryKey('id');
-            $table->addIndex('idx_option_name',['option_name']);
+            $table->addUniqueIndex('uk_option_name',['option_name']);
 
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });

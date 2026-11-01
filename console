@@ -8,6 +8,11 @@ if (!in_array(PHP_SAPI, ['cli', 'phpdbg', 'embed'], true)) {
 set_time_limit(0);
 
 define("ROOT_PATH", realpath(dirname(__FILE__) . '/'));
+// CLI 入口不会加载 app/bootstrap.php，这里补齐其定义的站点根目录常量，
+// 否则 ZapPackageManager 等依赖 APP_ROOT 的命令会报「未定义常量」。
+if (!defined('APP_ROOT')) {
+    define('APP_ROOT', rtrim(ROOT_PATH, '/\\'));
+}
 require ROOT_PATH . '/vendor/autoload.php';
 
 $console = new \zap\console\Console(ROOT_PATH);

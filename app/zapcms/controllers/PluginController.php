@@ -45,18 +45,20 @@ class PluginController extends AdminController
 
     /**
      * 合并「磁盘模块(mods/)」与「plugin 表(市场安装)」为一份扩展清单。
-     * 两者分发方式一致，按 name 归并；plugin 表有记录即视为「插件」，否则「模块」。
+     * 两者分发方式一致，按 name 归并。类型（模块/插件）以 mod.json 的 type 声明为准；
+     * 登记/启用状态由 mod.installed.{name} / plugin 表体现，二者互不混淆。
      * 激活状态优先取 mod.installed.{name} 选项（plugin 表 status 作兜底）。
      */
     protected function buildExtensions(): array
     {
         $extensions = [];
 
-        // 1) 以磁盘目录为基底（物理存在的扩展：模块与插件都在 mods/ 下）
+        // 1) 以磁盘目录为基底（物理存在的扩展：模块与插件都在 mods/ 下）。
+        //    类型（模块/插件）以 mod.json 的 type 声明为准，反映扩展的“性质”，
+        //    不与“是否已登记”混为一谈——模块和插件都要安装、都会登记。
         foreach ($this->pm->getLoadedMods() as $mod) {
             $name = $mod['name'];
             $ext  = $mod;
-            $ext['type']       = 'module';
             $ext['status']     = 0;
             $ext['registered'] = false;
             $ext['missing']    = false;
@@ -68,8 +70,8 @@ class PluginController extends AdminController
                 $ext['status'] = (int)($p['status'] ?? 0);
             }
 
+            // package_name 仅用于市场卸载/标识，不影响类型判定
             if ($p = $this->pm->getPlugin($name)) {
-                $ext['type']         = 'plugin';
                 $ext['package_name'] = $p['package_name'] ?? '';
             }
 

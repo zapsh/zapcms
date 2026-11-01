@@ -23,10 +23,19 @@ class Option
     }
 
     public static function replace($option_name,$option_value,$sort_order = null,$autoload = null){
-        $data = ['option_name'=>$option_name,'option_value'=>$option_value];
+        $data = ['option_value'=>$option_value];
         is_null($sort_order) ?: $data['sort_order'] = $sort_order;
         is_null($autoload) ?: $data['autoload'] = $autoload;
-        return DB::replace('options',$data);
+
+        $exists = DB::select('select id from {options} where option_name=:option_name limit 1',
+            ['option_name'=>$option_name]);
+
+        if(!empty($exists)){
+            return DB::update('options',$data,['option_name'=>$option_name]);
+        }
+
+        $data['option_name'] = $option_name;
+        return DB::insert('options',$data);
     }
 
     public static function add($option_name,$option_value,$sort_order = null,$autoload = null){
