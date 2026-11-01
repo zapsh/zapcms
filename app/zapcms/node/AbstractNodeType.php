@@ -22,6 +22,7 @@ use zap\http\Router;
 use zap\util\Arr;
 use zap\util\Str;
 use zap\view\View;
+use zapcms\Hook;
 
 class AbstractNodeType
 {
@@ -325,11 +326,26 @@ class AbstractNodeType
         $data['node_fields'] = NodeType::getFields((string)$this->nodeType);
         // 多语言翻译数据（表单里的「多语言翻译」区块使用）
         $data['translations'] = $this->loadTranslations($data['node'] ?? null);
+        $template = $name ?? $action;
+        $node = $data['node'] ?? null;
+        $isShow = ($template === 'show');
+        $isList = ($template === 'index');
+        if ($isShow) { Hook::fire('node_show_before', $node); }
+        if ($isList) { Hook::fire('node_list_before', $node); }
+
+        ob_start();
         try{
-            View::render("{$controller}.". ($name ?? $action),$data);
+            View::render("{$controller}.{$template}",$data);
         }catch (ViewNotFoundException $e){
-            View::render("default.". ($name ?? $action),$data);
+            View::render("default.{$template}",$data);
         }
+        $html = ob_get_clean();
+        if ($isShow) { $html = apply_filters('node_show_html', $html, $node); }
+        if ($isList) { $html = apply_filters('node_list_html', $html, $node); }
+        echo $html;
+
+        if ($isShow) { Hook::fire('node_show_after', $node); }
+        if ($isList) { Hook::fire('node_list_after', $node); }
 
     }
 

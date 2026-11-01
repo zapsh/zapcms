@@ -11,7 +11,10 @@
  *     mod.json/plugin.json 的 admin_menu，无需任何启动脚本；只注册菜单的扩展不会被 include。
  *  2. 引导脚本包含（仅对「声明了 boot / autoload」的扩展）
  *     - autoload（legacy，通常含 IN_ZAPCMS_ADMIN 守卫）→ 仅后台包含，避免前端触发守卫 die
- *     - boot    （新机制，前端安全）→ 前台 + 后台均包含，使插件可在系统初始化时注册钩子
+ *     - boot          （新机制，前端安全）→ 前台 + 后台均包含，使插件可在系统初始化时注册钩子
+ *     - boot_frontend （可选）→ 仅前台加载，如前台下单 / 履约钩子
+ *     - boot_admin    （可选）→ 仅后台加载，如后台列表 / 表单扩展钩子
+ *     三者按需声明，前后台分离可避免加载多余代码。
  *     未配置 boot 的扩展在启动时不做 include，也不触发 plugin.boot 事件。
  *  3. 所有引导脚本跑完后触发系统级 boot 事件（一次性）。
  *
@@ -73,7 +76,22 @@ class PluginLoader
                 }
             }
 
-            // 2b. 新机制 boot：前后台均包含（插件在此注册 Hook）
+            // 2b. 前后台分离引导脚本（优化项）：仅加载当前上下文所需的脚本，避免加载多余代码。
+            //     boot_admin    —— 仅后台加载（如注册后台列表 / 表单扩展钩子）
+            //     boot_frontend —— 仅前台加载（如注册前台下单 / 履约钩子）
+            if ($bootScript === null) {
+                $candidate = null;
+                if ($isAdmin && !empty($info['boot_admin'])) {
+                    $candidate = APP_ROOT . '/mods/' . $name . '/' . $info['boot_admin'];
+                } elseif (!$isAdmin && !empty($info['boot_frontend'])) {
+                    $candidate = APP_ROOT . '/mods/' . $name . '/' . $info['boot_frontend'];
+                }
+                if ($candidate !== null && is_file($candidate)) {
+                    $bootScript = $candidate;
+                }
+            }
+
+            // 2c. 通用 boot：前后台均包含（兼容旧配置，或放置前后台都要注册的钩子）
             if ($bootScript === null && !empty($info['boot'])) {
                 $candidate = APP_ROOT . '/mods/' . $name . '/' . $info['boot'];
                 if (is_file($candidate)) {
