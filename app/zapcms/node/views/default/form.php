@@ -107,7 +107,7 @@ unset($metaGroups['']);
                             $node_fields = $metaDefaultFields;
                             $meta_section_title = '自定义字段';
                             $meta_show_header = true;
-                            include __DIR__ . '/_meta_fields.php';
+                            include __DIR__ . '/../_meta_fields.php';
                             unset($node_fields, $meta_section_title, $meta_show_header);
                             ?>
                         </div>
@@ -129,7 +129,7 @@ unset($metaGroups['']);
                                 <?php
                                 $node_fields = $gfields;
                                 $meta_show_header = false;
-                                include __DIR__ . '/_meta_fields.php';
+                                include __DIR__ . '/../_meta_fields.php';
                                 unset($node_fields, $meta_show_header);
                                 ?>
                             </div>
