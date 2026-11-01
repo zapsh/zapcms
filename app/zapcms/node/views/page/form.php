@@ -255,6 +255,7 @@ $nodeImage = (string)($node['image'] ?? '');
 
 
     </div>
+<?php echo $this->partial('_translations', ['translations' => $translations ?? [], 'node' => $node ?? null]); ?>
 </form>
 
 <style>

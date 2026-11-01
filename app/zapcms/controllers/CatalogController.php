@@ -4,7 +4,9 @@ namespace zapcms\controllers;
 
 use zapcms\controllers\AdminController;
 use zapcms\services\Catalog;
+use zapcms\services\Locale;
 use zapcms\services\SlugHelper;
+use zapcms\services\Translator;
 use zap\DB;
 use zap\http\Request;
 use zap\http\Response;
@@ -52,11 +54,45 @@ class CatalogController extends AdminController
         $menu = Catalog::instance();
         if($catalogId){
             $menu->update($catalog,$catalogId);
+            $this->saveCatalogTranslations($catalogId);
         }else{
-            $menu->add($catalog);
+            $newId = (int) $menu->add($catalog);
+            if($newId > 0){
+                $this->saveCatalogTranslations($newId);
+            }
         }
 
         Response::json(['code'=>0,'msg'=>'保存成功']);
+    }
+
+    /**
+     * 保存栏目名称的其它语言译文
+     *
+     * 栏目同时存在 node / catalog 两条记录且 id 相同，译文统一按 node 维度存放。
+     *
+     * @param int $catalogId
+     */
+    protected function saveCatalogTranslations(int $catalogId): void
+    {
+        if ($catalogId <= 0 || !Locale::enabled()) {
+            return;
+        }
+
+        $posted = Request::post('translation', []);
+        if (!is_array($posted)) {
+            return;
+        }
+
+        foreach (Locale::available() as $code) {
+            if ($code === Locale::defaultLocale()) {
+                continue;
+            }
+            $row = $posted[$code] ?? [];
+            if (!is_array($row)) {
+                continue;
+            }
+            Translator::save(Translator::TYPE_NODE, $catalogId, $code, $row);
+        }
     }
 
     public function remove()
@@ -65,6 +101,8 @@ class CatalogController extends AdminController
         $menu = Catalog::instance();
         foreach ($catalog as $id=>$row){
             $menu->remove($id);
+            // 清理该栏目的多语言译文
+            Translator::deleteAll(Translator::TYPE_NODE, intval($id));
         }
         Response::json(['code'=>0,'msg'=>'分类删除成功']);
     }
@@ -79,6 +117,11 @@ class CatalogController extends AdminController
         }
 
         $data['catalog'] = $data['cid'] == 0 ? [] : Catalog::instance()->get($data['cid']);
+
+        // 已保存的栏目译文（locale => row）
+        $data['translations'] = !empty($data['catalog']['id']) && Locale::enabled()
+            ? Translator::getAll(Translator::TYPE_NODE, (int) $data['catalog']['id'])
+            : [];
 
         View::render('catalog.form',$data);
     }

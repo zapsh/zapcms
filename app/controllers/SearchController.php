@@ -31,7 +31,7 @@ class SearchController extends Controller
         // 强制使用 ?page=N 形式，避免 path 为空时生成 "/N" 这类错误链接。
         $queryParams = req()->get();
         unset($queryParams['page']);
-        $page->withPath(append_url_suffix(site_url('/search')) . '?' . ($queryParams ? http_build_query($queryParams) . '&' : '') . 'page={page}');
+        $page->withPath(append_url_suffix(locale_site_url('/search')) . '?' . ($queryParams ? http_build_query($queryParams) . '&' : '') . 'page={page}');
         pageState()->subCatalogList = pageState()->getSearchSidebarMenu();
         $query = Node::where('title','LIKE',"%{$keyword}%")
             ->where('status',Node::STATUS_PUBLISH)
@@ -41,7 +41,12 @@ class SearchController extends Controller
         // limit
         $query->limit($page->getLimit(),$page->getOffset());
         view('search',[
-            'data_list'=> $query->get(FETCH_ASSOC),
+            'data_list'=> \zapcms\services\Translator::applyBatch(
+                $query->get(FETCH_ASSOC),
+                null,
+                \zapcms\services\Translator::TYPE_NODE,
+                ['title', 'slug', 'excerpt']
+            ),
             'page' => $page,
             'query' => $keyword,
         ]);

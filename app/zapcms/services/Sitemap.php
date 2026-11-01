@@ -23,6 +23,9 @@ class Sitemap
     /** Sitemap 命名空间 */
     const NS = 'http://www.sitemaps.org/schemas/sitemap/0.9';
 
+    /** 多语言备用链接需要的 xhtml 命名空间 */
+    const NS_XHTML = 'http://www.w3.org/1999/xhtml';
+
     /** 每文件最多 URL 数 */
     const URLS_PER_FILE = 10000;
 
@@ -144,6 +147,9 @@ class Sitemap
 
         $body = [];
 
+        // 一次性取出本批内容的全部译文，避免逐条查询
+        $translationMap = $this->collectTranslations(array_column($entries, 'id'));
+
         foreach ($entries as $entry) {
             $url  = $this->buildUrl($entry);
             if (empty($url)) {
@@ -156,6 +162,7 @@ class Sitemap
 
             $body[] = "  <url>\n"
                 . '    <loc>' . $this->xmlEscape($url) . "</loc>\n"
+                . $this->buildAlternates($entry, $translationMap)
                 . ($lastmod > 0 ? '    <lastmod>' . $this->formatW3c($lastmod) . "</lastmod>\n" : '')
                 . '    <changefreq>' . $changefreq . "</changefreq>\n"
                 . '    <priority>' . number_format($priority, 1) . "</priority>\n"
@@ -164,7 +171,7 @@ class Sitemap
 
         return implode("\n", [
             '<?xml version="1.0" encoding="UTF-8"?>',
-            '<urlset xmlns="' . self::NS . '">',
+            '<urlset xmlns="' . self::NS . '" xmlns:xhtml="' . self::NS_XHTML . '">',
             ...$body,
             '</urlset>'
         ]);
@@ -173,7 +180,74 @@ class Sitemap
     protected function emptyUrlSetXml(): string
     {
         return '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
-            . '<urlset xmlns="' . self::NS . '"></urlset>';
+            . '<urlset xmlns="' . self::NS . '" xmlns:xhtml="' . self::NS_XHTML . '"></urlset>';
+    }
+
+    /**
+     * 批量取出一组节点的译文
+     *
+     * @param array $ids
+     * @return array object_id => [locale => row]
+     */
+    protected function collectTranslations(array $ids): array
+    {
+        $ids = array_values(array_filter(array_map('intval', $ids), static function ($id) {
+            return $id > 0;
+        }));
+
+        if ($ids === [] || !Locale::enabled()) {
+            return [];
+        }
+
+        $map = [];
+        $rows = DB::table(Translator::table())
+            ->where('object_type', Translator::TYPE_NODE)
+            ->where('object_id', 'IN', $ids)
+            ->fetchAll(FETCH_ASSOC) ?: [];
+
+        foreach ($rows as $row) {
+            $map[(int) $row['object_id']][(string) $row['locale']] = $row;
+        }
+
+        return $map;
+    }
+
+    /**
+     * 生成多语言备用链接（hreflang）
+     *
+     * @param array $entry
+     * @param array $translationMap
+     * @return string
+     */
+    protected function buildAlternates(array $entry, array $translationMap): string
+    {
+        if (!Locale::enabled() || !function_exists('build_permalink')) {
+            return '';
+        }
+
+        $id      = (int) ($entry['id'] ?? 0);
+        $html    = '';
+
+        foreach (Locale::available() as $locale) {
+            $row = $entry;
+
+            if ($locale !== Locale::defaultLocale()) {
+                $translation = $translationMap[$id][$locale] ?? null;
+                if ($translation !== null && !empty($translation['slug'])) {
+                    $row['slug'] = $translation['slug'];
+                }
+            }
+
+            $url = \build_permalink($row, $locale);
+            if ($url === '') {
+                continue;
+            }
+
+            $html .= '    <xhtml:link rel="alternate" hreflang="'
+                . $this->xmlEscape($locale) . '" href="' . $this->xmlEscape($url) . "\"/>\n";
+        }
+
+        return $html;
     }
 
     // ==================== URL 构建 ====================

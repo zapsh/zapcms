@@ -45,7 +45,7 @@ if (trim((string)$state['pageDescription']) === '') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="<?php echo \zapcms\services\Locale::htmlLang(); ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -64,11 +64,12 @@ if (trim((string)$state['pageDescription']) === '') {
 <body>
 
 <header class="site-header">
-    <form action="<?php echo append_url_suffix(site_url('/search')); ?>">
+    <form action="<?php echo append_url_suffix(locale_site_url('/search')); ?>">
     <div class="top d-none d-md-block">
         <div class="container">
             <div class="row">
                 <div class="col-sm-6">
+                    <?php echo render_language_switcher('list-inline mb-0 small'); ?>
                 </div>
                 <div class="col-sm-6">
                     <ul class="list-inline float-end">

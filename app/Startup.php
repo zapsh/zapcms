@@ -13,6 +13,8 @@ namespace app;
 use app\controllers\ZqueryController;
 use Twig\Error\Error as TwigError;
 use zapcms\models\Node;
+use zapcms\services\Locale;
+use zapcms\services\Translator;
 use zap\DB;
 use zap\exception\NotFoundException;
 use zap\exception\ViewNotFoundException;
@@ -101,7 +103,8 @@ class Startup
             include themes_path("{$theme}/functions.php");
         }
 
-        // ──── 解析 URL ────
+        // ──── 解析 URL（先剥离语言前缀）────
+        $path = $this->stripLocaleFromPath($path);
         $this->parseUrlPath($path);
 
         if (!isset($this->controllerClass) || $this->notFound) {
@@ -216,11 +219,87 @@ class Startup
     }
 
     /**
+    /**
+     * 剥离 URL 前面的语言前缀，并设定当前语言
+     *
+     * 默认语言不带前缀，因此 /xxx 与 /zh-CN/xxx 之外的 / 开头路径都视为默认语言。
+     *
+     * @param string $path
+     * @return string 去掉语言前缀后的路径
+     */
+    protected function stripLocaleFromPath(string $path): string
+    {
+        $locale = Locale::fromPath($path);
+
+        if ($locale !== '') {
+            Locale::setCurrent($locale);
+            $segments = explode('/', trim($path, '/'));
+            array_shift($segments);
+            return implode('/', $segments);
+        }
+
+        // 不带前缀 → 默认语言
+        Locale::setCurrent(Locale::defaultLocale());
+        return ltrim($path, '/');
+    }
+
+    /**
+     * 按 slug 解析节点（支持多语言 slug）
+     *
+     * 优先在当前语言的译文里匹配 slug，匹配不到再回落到主表 slug。
+     *
+     * @param string $slug
+     * @return array|null
+     */
+    protected function resolveNodeBySlug(string $slug): ?array
+    {
+        $locale = Locale::current();
+        $default = Locale::defaultLocale();
+
+        if ($locale !== $default) {
+            $translation = Translator::findBySlug($slug, $locale, Translator::TYPE_NODE);
+            if ($translation !== null) {
+                $node = Node::where('id', $translation['object_id'])
+                    ->where('status', Node::STATUS_PUBLISH)
+                    ->fetch(FETCH_ASSOC);
+                if ($node) {
+                    return Translator::apply($node, $locale);
+                }
+            }
+        }
+
+        $node = Node::where('slug', $slug)
+            ->where('status', Node::STATUS_PUBLISH)
+            ->fetch(FETCH_ASSOC);
+
+        if (!$node) {
+            return null;
+        }
+
+        return Translator::apply($node, $locale);
+    }
+
+    /**
+     * 写入多语言 SEO 数据（canonical + hreflang 备用链接）
+     *
+     * @param \app\PageState $pageState
+     * @param array          $node
+     */
+    protected function setSeoUrls($pageState, array $node): void
+    {
+        $pageState->canonicalUrl = smart_node_url($node);
+        $pageState->localeUrls   = locale_urls($node);
+    }
+
+    /**
      * 初始化 CMS 路由（根据参数确定控制器）
      */
     private function initRoute(): void
     {
         $pageState = pageState();
+
+        // 语言备用链接（hreflang），识别到节点后会被覆盖为更精确的链接
+        $pageState->localeUrls = locale_urls([], implode('/', (array) $this->router->params));
 
         if (($segment = current($this->router->params)) !== false) {
             
@@ -244,9 +323,7 @@ class Startup
 
         $slug = end($this->router->params);
         if ($slug) {
-            $node = Node::where('slug', $slug)
-                ->where('status', Node::STATUS_PUBLISH)
-                ->fetch(FETCH_ASSOC);
+            $node = $this->resolveNodeBySlug($slug);
             $node or $this->router->trigger404();
 
             if ($node['node_type'] === 'catalog' && empty($node['content'])) {
@@ -255,8 +332,13 @@ class Startup
                 // if ($catalog && !empty($catalog['content'])) {
                 //     $node['content'] = $catalog['content'];
                 // }
+                // 栏目同时存在 node / catalog 两份记录且 id 相同，译文统一按 node 维度存放
+                $catalog and $catalog = Translator::apply((array) $catalog, Locale::current());
                 $pageState->catalog = $catalog;
             }
+
+            // 多语言 SEO：canonical + hreflang
+            $this->setSeoUrls($pageState, $node);
 
             $pageState->node = $node;
             $pageState->nodeId = $node['id'];

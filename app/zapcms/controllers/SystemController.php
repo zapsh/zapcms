@@ -4,6 +4,7 @@ namespace zapcms\controllers;
 
 use zapcms\helpers\Database;
 use zapcms\controllers\AdminController;
+use zapcms\services\Locale;
 use zapcms\services\Mailer;
 use zapcms\services\Option;
 use zapcms\services\SlugHelper;
@@ -646,6 +647,64 @@ class SystemController extends AdminController
         ];
 
         \view('system.permalink', $data);
+    }
+
+    /**
+     * 多语言设置页面
+     */
+    public function languages()
+    {
+        if (Request::isPost()) {
+            $locales = Request::post('locales', []);
+            if (!is_array($locales) || $locales === []) {
+                Response::json(['code' => 1, 'msg' => '请至少选择一个语言']);
+                return;
+            }
+
+            $default = (string) Request::post('default_locale', '');
+            $custom  = trim((string) Request::post('custom_locale', ''));
+
+            $list = [];
+            foreach ($locales as $code) {
+                $code = Locale::normalize((string) $code);
+                if ($code !== '') {
+                    $list[] = $code;
+                }
+            }
+            if ($custom !== '') {
+                $list[] = Locale::normalize($custom);
+            }
+
+            if ($list === []) {
+                Response::json(['code' => 1, 'msg' => '请至少选择一个语言']);
+                return;
+            }
+
+            Locale::save($list, $default !== '' ? $default : null);
+
+            Response::json([
+                'code'    => 0,
+                'msg'     => '多语言设置已保存',
+                'default' => Locale::defaultLocale(),
+            ]);
+            return;
+        }
+
+        $data = [
+            'page_title'    => '多语言设置',
+            'page_subtitle' => '配置站点支持的语言',
+            'breadcrumbs'   => [
+                ['title' => '控制台', 'url' => \zap\facades\Url::action('Index')],
+                ['title' => '设置'],
+                ['title' => '多语言设置'],
+            ],
+            'locales'        => Locale::all(),
+            'default_locale' => Locale::defaultLocale(),
+            'known_locales'  => Locale::knownCodes(),
+            'enabled'        => Locale::enabled(),
+        ];
+
+        \view('system.languages', $data);
     }
 
 }

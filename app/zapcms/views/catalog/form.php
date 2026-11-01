@@ -121,6 +121,38 @@ use zapcms\services\NodeType;
             </div>
         </div>
     </div>
+    <?php if (\zapcms\services\Locale::enabled() && !empty($catalog['id'])): ?>
+    <hr class="my-2">
+    <div class="row g-2">
+        <div class="col-12">
+            <label class="form-label small mb-0"><i class="fa fa-language me-1"></i>多语言翻译</label>
+            <div class="form-text">留空的前台会自动回退到默认语言（<?php echo e(\zapcms\services\Locale::name(\zapcms\services\Locale::defaultLocale())); ?>）</div>
+        </div>
+        <?php foreach (\zapcms\services\Locale::all() as $item):
+            if ($item['is_default']) { continue; }
+            $code   = $item['code'];
+            $anchor = str_replace('-', '_', $code);
+            $row    = $translations[$code] ?? [];
+        ?>
+            <div class="col-md-6">
+                <label class="form-label small" for="trn_title_<?php echo $anchor; ?>">
+                    <?php echo e($item['title']); ?> 栏目名称 <small class="text-muted"><?php echo e($code); ?></small>
+                </label>
+                <input type="text" class="form-control form-control-sm" id="trn_title_<?php echo $anchor; ?>"
+                       name="translation[<?php echo e($code); ?>][title]"
+                       value="<?php echo e($row['title'] ?? ''); ?>" placeholder="留空则回退默认语言">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small" for="trn_slug_<?php echo $anchor; ?>">
+                    <?php echo e($item['title']); ?> 别名 <small class="text-muted">(slug)</small>
+                </label>
+                <input type="text" class="form-control form-control-sm font-monospace" id="trn_slug_<?php echo $anchor; ?>"
+                       name="translation[<?php echo e($code); ?>][slug]"
+                       value="<?php echo e($row['slug'] ?? ''); ?>" placeholder="留空则沿用默认语言别名">
+            </div>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
 </form>
 
 <script>

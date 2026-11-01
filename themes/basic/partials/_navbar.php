@@ -20,7 +20,7 @@ $childLastId = [];
         <div class="collapse navbar-collapse" id="bs-navbar-collapse">
             <ul class="navbar-nav main-navbar-nav">
                 <li class="nav-item<?php if ($state->isHome) echo ' active'; ?>">
-                    <a class="nav-link" href="<?php echo base_url('/'); ?>">首页</a>
+                    <a class="nav-link" href="<?php echo home_url(); ?>">首页</a>
                 </li>
                 <?php while ($menu = array_shift($catalogMenu)):
                     $hasChildren = !empty($menu['children']);

@@ -194,6 +194,25 @@ class CreateTables
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });
 
+        Schema::dropIfExists('translations');
+        Schema::create('translations',function(TableSchema $table){
+            $table->varchar('object_type', 32)->default('node');
+            $table->integer('object_id')->default('0');
+            $table->varchar('locale', 16);
+            $table->text('title')->nullable();
+            $table->varchar('slug', 191)->nullable();
+            $table->text('excerpt')->nullable();
+            $table->mediumtext('content')->nullable();
+            $table->text('keywords')->nullable();
+            $table->text('description')->nullable();
+            $table->integer('update_time')->nullable()->default('0');
+
+            $table->addPrimaryKey(['object_type', 'object_id', 'locale']);
+            $table->addIndex('idx_trn_locale_slug',['locale','slug']);
+
+            $table->setTableEngine(TableSchema::ENGINE_INNODB);
+        });
+
         Schema::dropIfExists('node_relation');
         Schema::create('node_relation',function(TableSchema $table){
             $table->integer('catalog_id');

@@ -195,10 +195,84 @@ function site_url(string $path = ''): string
 
 /**
  * 站点首页地址
+ *
+ * @param string|null $locale 指定语言，默认取当前语言
  */
-function home_url(): string
+function home_url(?string $locale = null): string
 {
-    return get_site_base_url() ?: '/';
+    return get_locale_base_url($locale) ?: '/';
+}
+
+/**
+ * 获取带语言前缀的站点基础地址
+ *
+ * 默认语言不加前缀（保持原有 URL 不变），其余语言形如 https://site.com/en。
+ * 未启用多语言时恒等于 get_site_base_url()。
+ *
+ * @param string|null $locale 指定语言，默认取当前语言
+ * @return string 不带尾部斜杠
+ */
+function get_locale_base_url(?string $locale = null): string
+{
+    $base = get_site_base_url();
+
+    if (!\zapcms\services\Locale::enabled()) {
+        return $base;
+    }
+
+    $locale = \zapcms\services\Locale::normalize($locale ?: \zapcms\services\Locale::current());
+
+    if ($locale === '' || \zapcms\services\Locale::isDefault($locale)) {
+        return $base;
+    }
+
+    return rtrim($base, '/') . '/' . $locale;
+}
+
+/**
+ * 生成带语言前缀的站内 URL
+ *
+ * @param string      $path
+ * @param string|null $locale 指定语言，默认取当前语言
+ */
+function locale_site_url(string $path = '', ?string $locale = null): string
+{
+    return get_locale_base_url($locale) . '/' . ltrim($path, '/');
+}
+
+/**
+ * 把当前页面路径切换到指定语言
+ *
+ * @param string      $locale 目标语言
+ * @param string|null $path   原始路径（不含查询串），默认取当前请求路径
+ * @return string
+ */
+function switch_locale_url(string $locale, ?string $path = null): string
+{
+    $locale = \zapcms\services\Locale::normalize($locale);
+    if ($locale === '') {
+        return get_locale_base_url();
+    }
+
+    if ($path === null) {
+        $path = \zapcms\services\Locale::requestPath();
+    }
+
+    // 剥掉已有的语言前缀
+    $segments = array_values(array_filter(explode('/', trim((string) $path, '/')), 'strlen'));
+    if ($segments !== [] && \zapcms\services\Locale::fromPath(implode('/', $segments)) !== '') {
+        array_shift($segments);
+    }
+
+    $query = '';
+    if (PHP_SAPI !== 'cli') {
+        $queryString = $_SERVER['QUERY_STRING'] ?? '';
+        if ($queryString !== '') {
+            $query = '?' . $queryString;
+        }
+    }
+
+    return get_locale_base_url($locale) . '/' . implode('/', $segments) . $query;
 }
 
 /**
@@ -312,12 +386,13 @@ function get_catalog_prefix(): string
 /**
  * 根据固定链接结构生成 Node 内容页链接
  *
- * @param array $node { id, slug, node_type, add_time 或 pub_time }
+ * @param array       $node   { id, slug, node_type, add_time 或 pub_time }
+ * @param string|null $locale 指定语言，默认取当前语言
  * @return string
  *
  * 支持标签：%year%, %monthnum%, %day%, %postname%, %post_id%, %node_type%
  */
-function build_permalink(array $node): string
+function build_permalink(array $node, ?string $locale = null): string
 {
     $structure = get_permalink_structure();
     $slug = $node['slug'] ?? '';
@@ -327,7 +402,7 @@ function build_permalink(array $node): string
     // 但只有当结构是简单的 /%postname%/ 时才直接用 slug
     if (!empty($slug) && $slug !== '--zap-link-url') {
         if ($structure === '/%postname%/') {
-            return append_url_suffix(site_url($slug));
+            return append_url_suffix(locale_site_url($slug, $locale));
         }
         // 自定义结构时也用 slug 替换 %postname%
     }
@@ -358,7 +433,7 @@ function build_permalink(array $node): string
 
     $uri = str_replace(array_keys($replacements), array_values($replacements), $structure);
 
-    return append_url_suffix(site_url($uri));
+    return append_url_suffix(locale_site_url($uri, $locale));
 }
 
 /**
@@ -370,13 +445,15 @@ function build_permalink(array $node): string
  *   无 slug → 按结构拼接
  *
  * @param int    $nodeId 节点ID
- * @param string $type   节点类型
+ * @param int         $nodeId 节点 ID
+ * @param string      $type   节点类型
+ * @param string|null $locale 指定语言，默认取当前语言
  * @return string
  *
  * @example node_url(42)           → /my-article-slug  (文章名称型)
  * @example node_url(42, 'article') → /2024/01/my-article-slug/  (月份和名称型)
  */
-function node_url(int $nodeId, string $type = 'default'): string
+function node_url(int $nodeId, string $type = 'default', ?string $locale = null): string
 {
     static $cache = [];
     if (isset($cache[$nodeId])) {
@@ -398,12 +475,12 @@ function node_url(int $nodeId, string $type = 'default'): string
 
     // 文章名称型且有 slug：直接用 slug
     if ($structure === '/%postname%/' && !empty($slug) && $slug !== '--zap-link-url') {
-        return append_url_suffix(site_url($slug));
+        return append_url_suffix(locale_site_url($slug, $locale));
     }
 
     // 使用固定链接结构生成
     $node['node_type'] = $node['node_type'] ?: $type;
-    return build_permalink($node);
+    return build_permalink($node, $locale);
 }
 
 /**
@@ -414,10 +491,11 @@ function node_url(int $nodeId, string $type = 'default'): string
  *   - node     → link_to 存的是 slug，node 的 slug 全局唯一
  *   - custom_link → link_to 是完整 URL 或路径
  *
- * @param array $linkRow { link_type, link_to, link_object }
+ * @param array       $linkRow { link_type, link_to, link_object }
+ * @param string|null $locale  指定语言，默认取当前语言
  * @return string 完整 URL
  */
-function resolve_link_url(array $linkRow): string
+function resolve_link_url(array $linkRow, ?string $locale = null): string
 {
     $linkType   = $linkRow['link_type']   ?? '';
     $linkTo     = $linkRow['link_to']     ?? '';
@@ -428,16 +506,16 @@ function resolve_link_url(array $linkRow): string
             // link_to 存的是 slug
             $catalogPrefix = get_catalog_prefix();
             if (!empty($linkTo) && $linkTo !== '--zap-link-url') {
-                return append_url_suffix(site_url($catalogPrefix . '/' . $linkTo));
+                return append_url_suffix(locale_site_url($catalogPrefix . '/' . $linkTo, $locale));
             }
             if ($linkObject > 0) {
                 $catalog = Node::createQuery()->select('id', 'slug')->where('id', $linkObject)->first();
                 if ($catalog && !empty($catalog['slug']) && $catalog['slug'] !== '--zap-link-url') {
-                    return append_url_suffix(site_url($catalogPrefix . '/' . $catalog['slug']));
+                    return append_url_suffix(locale_site_url($catalogPrefix . '/' . $catalog['slug'], $locale));
                 }
-                return append_url_suffix(site_url($catalogPrefix . '/' . $linkObject));
+                return append_url_suffix(locale_site_url($catalogPrefix . '/' . $linkObject, $locale));
             }
-            return home_url();
+            return home_url($locale);
 
         case 'node':
             // link_to 存的是节点的 slug
@@ -453,11 +531,11 @@ function resolve_link_url(array $linkRow): string
             if (!empty($linkTo) && $linkTo !== '--zap-link-url') {
                 $structure = get_permalink_structure();
                 if ($structure === '/%postname%/') {
-                    return append_url_suffix(site_url($linkTo));
+                    return append_url_suffix(locale_site_url($linkTo, $locale));
                 }
-                return append_url_suffix(site_url(str_replace('%postname%', $linkTo, $structure)));
+                return append_url_suffix(locale_site_url(str_replace('%postname%', $linkTo, $structure), $locale));
             }
-            return home_url();
+            return home_url($locale);
 
         case 'custom_link':
         default:
@@ -465,22 +543,23 @@ function resolve_link_url(array $linkRow): string
             if (preg_match('#^(https?://|//|mailto:|tel:)#i', $linkTo)) {
                 return $linkTo;
             }
-            return append_url_suffix(site_url($linkTo));
+            return append_url_suffix(locale_site_url($linkTo, $locale));
     }
 }
 
 /**
  * 生成外部或自定义链接（自动补全站内地址）
  *
- * @param string $path 链接地址
+ * @param string      $path   链接地址
+ * @param string|null $locale 指定语言，默认取当前语言
  * @return string
  */
-function url_link(string $path): string
+function url_link(string $path, ?string $locale = null): string
 {
     if (preg_match('#^(https?://|//|mailto:|tel:)#i', $path)) {
         return $path;
     }
-    return append_url_suffix(site_url($path));
+    return append_url_suffix(locale_site_url($path, $locale));
 }
 
 /**
@@ -508,10 +587,11 @@ function catalog_link(string $url, string $title, array $attrs = []): string
  *   - 普通节点         → 调用 node_url
  *   - 普通栏目         → site_url(slug)
  *
- * @param array $row { id, node_type, slug, link_type, link_to, link_object }
+ * @param array       $row    { id, node_type, slug, link_type, link_to, link_object }
+ * @param string|null $locale 指定语言，默认取当前语言
  * @return string 完整 URL
  */
-function smart_node_url(array $row): string
+function smart_node_url(array $row, ?string $locale = null): string
 {
     $nodeType = $row['node_type'] ?? '';
 
@@ -521,7 +601,7 @@ function smart_node_url(array $row): string
             'link_type'   => $row['link_type']   ?? '',
             'link_to'     => $row['link_to']     ?? '',
             'link_object' => $row['link_object'] ?? 0,
-        ]);
+        ], $locale);
     }
 
     // 普通栏目
@@ -529,13 +609,67 @@ function smart_node_url(array $row): string
         $slug = $row['slug'] ?? '';
         $catalogPrefix = get_catalog_prefix();
         if (!empty($slug) && $slug !== '--zap-link-url') {
-            return append_url_suffix(site_url($catalogPrefix . '/' . $slug));
+            return append_url_suffix(locale_site_url($catalogPrefix . '/' . $slug, $locale));
         }
-        return append_url_suffix(site_url($catalogPrefix . '/' . ((int) ($row['id'] ?? 0))));
+        return append_url_suffix(locale_site_url($catalogPrefix . '/' . ((int) ($row['id'] ?? 0)), $locale));
     }
 
     // 普通内容节点：使用固定链接结构
-    return build_permalink($row);
+    return build_permalink($row, $locale);
+}
+
+/**
+ * 当前内容在各语言下的链接（用于 hreflang / 语言切换器）
+ *
+ * @param array    $node   当前节点（含 id / slug / node_type）
+ * @param string   $path   当前路径回退值（未识别到节点时使用）
+ * @return array<string,string> locale => url
+ */
+function locale_urls(array $node = [], ?string $path = null): array
+{
+    $locales = \zapcms\services\Locale::available();
+    $urls = [];
+
+    foreach ($locales as $locale) {
+        if (!empty($node['id'])) {
+            $urls[$locale] = build_permalink($node, $locale);
+            continue;
+        }
+        $urls[$locale] = switch_locale_url($locale, $path);
+    }
+
+    return $urls;
+}
+
+/**
+ * 渲染语言切换器 HTML（主题可直接调用）
+ *
+ * @param string $class  最外层 ul 的 class
+ * @param bool   $active 是否给当前语言加 .active
+ * @return string
+ */
+function render_language_switcher(string $class = 'list-inline float-end m-0', bool $active = true): string
+{
+    if (!\zapcms\services\Locale::enabled()) {
+        return '';
+    }
+
+    $current = \zapcms\services\Locale::current();
+    $locales = \zapcms\services\Locale::all();
+
+    $html = '<ul class="' . htmlspecialchars($class, ENT_QUOTES) . '">' . "\n";
+    foreach ($locales as $item) {
+        $isCurrent = $item['code'] === $current;
+        $html .= '  <li class="list-inline-item'
+            . ($active && $isCurrent ? ' active' : '')
+            . '"><a href="' . htmlspecialchars(switch_locale_url($item['code']), ENT_QUOTES) . '"'
+            . ' hreflang="' . htmlspecialchars($item['code'], ENT_QUOTES) . '"'
+            . ($isCurrent ? ' aria-current="page"' : '')
+            . '>' . htmlspecialchars($item['title']) . '</a></li>' . "\n";
+    }
+    $html .= '</ul>';
+
+    return $html;
 }
 
 /**

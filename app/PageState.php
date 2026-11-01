@@ -4,6 +4,8 @@ namespace app;
 use ArrayObject;
 use zapcms\models\Node;
 use zapcms\services\Catalog;
+use zapcms\services\Locale;
+use zapcms\services\Translator;
 use zap\facades\Cache;
 
 defined('IN_ZAPCMS') or die('No permission to access');
@@ -58,6 +60,7 @@ defined('IN_ZAPCMS') or die('No permission to access');
  * @property string       $theme           当前主题名称
  * @property array        $setting         当前主题配置
  * @property string       $canonicalUrl    当前页面的规范化 URL
+ * @property array        $localeUrls      各语言的页面地址（locale => url，用于 hreflang）
  * @property array        $catalogPaths    当前栏目路径数组（用于面包屑）
  * @property string       $nodeMimeType    当前节点的 MIME 类型（如 article、product、page 等）
  * @property string       $nodeMimeTypeLabel 当前节点的 MIME 类型中文标签
@@ -180,11 +183,87 @@ class PageState extends ArrayObject
     public function getCatalogList(): ?array
     {
         if (!$this['catalogList']) {
-            $this['catalogList'] = Cache::get('top_menu', function () {
+            // 缓存里存放未翻译的原始树，翻译在每次请求时叠加，避免跨语言污染缓存
+            $tree = Cache::get('top_menu', function () {
                 return Catalog::instance()->getTreeArray();
             }, 5000);
+            $this['catalogList'] = $this->applyMenuTranslation($tree);
         }
         return $this['catalogList'];
+    }
+
+    /**
+     * 给栏目菜单树叠加当前语言的译文（递归 children）
+     *
+     * 先一次性取出整棵树用到的译文，避免逐条查询。
+     *
+     * @param mixed $rows
+     * @return mixed
+     */
+    protected function applyMenuTranslation($rows)
+    {
+        if (!is_array($rows) || $rows === []) {
+            return $rows;
+        }
+
+        $locale = Locale::current();
+        if ($locale === Locale::defaultLocale()) {
+            return $rows;
+        }
+
+        $ids = [];
+        $this->collectTranslationIds($rows, $ids);
+        if ($ids === []) {
+            return $rows;
+        }
+
+        $map = Translator::getMap(Translator::TYPE_NODE, array_values($ids), $locale);
+        if ($map === []) {
+            return $rows;
+        }
+
+        return $this->translateTreeRows($rows, $map, $locale);
+    }
+
+    /**
+     * 递归收集树里的节点 ID
+     */
+    protected function collectTranslationIds(array $rows, array &$ids): void
+    {
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $id = (int) ($row['id'] ?? 0);
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+            if (!empty($row['children']) && is_array($row['children'])) {
+                $this->collectTranslationIds($row['children'], $ids);
+            }
+        }
+    }
+
+    /**
+     * 按预取的译文映射递归改写树
+     */
+    protected function translateTreeRows(array $rows, array $map, string $locale): array
+    {
+        foreach ($rows as $key => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $translation = $map[(int) ($row['id'] ?? 0)] ?? null;
+            if ($translation !== null) {
+                $row = Translator::applyWith($row, $translation, $locale);
+            }
+            if (!empty($row['children']) && is_array($row['children'])) {
+                $row['children'] = $this->translateTreeRows($row['children'], $map, $locale);
+            }
+            $rows[$key] = $row;
+        }
+
+        return $rows;
     }
 
     /**
@@ -261,6 +340,38 @@ class PageState extends ArrayObject
         if (!empty($this['canonicalUrl'])) {
             $html .= '<link rel="canonical" href="' . htmlspecialchars($this['canonicalUrl']) . '">' . "\n";
         }
+        $html .= $this->printAlternateLinks();
+        return $html;
+    }
+
+    /**
+     * 输出多语言 hreflang 备用链接
+     *
+     * @return string
+     */
+    public function printAlternateLinks(): string
+    {
+        $urls = $this['localeUrls'];
+        if (empty($urls) || !is_array($urls) || !Locale::enabled()) {
+            return '';
+        }
+
+        $html = '';
+        foreach ($urls as $locale => $url) {
+            if ($url === '' || $url === null) {
+                continue;
+            }
+            $html .= '<link rel="alternate" hreflang="' . htmlspecialchars((string) $locale, ENT_QUOTES) . '"'
+                . ' href="' . htmlspecialchars((string) $url, ENT_QUOTES) . '">' . "\n";
+        }
+
+        // 未匹配到语言时指向的兜底地址
+        $default = Locale::defaultLocale();
+        if (isset($urls[$default])) {
+            $html .= '<link rel="alternate" hreflang="x-default"'
+                . ' href="' . htmlspecialchars((string) $urls[$default], ENT_QUOTES) . '">' . "\n";
+        }
+
         return $html;
     }
 }

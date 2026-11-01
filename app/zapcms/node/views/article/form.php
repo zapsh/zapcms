@@ -273,6 +273,7 @@ if (empty($galleryArr)) {
             </div>
         </div>
     </div>
+<?php echo $this->partial('_translations', ['translations' => $translations ?? [], 'node' => $node ?? null]); ?>
 </form>
 
 <style>

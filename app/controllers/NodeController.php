@@ -38,7 +38,7 @@ class NodeController extends Controller
    
         //侧边栏菜单
         $topCatalog = current(pageState()->catalogPaths);
-        pageState()->subCatalogList = Catalog::instance()->getSubCatalogList($topCatalog['id']);
+        pageState()->subCatalogList = $this->translateCatalogList(Catalog::instance()->getSubCatalogList($topCatalog['id']));
         view('node',[]);
     }
 
@@ -61,7 +61,7 @@ class NodeController extends Controller
 
         //侧边栏菜单
         $topCatalog = current(pageState()->catalogPaths);
-        pageState()->subCatalogList = Catalog::instance()->getSubCatalogList($topCatalog['id']);
+        pageState()->subCatalogList = $this->translateCatalogList(Catalog::instance()->getSubCatalogList($topCatalog['id']));
         view('article', ['node' => $node]);
     }
 
@@ -78,7 +78,7 @@ class NodeController extends Controller
 
         //侧边栏菜单
         $topCatalog = current(pageState()->catalogPaths);
-        pageState()->subCatalogList = Catalog::instance()->getSubCatalogList($topCatalog['id']);
+        pageState()->subCatalogList = $this->translateCatalogList(Catalog::instance()->getSubCatalogList($topCatalog['id']));
         // 加载自定义字段（node_meta），如产品价格
         $nodeModel = Node::findById($node['id'] ?? 0);
         $node['meta'] = $nodeModel ? $nodeModel->loadMeta() : [];
@@ -104,9 +104,19 @@ class NodeController extends Controller
     }
 
     private function getCatalogPathByNodeId(int $node_id){
-        return NodeRelation::where('node_id',$node_id)->orderBy('level ASC')
+        $rows = NodeRelation::where('node_id',$node_id)->orderBy('level ASC')
             ->leftJoin(['node','n'],'node_relation.catalog_id=n.id')
             ->select('n.title,n.id,n.slug')
             ->get(FETCH_ASSOC);
+
+        return \zapcms\services\Translator::applyBatch((array) $rows, null, \zapcms\services\Translator::TYPE_NODE, ['title', 'slug']);
+    }
+
+    /**
+     * 给侧边栏子栏目列表套用当前语言译文
+     */
+    private function translateCatalogList($rows)
+    {
+        return \zapcms\services\Translator::applyBatch((array) $rows, null, \zapcms\services\Translator::TYPE_NODE, ['title', 'slug']);
     }
 }

@@ -184,6 +184,7 @@ $catalogId = (int)($catalog['id'] ?? $catalogId ?? 0);
 
 
     </div>
+<?php echo $this->partial('_translations', ['translations' => $translations ?? [], 'node' => $node ?? null]); ?>
 </form>
 
 <style>

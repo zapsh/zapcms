@@ -4,9 +4,11 @@ namespace zapcms\node;
 
 use zapcms\services\BreadCrumb;
 use zapcms\services\Catalog;
+use zapcms\services\Locale;
 use zapcms\services\NodeMeta;
 use zapcms\services\NodeType;
 use zapcms\services\SlugHelper;
+use zapcms\services\Translator;
 use zapcms\support\HtmlXss;
 use zapcms\models\Node;
 use zapcms\models\NodeRelation;
@@ -134,6 +136,8 @@ class AbstractNodeType
             Node::updateAll($node,['id'=>$id]);
             // 保存自定义字段（node_meta）
             Node::findById($id)->saveMeta(Request::post('meta', []));
+            // 保存多语言译文（translations）
+            $this->saveTranslations($id);
             // slug 可能被唯一性校验改写（重名补 -id 后缀），一并返回给前端回写，
             // 前端据此就地更新页面，不再整体刷新（见 Zap.saveNodeForm）
             Response::json([
@@ -183,6 +187,8 @@ class AbstractNodeType
             $nodeModel = Node::create($node);
             // 保存自定义字段（node_meta）
             $nodeModel->saveMeta(Request::post('meta', []));
+            // 保存多语言译文（translations）
+            $this->saveTranslations((int) $nodeModel->id);
             foreach ($catalogArray as $catalog_id=>$level){
                 NodeRelation::create(['node_id'=>$nodeModel->id,'catalog_id'=>$catalog_id,'level'=>$level]);
             }
@@ -223,6 +229,53 @@ class AbstractNodeType
         $this->display($data,'form');
     }
 
+    /**
+     * 保存表单提交的多语言译文
+     *
+     * @param int $nodeId
+     */
+    protected function saveTranslations(int $nodeId): void
+    {
+        if ($nodeId <= 0 || !Locale::enabled()) {
+            return;
+        }
+
+        $posted = Request::post('translation', []);
+        if (!is_array($posted)) {
+            return;
+        }
+
+        foreach (Locale::available() as $code) {
+            // 默认语言的内容存在主表里，子表只保存其它语言
+            if ($code === Locale::defaultLocale()) {
+                continue;
+            }
+            $row = $posted[$code] ?? [];
+            if (!is_array($row)) {
+                continue;
+            }
+            if (!empty($row['content'])) {
+                $row['content'] = HtmlXss::clean($row['content']);
+            }
+            Translator::save(Translator::TYPE_NODE, $nodeId, $code, $row);
+        }
+    }
+
+    /**
+     * 读取当节点前已有的全部译文
+     *
+     * @param mixed $node Node 模型或数组
+     * @return array locale => 译文行
+     */
+    protected function loadTranslations($node = null): array
+    {
+        $nodeId = (int) ($node['id'] ?? 0);
+        if ($nodeId <= 0 || !Locale::enabled()) {
+            return [];
+        }
+        return Translator::getAll(Translator::TYPE_NODE, $nodeId);
+    }
+
     function remove(){
         $id = intval(Request::post('id'));
         if(Request::isPost() && $id){
@@ -231,6 +284,8 @@ class AbstractNodeType
             if ($nodeModel) {
                 $nodeModel->deleteMeta();
             }
+            // 删除多语言译文（translations）
+            Translator::deleteAll(Translator::TYPE_NODE, $id);
             $affId = Node::delete($id);
             if($affId){
                 session()->flash('success', $this->title . '删除成功');
@@ -268,6 +323,8 @@ class AbstractNodeType
         $data['menu'] = Catalog::instance();
         $data['node_type'] = $this->nodeType;
         $data['node_fields'] = NodeType::getFields((string)$this->nodeType);
+        // 多语言翻译数据（表单里的「多语言翻译」区块使用）
+        $data['translations'] = $this->loadTranslations($data['node'] ?? null);
         try{
             View::render("{$controller}.". ($name ?? $action),$data);
         }catch (ViewNotFoundException $e){

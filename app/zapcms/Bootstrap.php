@@ -13,6 +13,7 @@ namespace zapcms;
 use zap\http\Router;
 use zap\http\Request;
 use zap\view\View;
+use zapcms\services\Locale;
 use zapcms\services\Option;
 use zapcms\support\Csrf;
 
@@ -58,6 +59,9 @@ class Bootstrap
         config_set('config.theme', false);
         define('IS_AJAX', Request::isAjax());
         View::paths(realpath(__DIR__ . '/views'));
+
+        // 后台始终使用默认语言（后台界面文案不做跟随浏览器切换）
+        Locale::setCurrent(Locale::defaultLocale());
 
         $theme = option('website.theme', 'basic');
         // 后端只加载 admin/functions.php，不加载前台的 functions.php

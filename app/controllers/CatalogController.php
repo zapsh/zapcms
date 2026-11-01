@@ -42,7 +42,12 @@ class CatalogController extends Controller
     function index(){
         pageState()->getCatalog();
 
-        pageState()->catalogPaths = Catalog::instance()->getCatalogPathById(pageState()->nodeId);
+        pageState()->catalogPaths = \zapcms\services\Translator::applyBatch(
+            (array) Catalog::instance()->getCatalogPathById(pageState()->nodeId),
+            null,
+            \zapcms\services\Translator::TYPE_NODE,
+            ['title', 'slug']
+        );
         $lastKey = array_key_last(pageState()->catalogPaths );
         foreach (pageState()->catalogPaths as $key => $catalog){
             BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'catalog', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]),$key === $lastKey);
@@ -84,6 +89,8 @@ class CatalogController extends Controller
                 $view->page = $page->setTotal($query->count('n.id'));
                 $query->limit($page->getLimit())->offset($page->getOffset());
                 $nodes = $query->get(FETCH_ASSOC);
+                // 列表节点套用当前语言译文（只需标题/别名/摘要，不取正文避免列表查询过重）
+                $nodes = \zapcms\services\Translator::applyBatch($nodes, null, \zapcms\services\Translator::TYPE_NODE, ['title', 'slug', 'excerpt']);
                 $node_list_columns = \zapcms\services\NodeType::getConfig(pageState()->nodeMimeType,'list_columns',[]);
                 // 批量加载 node_meta（如产品价格 price）附加到列表节点，避免 N+1 查询
                 $view->nodes = NodeMeta::attachList($nodes, $node_list_columns);
