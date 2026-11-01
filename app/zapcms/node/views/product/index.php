@@ -104,6 +104,7 @@ if (!empty($catalogPaths)) {
                                     <?php foreach (($list_columns ?? []) as $lc): ?>
                                     <th><?php echo htmlspecialchars($lc['field_label']); ?></th>
                                     <?php endforeach; ?>
+                                    <?php \zapcms\AdminHook::echo('admin_node_list_head'); ?>
                                     <th style="width:130px">操作</th>
                                 </tr>
                             </thead>
@@ -139,6 +140,7 @@ if (!empty($catalogPaths)) {
                                         <?php echo $mv !== '' && $mv !== null ? htmlspecialchars((string)$mv) : '<span class="text-light-emphasis">-</span>'; ?>
                                     </td>
                                     <?php endforeach; ?>
+                                    <?php \zapcms\AdminHook::echo('admin_node_list_row', $row); ?>
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <?php if (!empty($row['slug'])): ?>

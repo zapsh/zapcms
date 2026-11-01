@@ -1407,7 +1407,11 @@ class ZapPackageManager
             if ($mod === 'zapcms') {
                 continue;
             }
-            $installed = DB::table('plugin')->where('name', $mod)->first();
+            // 依赖键为 package_name（如 zapcms/pay），但 plugin 表同时存有短名 name（如 pay），两者都尝试匹配
+            $installed = DB::table('plugin')->where('package_name', $mod)->first();
+            if (!$installed) {
+                $installed = DB::table('plugin')->where('name', $mod)->first();
+            }
             if (!$installed) {
                 return '缺少依赖模块: ' . $mod . ' (' . $constraint . ')';
             }
