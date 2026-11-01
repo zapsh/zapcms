@@ -41,35 +41,33 @@ if ($driver === 'sqlite') {
 }
 
 // 表列表（含附加信息）
+// getDatabaseTableNames() 已统一返回纯表名字符串数组，这里直接遍历即可。
 $tableData = [];
 $tablesRaw = \zapcms\support\SysInfo::getDatabaseTableNames();
-foreach ($tablesRaw as $t) {
-    $name = $t['name'];
+foreach ($tablesRaw as $name) {
+    $name = (string) $name;
     $entry = ['name' => $name, 'rows' => '', 'size' => ''];
-    if ($driver !== 'sqlite') {
-        // MySQL: 表名在第一个字段
-        $name = is_array($t) ? current($t) : $t;
-        $entry['name'] = $name;
-    }
-    // 尝试获取行数
+
     try {
-        $cnt = \zap\DB::select("SELECT COUNT(*) AS cnt FROM `{$name}`");
-        if (!empty($cnt)) {
-            $entry['rows'] = $cnt[0]['cnt'] ?? '';
-        }
-    } catch (\Throwable $e) {}
-    // MySQL 获取表大小
-    if ($driver !== 'sqlite') {
-        try {
+        if ($driver !== 'sqlite') {
+            // MySQL: 一次 SHOW TABLE STATUS 同时拿到行数与大小，避免逐表 COUNT(*)
             $info = \zap\DB::select("SHOW TABLE STATUS LIKE :tname", ['tname' => $name]);
             if (!empty($info)) {
-                $size = $info[0]['Data_length'] + $info[0]['Index_length'];
+                $entry['rows'] = (int) ($info[0]['Rows'] ?? 0);
+                $size = (int) ($info[0]['Data_length'] ?? 0) + (int) ($info[0]['Index_length'] ?? 0);
                 if ($size > 0) {
-                    $entry['size'] = \zap\util\Fmt::ByteToHuman(intval($size));
+                    $entry['size'] = \zap\util\Fmt::ByteToHuman($size);
                 }
             }
-        } catch (\Throwable $e) {}
-    }
+        } else {
+            // SQLite: 仅统计行数（表头对 sqlite 隐藏了行数/大小列，这里算出备用）
+            $cnt = \zap\DB::select("SELECT COUNT(*) AS cnt FROM `{$name}`");
+            if (!empty($cnt)) {
+                $entry['rows'] = (int) ($cnt[0]['cnt'] ?? 0);
+            }
+        }
+    } catch (\Throwable $e) {}
+
     $tableData[] = $entry;
 }
 
