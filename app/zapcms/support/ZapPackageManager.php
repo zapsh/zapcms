@@ -405,7 +405,14 @@ class ZapPackageManager
             $filename = basename((string)parse_url($url, PHP_URL_PATH));
         }
 
+        // 包名可能带命名空间斜杠（如 zapcms/pay），只取文件名，避免写到不存在的子目录
+        $filename = basename(str_replace('\\', '/', $filename));
+        if ($filename === '' || $filename === '.' || $filename === '..') {
+            $filename = 'package_' . uniqid() . '.zip';
+        }
+
         $tmpFile = $this->tmpDir . '/' . $filename;
+        $this->ensureDirectory(dirname($tmpFile));
         $this->lastRequestInsecure = false;
 
         $verifyAttempts = [$this->sslVerify];
