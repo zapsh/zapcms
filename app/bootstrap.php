@@ -170,7 +170,7 @@ function check_database_error(\PDOException $e): void
 // Install — 未安装时进入安装流程
 app_require_installed();
 
-require "vendor/autoload.php";
+require __DIR__ . '/../vendor/autoload.php';
 $app = new \zap\App(dirname(__DIR__));
 
 // ──────────────────── 运行参数（server.* / cache.*）从 options 表读取 ────────────────────
