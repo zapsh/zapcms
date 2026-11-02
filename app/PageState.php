@@ -306,15 +306,6 @@ class PageState extends ArrayObject
         return smart_node_url($node);
     }
 
-    /**
-     * 获取缩略图 URL
-     */
-    public function thumb(int $width, int $height): string
-    {
-        return \zapcms\helpers\ThumbHelper::thumb($this->image, $width, $height);
-    }
-
-
     public function setPageTitle(string $title): void
     {
         $this['pageTitle'] = $title;
