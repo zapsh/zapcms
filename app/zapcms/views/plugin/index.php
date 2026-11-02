@@ -236,6 +236,28 @@ $unregistered = count(array_filter($extensions, fn($e) => empty($e['registered']
     </div>
 </div>
 
+<!-- 确认启用/禁用 Modal -->
+<div class="modal fade" id="toggleStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" id="toggleStatusHeader">
+                <h5 class="modal-title" id="toggleStatusTitle"><i class="fa fa-power-off me-2"></i>确认操作</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要 <strong id="toggleStatusAction">—</strong> 扩展 <strong id="toggleStatusName">—</strong> 吗？</p>
+                <div class="alert mb-0" id="toggleStatusTip">
+                    <i class="fa fa-exclamation-circle me-1"></i><span></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-warning" id="confirmToggleStatus"><i class="fa fa-pause me-1"></i>禁用</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // ==============================
 //  扩展管理 - 前端交互逻辑
@@ -318,28 +340,75 @@ document.getElementById('confirmUninstall').addEventListener('click', function()
     });
 });
 
-// —— 启用/禁用 ——
+// —— 启用/禁用（先确认，避免误点） ——
+let pendingToggle = null;
+
 function toggleStatus(name, currentStatus) {
     const newStatus = currentStatus ? 0 : 1;
-    const actionText = newStatus ? '启用' : '禁用';
+    pendingToggle = { name: name, status: newStatus };
+
+    const header = document.getElementById('toggleStatusHeader');
+    const title  = document.getElementById('toggleStatusTitle');
+    const btn    = document.getElementById('confirmToggleStatus');
+    const tip    = document.getElementById('toggleStatusTip');
+    const tipText = tip.querySelector('span');
+
+    document.getElementById('toggleStatusName').textContent = name;
+
+    if (newStatus) {
+        document.getElementById('toggleStatusAction').textContent = '启用';
+        header.className = 'modal-header bg-success text-white';
+        title.innerHTML = '<i class="fa fa-play me-2"></i>确认启用';
+        btn.className = 'btn btn-success';
+        btn.innerHTML = '<i class="fa fa-play me-1"></i>启用';
+        tip.className = 'alert alert-info mb-0';
+        tipText.textContent = '启用后该扩展功能将恢复运行。';
+    } else {
+        document.getElementById('toggleStatusAction').textContent = '禁用（暂停）';
+        header.className = 'modal-header bg-warning text-white';
+        title.innerHTML = '<i class="fa fa-pause me-2"></i>确认禁用（暂停）';
+        btn.className = 'btn btn-warning';
+        btn.innerHTML = '<i class="fa fa-pause me-1"></i>禁用';
+        tip.className = 'alert alert-warning mb-0';
+        tipText.textContent = '禁用（暂停）后该扩展功能将停止运行，可能影响依赖它的页面或功能。';
+    }
+
+    const modal = new bootstrap.Modal('#toggleStatusModal');
+    modal.show();
+}
+
+document.getElementById('confirmToggleStatus').addEventListener('click', function() {
+    if (!pendingToggle) return;
+    const btn = this;
+    const data = pendingToggle;
+    const restoreLabel = data.status ? '<i class="fa fa-play me-1"></i>启用' : '<i class="fa fa-pause me-1"></i>禁用';
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>处理中…';
 
     Zap.AjaxPost({
         url: '<?= Url::action('Plugin@toggleStatus') ?>',
-        data: { name: name, status: newStatus },
+        data: { name: data.name, status: data.status },
         dataType: 'json',
         success: function(res) {
+            bootstrap.Modal.getInstance('#toggleStatusModal').hide();
+            btn.disabled = false;
+            btn.innerHTML = restoreLabel;
             if (res.code === 0) {
-                ZapToast.alert((newStatus ? '已启用：' : '已禁用：') + name, { bgColor: bgSuccess });
+                ZapToast.alert((data.status ? '已启用：' : '已禁用：') + data.name, { bgColor: bgSuccess });
                 setTimeout(function() { location.reload(); }, 500);
             } else {
                 ZapToast.alert(res.msg || '操作失败', { bgColor: bgDanger });
             }
         },
         error: function() {
+            bootstrap.Modal.getInstance('#toggleStatusModal').hide();
+            btn.disabled = false;
+            btn.innerHTML = restoreLabel;
             ZapToast.alert('网络请求失败', { bgColor: bgDanger });
         }
     });
-}
+});
 
 // —— 注册未注册扩展（目录已存在，仅缺失登记） ——
 function registerPlugin(name) {
