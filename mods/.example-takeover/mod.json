@@ -1,0 +1,9 @@
+{
+  "name": "example-takeover",
+  "title": "示例：内容模型页面接管",
+  "description": "演示通过 node_render_* / catalog_render_* 钩子接管内容模型详情页与列表页。安装即激活，卸载即恢复主题默认渲染。",
+  "version": "1.0.0",
+  "author": "ZAP CMS",
+  "status": 1,
+  "boot_frontend": "boot_frontend.php"
+}

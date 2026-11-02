@@ -13,6 +13,7 @@ use zap\exception\ViewNotFoundException;
 use zap\helpers\Pagination;
 use zap\http\Controller;
 use zap\view\View;
+use app\controllers\RenderTakeover;
 
 
 /**
@@ -25,6 +26,8 @@ use zap\view\View;
  */
 class CatalogController extends Controller
 {
+    use RenderTakeover;
+
     public function __construct()
     {
         BreadCrumb::instance()->add('首页',base_url('/'));
@@ -62,18 +65,9 @@ class CatalogController extends Controller
                 view('page', ['node' => pageState()->node]);
                 return;
             }else{
-                // 模块接管整页渲染（如 mall 渲染自有商品列表页）：返回非空字符串即视为已接管，
-                // 直接输出并跳过默认视图；未接管时回退到主题 product_list.php（其内部仍保留
-                // mall_product_list 钩子作兜底，保持向后兼容）。
-                $hosted = \zapcms\Hook::applyFilters(
-                    'catalog_product_list_render',
-                    '',
-                    pageState()->node ?: [],
-                    pageState()->nodeMimeType,
-                    pageState()->nodeId
-                );
-                if (is_string($hosted) && trim($hosted) !== '') {
-                    echo $hosted;
+                // 模块接管整页列表渲染（约定式 catalog_render_{mime} 及旧式
+                // catalog_product_list_render）；命中即接管并结束渲染。
+                if ($this->renderCatalog(pageState()->nodeMimeType)) {
                     return;
                 }
 

@@ -13,6 +13,8 @@ use zap\http\Controller;
 
 class NodeController extends Controller
 {
+    use RenderTakeover;
+
     public function __construct()
     {
         BreadCrumb::instance()->add('首页',base_url('/'));
@@ -23,11 +25,14 @@ class NodeController extends Controller
         if(method_exists($this,$method)){
             $this->$method();
         }else{
-            $this->index();
+            // 未知模型类型：先交给 mod 接管（node_render_{method} / node_{method}_render），
+            // 无接管则回退到通用 node 模板。
+            $this->renderNode(pageState()->node ?: [], $method);
         }
     }
 
     function index(){
+        $node = pageState()->node ?: [];
         pageState()->catalogPaths = $this->getCatalogPathByNodeId(pageState()->nodeId);
         $slugs = [];
         foreach (pageState()->catalogPaths as $catalog){
@@ -35,17 +40,17 @@ class NodeController extends Controller
             BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'catalog', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]));
         }
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);
-   
+
         //侧边栏菜单
         $topCatalog = current(pageState()->catalogPaths);
         pageState()->subCatalogList = $this->translateCatalogList(Catalog::instance()->getSubCatalogList($topCatalog['id']));
-        view('node',[]);
+        $this->renderNode($node, pageState()->nodeMimeType ?? ($node['node_type'] ?? 'page'));
     }
 
     function page(){
         $node = pageState()->node;
         BreadCrumb::instance()->add($node['title'],smart_node_url($node),true);
-        view('page', ['node' => $node]);
+        $this->renderNode($node, 'page');
     }
 
     function article(){
@@ -62,7 +67,7 @@ class NodeController extends Controller
         //侧边栏菜单
         $topCatalog = current(pageState()->catalogPaths);
         pageState()->subCatalogList = $this->translateCatalogList(Catalog::instance()->getSubCatalogList($topCatalog['id']));
-        view('article', ['node' => $node]);
+        $this->renderNode($node, 'article');
     }
 
     function product(){
@@ -83,16 +88,8 @@ class NodeController extends Controller
         $nodeModel = Node::findById($node['id'] ?? 0);
         $node['meta'] = $nodeModel ? $nodeModel->loadMeta() : [];
 
-        // 模块接管整页渲染（如 mall 渲染自有商品详情页）：返回非空字符串即视为已接管，
-        // 直接输出并跳过主题 product.php；未接管时回退到主题模板（其内的 mall_product_sku /
-        // mall_product_price 注入钩子仍作兜底）。
-        $hosted = \zapcms\Hook::applyFilters('node_product_render', '', $node, $node['node_type'] ?? pageState()->nodeMimeType);
-        if (is_string($hosted) && trim($hosted) !== '') {
-            echo $hosted;
-            return;
-        }
-
-        view('product', ['node' => $node]);
+        // 整页接管交由 RenderTakeover（node_render / node_render_product / node_product_render）
+        $this->renderNode($node, 'product');
     }
 
     function faq(){
@@ -110,7 +107,7 @@ class NodeController extends Controller
             pageState()->subCatalogList = \zapcms\services\Catalog::instance()->getPositionMenu(\zapcms\services\Catalog::POSITION_LEFT);
         }
 
-        view('faq-page', ['node' => $node]);
+        $this->renderNode($node, 'faq');
     }
 
     private function getCatalogPathByNodeId(int $node_id){
