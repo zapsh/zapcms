@@ -40,7 +40,7 @@
     </div>
     <div class="mb-3">
         <label for="data_description" class="form-label">权限描述</label>
-        <input type="text" class="form-control" id="data_description" name="data[description]" value="<?php echo \zapcms\support\HtmlXss::clean($data['description']); ?>" placeholder="请输入权限描述" />
+        <input type="text" class="form-control" id="data_description" name="data[description]" value="<?php echo \zapcms\support\HtmlXss::escape($data['description'] ?? ''); ?>" placeholder="请输入权限描述" />
     </div>
 
 </form>

@@ -8,7 +8,7 @@
     </div>
     <div class="mb-3">
         <label for="data_description" class="form-label">简介</label>
-        <input type="text" class="form-control" id="data_description" name="data[description]" value="<?php echo \zapcms\support\HtmlXss::clean($data['description']); ?>" placeholder="请输入角色介绍" />
+        <input type="text" class="form-control" id="data_description" name="data[description]" value="<?php echo \zapcms\support\HtmlXss::escape($data['description'] ?? ''); ?>" placeholder="请输入角色介绍" />
     </div>
     <hr/>
 
