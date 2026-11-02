@@ -54,6 +54,18 @@ class PluginLoader
                 continue;
             }
 
+            // 引导脚本以模块目录内的 mod.json 为准：options 里的安装快照可能早于
+            // boot / boot_frontend / boot_admin 字段的加入，导致引导脚本永远不加载。
+            $modJsonFile = APP_ROOT . '/mods/' . $name . '/mod.json';
+            if (is_file($modJsonFile)) {
+                $fileInfo = json_decode((string) file_get_contents($modJsonFile), true) ?: [];
+                foreach (['boot', 'boot_frontend', 'boot_admin', 'autoload'] as $bootKey) {
+                    if (empty($info[$bootKey]) && !empty($fileInfo[$bootKey])) {
+                        $info[$bootKey] = $fileInfo[$bootKey];
+                    }
+                }
+            }
+
             // 1. 菜单同步（仅后台，指纹幂等）。纯配置驱动，与启动脚本无关，
             //    只注册菜单、未配置 boot 的扩展也能正常显示后台菜单。
             if ($isAdmin) {

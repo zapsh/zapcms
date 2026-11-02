@@ -27,13 +27,15 @@ $imageUrl = \zapcms\helpers\ThumbHelper::thumb($node['image'] ?? '', $detailW, $
                             </div>
                             <div class="col-sm-6">
                                 <h2 class="product-title"><?php echo htmlspecialchars($node['title'] ?? ''); ?></h2>
-                                <?php if (!empty($node['meta']['price'])): ?>
-                                <div class="product-price">
-                                    <span class="product-price-label">价格</span>
-                                    <span class="product-price-currency">¥</span>
-                                    <span class="product-price-value"><?php echo number_format(floatval($node['meta']['price']), 2); ?></span>
-                                </div>
+                                <?php
+                                $priceHtml = '<span class="product-price-label">价格</span><span class="product-price-currency">¥</span><span class="product-price-value">' . number_format(floatval($node['meta']['price'] ?? 0), 2) . '</span>';
+                                /* mall 有 SKU 时由 sku 组件展示价格区间，隐藏核心单一价 */
+                                $priceHtml = \zapcms\Hook::applyFilters('mall_product_price', $priceHtml, $node);
+                                ?>
+                                <?php if ($priceHtml !== ''): ?>
+                                <div class="product-price"><?php echo $priceHtml; ?></div>
                                 <?php endif; ?>
+                                <?php echo \zapcms\Hook::fire('mall_product_sku', $node); ?>
                                 <?php if (!empty($node['excerpt'])): ?>
                                 <p class="product-excerpt text-muted"><?php echo htmlspecialchars($node['excerpt']); ?></p>
                                 <?php endif; ?>

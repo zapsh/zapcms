@@ -9,6 +9,15 @@ $this->beginBlock('content');
             <?php echo $this->partial('partials/_sidebar'); ?>
             <div class="col-sm-9">
                 <div class="content-wrap">
+                    <?php
+                    // 产品栏目：mall 启用时用高级搜索（规格/价格/库存/分类筛选）替换默认网格
+                    $catalogNode = pageState()->node ?: [];
+                    $isProductCatalog = (($catalogNode['node_type'] ?? '') === 'catalog' && ($catalogNode['mime_type'] ?? '') === 'product');
+                    $adv = $isProductCatalog ? \zapcms\Hook::fire('mall_product_list', (int) ($catalogNode['id'] ?? 0)) : '';
+                    if (trim($adv) !== '') {
+                        echo $adv;
+                    } else {
+                    ?>
                     <div class="row">
                         <?php if (empty($nodes)): ?>
                         <div class="col-sm-12">
@@ -31,6 +40,9 @@ $this->beginBlock('content');
                         <?php endforeach; endif; ?>
                     </div>
                     <?php echo $this->partial('partials/_pagination', ['page' => $page ?? null]); ?>
+                    <?php
+                    }
+                    ?>
                 </div>
             </div>
         </div>

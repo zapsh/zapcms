@@ -12,6 +12,18 @@ $this->beginBlock('content');
             <?php echo $this->partial('partials/_sidebar'); ?>
             <div class="col-sm-9">
                 <div class="content-wrap">
+                    <?php
+                    // mall 高级搜索集成：mall 启用且注册 mall_product_list 时，由其渲染
+                    // 规格/价格/库存/分类筛选 + 结果网格；否则回退到核心默认列表。
+                    $pageNode = pageState()->node ?: [];
+                    $currentCatalog = (($pageNode['node_type'] ?? '') === 'catalog')
+                        ? (int) $pageNode['id']
+                        : (int) ($catalogId ?? ($_GET['cid'] ?? 0));
+                    $adv = \zapcms\Hook::fire('mall_product_list', $currentCatalog);
+                    if (trim($adv) !== '') {
+                        echo $adv;
+                    } else {
+                    ?>
                     <div class="row">
                         <?php if (empty($nodes)): ?>
                         <div class="col-sm-12">
@@ -40,6 +52,9 @@ $this->beginBlock('content');
                         <?php endforeach; endif; ?>
                     </div>
                     <?php echo $this->partial('partials/_pagination', ['page' => $page ?? null]); ?>
+                    <?php
+                    }
+                    ?>
                 </div>
             </div>
         </div>
