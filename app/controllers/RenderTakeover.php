@@ -29,6 +29,9 @@ use zapcms\Hook;
  * 首页同理（IndexController）：
  *   home_render  接管站点首页
  *
+ * 404 页面同理（NotFoundController）：
+ *   not_found_render  接管 404 页面
+ *
  * 回调可返回：
  *   - \zap\view\View 实例（推荐，自动套用主题模板/layout）
  *   - 非空字符串（直接输出，需自行拼装整页）
@@ -107,6 +110,24 @@ trait RenderTakeover
     protected function renderHome(): bool
     {
         if ($this->tryTakeover('home_render', [$this])) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 404 页面统一接管入口（命中即接管整页渲染）。
+     * 约定式钩子：
+     *   not_found_render  接管 404 页面（NotFoundController）
+     * 回调签名：function ($_, $uri, $ctrl)
+     * @return bool 是否已接管（true 时调用方应 return）
+     */
+    protected function render404(): bool
+    {
+        $uri = isset($_SERVER['REQUEST_URI'])
+            ? (string) urldecode(strtok($_SERVER['REQUEST_URI'], '?') ?: '/')
+            : '/';
+        if ($this->tryTakeover('not_found_render', [$uri, $this])) {
             return true;
         }
         return false;

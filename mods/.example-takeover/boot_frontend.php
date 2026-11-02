@@ -12,6 +12,9 @@
  *   node_render_{mime}   按模型类型接管详情页，如 node_render_product
  *   node_{mime}_render   旧式别名（向后兼容，如 node_product_render）
  *   catalog_render_{mime} 按模型类型接管栏目列表页
+ *   search_render         接管搜索结果页
+ *   home_render           接管首页
+ *   not_found_render      接管 404 页面
  *
  * 回调可返回：
  *   - \zap\view\View 实例（推荐，可复用主题模板/layout）
@@ -57,4 +60,9 @@ Hook::filter('search_render', function ($_, $keyword, $searchType, $ctrl) {
 // ── 接管「首页」（约定式 home_render）──
 Hook::filter('home_render', function ($_, $ctrl) {
     return view('example_takeover.home', []);
+});
+
+// ── 接管「404 页面」（约定式 not_found_render）──
+Hook::filter('not_found_render', function ($_, $uri, $ctrl) {
+    return view('example_takeover.404', ['uri' => $uri]);
 });

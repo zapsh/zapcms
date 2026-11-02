@@ -44,7 +44,7 @@ mods/.example-takeover/
 {
   "name": ".example-takeover",
   "title": "示例：内容模型页面接管",
-  "description": "演示 node_render_* / catalog_render_* / search_render / home_render 接管。",
+  "description": "演示 node_render_* / catalog_render_* / search_render / home_render / not_found_render 接管。",
   "version": "1.0.0",
   "author": "ZAP CMS",
   "status": 1,
@@ -76,6 +76,7 @@ mods/.example-takeover/
 | 栏目列表 | `catalog_render_{mime}` → `catalog_product_list_render`（旧别名） | `function($_, $catalog, $mime, $ctrl)` | 如 `catalog_render_product`；在构建列表查询**之前**触发 |
 | 搜索结果 | `search_render` → `search_render_{node_type}` | `function($_, $keyword, $searchType, $ctrl)` | 如 `search_render_product`；在构建查询**之前**触发 |
 | 首页 | `home_render` | `function($_, $ctrl)` | 自定义首屏 |
+| 404 | `not_found_render` | `function($_, $uri, $ctrl)` | 自定义 404 页面（保留 404 状态码） |
 
 命中任一钩子即视为「接管」，框架统一 `emit` 后结束渲染，不再走默认模板。
 
@@ -106,6 +107,11 @@ Hook::filter('search_render', function ($_, $keyword, $searchType, $ctrl) {
 // 5) 接管首页
 Hook::filter('home_render', function ($_, $ctrl) {
     return view('example_takeover.home', []);
+});
+
+// 6) 接管 404 页面
+Hook::filter('not_found_render', function ($_, $uri, $ctrl) {
+    return view('example_takeover.404', ['uri' => $uri]);
 });
 ```
 
