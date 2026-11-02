@@ -22,7 +22,6 @@ class CreateSchema extends Command
         $connection = $this->input->getParam('c','my_test');
         Schema::connection($connection);
         Schema::setOutput($output);
-        // CreateTables 没有构造函数，原先传入的 verbose 参数会被静默丢弃
         $schema = new CreateTables();
         $schema->createSchema();
 
@@ -39,10 +38,12 @@ class CreateSchema extends Command
 
     public function help() : int
     {
-        $this->out->writeln("ZapCMS 创建表结构");
+        $this->out->writeln("ZapCMS CreateSchema Command");
         $this->out->writeln("Help:");
-        $this->out->writeln("-b\t基础数据");
-        $this->out->writeln("-v\t显示创建脚本");
+        $this->out->writeln("-b\tBase data installation");
+        $this->out->writeln("-d\tDemo data installation");
+        $this->out->writeln("-c\tConnection name, default: my_test");
+        $this->out->writeln("-v\tVerbose output");
         return self::SUCCESS;
     }
 

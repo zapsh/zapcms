@@ -303,8 +303,27 @@ class UpdateBaseData extends Command
         $default  = $col['default'] ?? null;
         $autoInc  = !empty($col['auto_increment']);
 
-        // MySQL 限制：TEXT 列不能建索引（无前缀长度），也不能带默认值。
-        // 导出时对此类列自动降级为 varchar，保证生成的 DDL 在 MySQL 下可执行。
+        // MySQL 优化：TEXT 列不能建索引（无前缀长度），也不能带默认值，
+        // 且相比 VARCHAR 占用更多空间、性能更差。导出时对“短字符串”列自动
+        // 降级为 VARCHAR 并给出合理长度，保证生成的 DDL 在 MySQL 下既高效又合法。
+        // 长文本列（content / description / meta_value / user_agent 等）保留 TEXT。
+        if ($method === 'text') {
+            $inferred = $this->inferTextLength($name);
+            if ($inferred !== null) {
+                $length = $inferred;
+                // 被索引 / 主键引用或带默认值的列，至少使用 255 并保证能容纳默认值
+                if (isset($keyColumns[$name]) || $default !== null) {
+                    $length = max($length, 255);
+                }
+                if (is_string($default)) {
+                    $length = max($length, mb_strlen($default) + 10);
+                }
+                $method = 'varchar';
+            }
+        }
+
+        // 安全兜底：仍残留的 TEXT 列（被索引 / 主键引用或带默认值）在 MySQL 下
+        // 无法建索引 / 设默认值，强制降级为 VARCHAR(255)。
         if ($method === 'text' && (isset($keyColumns[$name]) || $default !== null)) {
             $method = 'varchar';
             $length = 255;
@@ -342,6 +361,52 @@ class UpdateBaseData extends Command
         }
 
         return $code . ';';
+    }
+
+    /**
+     * 推断 TEXT 列在 MySQL 下应使用的 VARCHAR 长度。
+     *
+     * 返回 null  → 保留 TEXT（长文本，避免截断风险）；
+     * 返回整数  → 降级为 VARCHAR(该长度)。
+     *
+     * 依据列名启发式判断：
+     *  - 长文本（content / description / meta_value / user_agent / request_url 等）保留 TEXT；
+     *  - IP 地址使用 45（IPv6 最大长度）；
+     *  - 邮箱 / 电话等已知短字段使用更贴合的长度；
+     *  - 其余短字符串默认 VARCHAR(255)。
+     */
+    protected function inferTextLength(string $name): ?int
+    {
+        $n = strtolower($name);
+
+        // 长文本列 —— 保留 TEXT，避免截断
+        if (preg_match('/(content|excerpt|description|meta_value|value|changelog|body|message|user_agent|request_url|request_uri|remark|note|biography|summary|html|response|error|stack|sql)$/i', $n)) {
+            return null;
+        }
+
+        // IP 地址（IPv4 最长 15，IPv6 最长 45）
+        if ($n === 'ip' || $n === 'ipaddress' || substr($n, -3) === '_ip'
+            || str_starts_with($n, 'ip_') || str_contains($n, '_ip_') || str_contains($n, 'ipaddress')) {
+            return 45;
+        }
+
+        // 邮箱
+        if (str_contains($n, 'email') || str_contains($n, 'mail')) {
+            return 191;
+        }
+
+        // 电话
+        if (str_contains($n, 'phone') || str_contains($n, 'mobile')) {
+            return 40;
+        }
+
+        // URL / 链接 / 图片类（可能略长，但非大文本）
+        if (preg_match('/(url|uri|link|avatar|thumb|image|img|icon|path|domain|host|file)$/i', $n)) {
+            return 255;
+        }
+
+        // 其余短字符串 —— 默认 VARCHAR(255)
+        return 255;
     }
 
     // ──────────────── CreateBaseData (data) generation ────────────────
