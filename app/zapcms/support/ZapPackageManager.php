@@ -283,7 +283,6 @@ class ZapPackageManager
         $code  = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $errno = curl_errno($ch);
         $error = curl_error($ch);
-        // PHP 8.0+ 起 curl_close() 已无实际作用，8.5 中会触发 deprecated 日志，直接省略
 
         return [
             'body'  => $body === false ? '' : (string)$body,
