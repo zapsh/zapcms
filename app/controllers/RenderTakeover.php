@@ -22,6 +22,13 @@ use zapcms\Hook;
  *   catalog_render_{mime}      按模型类型接管栏目列表
  *   catalog_product_list_render 旧式别名（向后兼容）
  *
+ * 搜索结果页同理（SearchController）：
+ *   search_render              主钩子（全类型）
+ *   search_render_{node_type}  按搜索类型接管，如 search_render_product
+ *
+ * 首页同理（IndexController）：
+ *   home_render  接管站点首页
+ *
  * 回调可返回：
  *   - \zap\view\View 实例（推荐，自动套用主题模板/layout）
  *   - 非空字符串（直接输出，需自行拼装整页）
@@ -63,6 +70,44 @@ trait RenderTakeover
             if ($this->tryTakeover($tag, $payload)) {
                 return true;
             }
+        }
+        return false;
+    }
+
+    /**
+     * 搜索结果页统一接管入口（命中即接管整页渲染）。
+     * 约定式钩子：
+     *   search_render              主钩子（全类型）
+     *   search_render_{node_type}  按搜索类型接管，如 search_render_product
+     * 回调签名：function ($_, $keyword, $searchType, $ctrl)
+     * @return bool 是否已接管（true 时调用方应 return）
+     */
+    protected function renderSearch(string $keyword = '', string $searchType = ''): bool
+    {
+        $payload = [$keyword, $searchType, $this];
+        $tags = ['search_render'];
+        if ($searchType !== '') {
+            $tags[] = "search_render_{$searchType}";
+        }
+        foreach ($tags as $tag) {
+            if ($this->tryTakeover($tag, $payload)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 首页统一接管入口（命中即接管整页渲染）。
+     * 约定式钩子：
+     *   home_render  接管站点首页（IndexController）
+     * 回调签名：function ($_, $ctrl)
+     * @return bool 是否已接管（true 时调用方应 return）
+     */
+    protected function renderHome(): bool
+    {
+        if ($this->tryTakeover('home_render', [$this])) {
+            return true;
         }
         return false;
     }

@@ -17,7 +17,7 @@ $mime = $mime ?? '';
             <div class="col-sm-9">
                 <div class="content-wrap">
                     <div class="alert alert-info">
-                        此栏目列表已由 <strong>example-takeover</strong> mod 通过 <code>catalog_render_product</code> 钩子接管，并复用站点 layout 渲染。
+                        此栏目列表已由 <strong>.example-takeover</strong> mod 通过 <code>catalog_render_product</code> 钩子接管，并复用站点 layout 渲染。
                     </div>
                     <h1><?php echo htmlspecialchars($catalog['title'] ?? ''); ?></h1>
                     <p class="text-muted">内容模型类型：<?php echo htmlspecialchars($mime); ?></p>

@@ -682,6 +682,20 @@ function theme_url(?string $path = null): string
 }
 
 /**
+ * 模块（mod）资源 URL
+ *
+ * mod_url('example-takeover', 'assets/js/main.js')
+ *   => /mods/example-takeover/assets/js/main.js
+ *
+ * 两种部署模式（根目录 / public/ 软链）下均可用：public 模式中 mods 被软链进
+ * public/mods，URL 形态保持一致；base_url() 返回基于入口脚本目录、不带语言前缀的相对 URL。
+ */
+function mod_url(string $mod, string $path = ''): string
+{
+    return base_url("mods/{$mod}/" . ltrim($path, '/'));
+}
+
+/**
  * 输出主题资源 URL（CSS/JS/图片等）
  * 用法: theme_asset('css/style.css'), theme_asset('img/logo.svg')
  */

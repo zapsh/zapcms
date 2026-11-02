@@ -5,6 +5,9 @@ RewriteRule ^(app|config|vendor|var|\.git|\.idea)/ - [R=403,L]
 
 RewriteRule ^(composer\.(json|lock)|Dockerfile|console|README\.md|LICENSE|CHANGELOG\.md|\.env|\.env\..*)$ - [R=403,L]
 
+# 禁止通过 Web 直接执行 mods 下的 PHP（mod 含 boot_frontend.php 等，仅应由框架在启动时 include）
+RewriteRule ^mods/.*\.php$ - [R=403,L]
+
 RewriteCond %{HTTP:Authorization} .
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 

@@ -60,6 +60,7 @@ if (trim((string)$state['pageDescription']) === '') {
     <link href="<?php echo theme_url('css/page-styles.css'); ?>" rel="stylesheet">
 
     <?php echo option('website.head_script'); ?>
+    <?php print_styles(); ?>
 </head>
 <body>
 

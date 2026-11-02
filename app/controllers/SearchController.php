@@ -14,6 +14,8 @@ use zap\http\Controller;
 
 class SearchController extends Controller
 {
+    use RenderTakeover;
+
     public function __construct()
     {
         BreadCrumb::instance()->add('首页',base_url('/'));
@@ -23,8 +25,16 @@ class SearchController extends Controller
     function index(){
         $keyword = trim(req()->get('q'));
 
-        // 分页数量从内容模型显示配置读取（按请求 node_type 区分，默认 12）
+        // 搜索类型（product/article/faq/catalog，可为空）
         $searchType = trim((string)req()->get('node_type'));
+
+        // 模块接管整页搜索结果渲染（约定式 search_render / search_render_{type}）；
+        // 命中即接管并结束渲染，置于默认查询之前，接管时不必重复查询。
+        if ($this->renderSearch($keyword, $searchType)) {
+            return;
+        }
+
+        // 分页数量从内容模型显示配置读取（按请求 node_type 区分，默认 12）
         $listPerPage = (int)\zapcms\services\NodeType::getConfig($searchType !== '' ? $searchType : 'article', 'list_per_page', 12);
         $page = new Pagination(intval(req()->get('page',1)), max(1, $listPerPage), req()->get());
         // 修复分页链接：以搜索页 /search 为基准，保留 q/node_type 等查询参数，
