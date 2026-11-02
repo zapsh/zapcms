@@ -112,6 +112,7 @@ class PluginLoader
             }
 
             if ($bootScript !== null) {
+                defined('IN_ZAPCMS') or define('IN_ZAPCMS', true);
                 include_once $bootScript;
                 Hook::fire('plugin.boot', $name, $info);
             }
