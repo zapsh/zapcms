@@ -18,7 +18,12 @@ $total     = count($items);
             <tbody>
             <?php foreach ($items as $item): ?>
             <tr>
-                <td class="ps-3"><?= htmlspecialchars($item['label']) ?></td>
+                <td class="ps-3">
+                    <?= htmlspecialchars($item['label']) ?>
+                    <?php if (!$item['pass'] && !empty($item['failMsg'])): ?>
+                        <div class="text-danger small mt-1"><?= htmlspecialchars($item['failMsg']) ?></div>
+                    <?php endif; ?>
+                </td>
                 <td class="text-secondary small"><?= htmlspecialchars($item['value']) ?></td>
                 <td class="text-end pe-3">
                     <?php if ($item['pass']): ?>

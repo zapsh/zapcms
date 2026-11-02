@@ -411,72 +411,71 @@ function installBaseUrl(): string
 }
 
 /**
- * 探测一条「干净 URL」的 HTTP 状态码，用于判断伪静态是否生效。
- * 返回：0=无法探测；404=未生效；其它（含 200/302 重定向）= 已生效。
+ * 探测一个 URL 的 HTTP 状态码与响应体（GET，不跟随跳转）。
+ *
+ * 伪静态检测不能只看状态码：把重写规则配成「静态 SPA」模式时，服务器会因为
+ * 内部重定向成环而返回 500 —— 那也是「未生效」，只看状态码会误判为通过。
+ * 因此这里把响应体一并取回，交给调用方校验 index.php 输出的探针 JSON。
+ *
+ * @return array{status:int,body:string} status=0 表示无法探测
  */
-function probeHttpStatus(string $url): int
+function probeHttp(string $url): array
 {
+    $ua = "User-Agent: ZapCMS-Installer\r\n";
+
     // 1) cURL
     if (function_exists('curl_init')) {
         $ch = curl_init($url);
         curl_setopt_array($ch, [
-            CURLOPT_CUSTOMREQUEST  => 'GET',
-            CURLOPT_NOBODY         => true,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HEADER         => true,
+            CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_TIMEOUT        => 5,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_HTTPHEADER     => ['User-Agent: ZapCMS-Installer'],
         ]);
-        @curl_exec($ch);
+        $body = @curl_exec($ch);
         $code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-        return $code;
+
+        return ['status' => $code, 'body' => is_string($body) ? $body : ''];
     }
 
-    // 2) file_get_contents（HEAD）
+    // 2) file_get_contents
     if (filter_var(ini_get('allow_url_fopen'), FILTER_VALIDATE_BOOLEAN)) {
         $ctx = stream_context_create([
-            'http'  => ['method' => 'HEAD', 'timeout' => 5, 'ignore_errors' => true],
-            'https' => ['method' => 'HEAD', 'timeout' => 5, 'ignore_errors' => true],
+            'http'  => ['method' => 'GET', 'timeout' => 5, 'ignore_errors' => true, 'header' => $ua],
+            'https' => ['method' => 'GET', 'timeout' => 5, 'ignore_errors' => true, 'header' => $ua],
         ]);
-        $headers = @get_headers($url, 1, $ctx);
-        if (is_array($headers) && isset($headers[0])
-            && preg_match('#HTTP/\d\.\d\s+(\d{3})#i', (string) $headers[0], $m)) {
-            return (int) $m[1];
+        $body   = @file_get_contents($url, false, $ctx);
+        $status = 0;
+        foreach ((array) ($http_response_header ?? []) as $line) {
+            if (preg_match('#^HTTP/\d\.\d\s+(\d{3})#i', (string) $line, $m)) {
+                $status = (int) $m[1];  // 有跳转时取最后一条状态行
+            }
+        }
+
+        if ($status !== 0 || is_string($body)) {
+            return ['status' => $status, 'body' => is_string($body) ? $body : ''];
         }
     }
 
-    // 3) fsockopen 兜底
-    $parts = parse_url($url);
-    if ($parts === false || empty($parts['host'])) {
-        return 0;
-    }
-    $scheme = (($parts['scheme'] ?? 'http') === 'https') ? 'ssl' : 'tcp';
-    $host   = $parts['host'];
-    $port   = (int) ($parts['port'] ?? ($scheme === 'ssl' ? 443 : 80));
-    $path   = ($parts['path'] ?? '/') . (!empty($parts['query']) ? '?' . $parts['query'] : '');
-    $fp     = @fsockopen(($scheme === 'ssl' ? 'ssl://' : '') . $host, $port, $errno, $errstr, 5);
-    if ($fp === false) {
-        return 0;
-    }
-    fwrite($fp, "GET {$path} HTTP/1.1\r\nHost: {$host}\r\nConnection: close\r\n\r\n");
-    $line = fgets($fp, 1024);
-    fclose($fp);
-    if (is_string($line) && preg_match('#HTTP/\d\.\d\s+(\d{3})#i', $line, $m)) {
-        return (int) $m[1];
-    }
-    return 0;
+    // 3) 无可用的 HTTP 客户端
+    return ['status' => 0, 'body' => ''];
 }
 
 /**
  * 伪静态（URL 重写）检测。
  *
- * 通过向一条「不存在的干净 URL」发起请求来判断：
- *   - 若被 Web 服务器路由到 index.php（未安装站点会 302 跳转到安装页），说明伪静态生效；
- *   - 若返回 404，说明未配置 try_files / mod_rewrite，安装后前台路由将无法工作。
- * 同时辅以 .htaccess 存在性与重写规则检查（仅 Apache）。
+ * 直接请求后台入口这条「干净 URL」/z-admin：
+ *   - 200/3xx → 请求被重写进了 index.php（未安装时会 302 跳转到安装页，请求已抵达 PHP），伪静态生效；
+ *   - 404     → 没有配置 try_files / mod_rewrite，请求没进 PHP；
+ *   - 500     → 重写规则把请求交给了错误目标（常见于「静态 SPA」预设兜底到 index.html），同样算未生效；
+ *   - 0       → 无法探测自身地址（curl / allow_url_fopen 均不可用），明确提示，不做乐观判断。
+ *
+ * 注意：不能拿 / 或 /index.php 来测——它们即使没开重写也会 200（服务器把 index.php
+ * 当目录首页），会得到「假通过」；后台入口则没有真实文件，必须靠重写才能进 PHP。
  *
  * @return array{pass:bool,value:string,failMsg:string,autofix:string}
  */
@@ -484,52 +483,60 @@ function checkRewrite(): array
 {
     $server   = strtolower((string) ($_SERVER['SERVER_SOFTWARE'] ?? ''));
     $isApache = str_contains($server, 'apache');
-    $isNginx  = str_contains($server, 'nginx');
-    $name     = $isNginx ? 'Nginx' : ($isApache ? 'Apache' : '未知');
 
-    // .htaccess（仅 Apache 相关）
-    $htPath           = base_path('.htaccess');
-    $htExists         = is_file($htPath);
-    $htHasRewrite     = false;
-    if ($htExists) {
-        $c = (string) @file_get_contents($htPath);
-        $htHasRewrite = stripos($c, 'RewriteEngine') !== false
-            || stripos($c, 'try_files') !== false;
+    // 展示列只呈现服务器类型，成功/失败由状态列（✓/✗）表达
+    $name = '未知';
+    foreach ([
+        'openresty' => 'OpenResty',
+        'nginx'     => 'Nginx',
+        'apache'    => 'Apache',
+        'litespeed' => 'LiteSpeed',
+        'iis'       => 'IIS',
+        'caddy'     => 'Caddy',
+        'php'       => 'PHP',
+    ] as $needle => $label) {
+        if (str_contains($server, $needle)) {
+            $name = $label;
+            break;
+        }
     }
 
-    // 现场探测干净 URL 是否抵达 index.php
-    $status  = probeHttpStatus(installBaseUrl() . '/zapcms-rewrite-probe-' . bin2hex(random_bytes(4)));
-    $probeOk = ($status !== 0) && ($status !== 404);
-    $pass    = $probeOk;
+    // .htaccess（仅 Apache 相关，用于失败时给出更具体的建议）
+    $htPath       = base_path('.htaccess');
+    $htExists     = is_file($htPath);
+    $htHasRewrite = $htExists
+        && preg_match('/RewriteEngine|try_files/i', (string) @file_get_contents($htPath)) === 1;
 
-    $value = $name;
-    if ($status === 0) {
-        $value .= '（无法探测，请确认 allow_url_fopen / curl 可用）';
-    } else {
-        $value .= '（探测 HTTP ' . $status . '）';
-    }
-    if ($isApache) {
-        $value .= $htExists
-            ? ($htHasRewrite ? ' · .htaccess 已配置' : ' · .htaccess 缺少重写规则')
-            : ' · 缺少 .htaccess';
-    }
+    // 现场探测：请求一条干净 URL /z-admin 是否真的被路由到 index.php。
+    // 开启重写 → 抵达 index.php → 未安装时 302 跳转安装页（请求已进 PHP）→ 2xx/3xx 即生效；
+    // 未开启重写 → 服务器找不到该文件 → 404；SPA 误配 → 500。
+    $probe  = probeHttp(installBaseUrl() . '/z-admin');
+    $status = $probe['status'];
+    $pass   = $status >= 200 && $status < 400;
 
     if ($pass) {
         $failMsg = '';
     } elseif ($status === 0) {
-        $failMsg = '无法自动探测伪静态，请确认服务器已配置 URL 重写（Nginx try_files / Apache mod_rewrite + .htaccess）后再继续。';
-    } elseif ($isApache && !$htExists) {
-        $failMsg = 'Apache 环境缺少 .htaccess（或虚拟主机 AllowOverride 未开启），伪静态未生效。可点击下方「生成 .htaccess」后刷新本页。';
-    } elseif ($isApache && !$htHasRewrite) {
-        $failMsg = '.htaccess 未包含重写规则，或虚拟主机 AllowOverride 未开启，伪静态未生效。';
+        $failMsg = '无法自动探测伪静态：服务器无法访问自身地址（curl / allow_url_fopen 均不可用）。请手动确认已配置 URL 重写后再继续。';
+    } elseif ($status >= 500) {
+        $failMsg = '伪静态未生效：探测返回 HTTP ' . $status . '，通常是重写规则把请求交给了不存在的目标'
+            . '（例如 Nginx 选用了「静态 SPA」预设，兜底到 index.html）。'
+            . '请改为 try_files $uri $uri/ /index.php$is_args$args;';
+    } elseif ($status === 404) {
+        if ($isApache || $name === 'LiteSpeed') {
+            $failMsg = '伪静态未生效：' . $name . ' 需开启 mod_rewrite 并在根目录放置 .htaccess（虚拟主机 AllowOverride All）。'
+                . ($htExists ? ($htHasRewrite ? '' : ' 当前 .htaccess 未包含重写规则。') : ' 当前根目录缺少 .htaccess。');
+        } else {
+            $failMsg = '伪静态未生效：请在 server 段添加 location / { try_files $uri $uri/ /index.php$is_args$args; }';
+        }
     } else {
-        $failMsg = '伪静态未开启：Nginx 请在 server 段配置 try_files $uri $uri/ /index.php?$query_string; Apache 请开启 mod_rewrite 并在根目录放置 .htaccess。';
+        $failMsg = '伪静态未生效（探测 HTTP ' . $status . '）：请求没有抵达 index.php，请检查重写规则是否指向 index.php。';
     }
 
     // 仅当 Apache 且根目录无 .htaccess 时才提供一键生成
     $autofix = ($isApache && !$htExists) ? 'index.php?action=installHtaccess' : '';
 
-    return ['pass' => $pass, 'value' => $value, 'failMsg' => $failMsg, 'autofix' => $autofix];
+    return ['pass' => $pass, 'value' => $name, 'failMsg' => $failMsg, 'autofix' => $autofix];
 }
 
 function buildEnvChecks(): array
@@ -576,7 +583,7 @@ function buildEnvChecks(): array
             'failMsg' => '需要 PHP 8.2 或更高版本',
         ],
         [
-            'label'   => '伪静态（URL 重写）已开启',
+            'label'   => '伪静态（URL 重写）',
             'value'   => $rewrite['value'],
             'pass'    => $rewrite['pass'],
             'failMsg' => $rewrite['failMsg'],
@@ -593,6 +600,18 @@ function buildEnvChecks(): array
             'value'   => function_exists('gd_info') ? current(gd_info()) : '不支持',
             'pass'    => function_exists('gd_info'),
             'failMsg' => '不支持 GD 扩展，无法处理图片',
+        ],
+        [
+            'label'   => 'cURL 扩展',
+            'value'   => function_exists('curl_init') ? '支持' : '不支持',
+            'pass'    => function_exists('curl_init'),
+            'failMsg' => '不支持 cURL 扩展，无法完成伪静态自检与远程请求',
+        ],
+        [
+            'label'   => 'OpenSSL 扩展',
+            'value'   => extension_loaded('openssl') ? '支持' : '不支持',
+            'pass'    => extension_loaded('openssl'),
+            'failMsg' => '不支持 OpenSSL 扩展，无法进行 HTTPS 通信',
         ],
         [
             'label'   => 'storage/ 目录可写',
