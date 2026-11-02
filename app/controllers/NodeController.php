@@ -82,6 +82,16 @@ class NodeController extends Controller
         // 加载自定义字段（node_meta），如产品价格
         $nodeModel = Node::findById($node['id'] ?? 0);
         $node['meta'] = $nodeModel ? $nodeModel->loadMeta() : [];
+
+        // 模块接管整页渲染（如 mall 渲染自有商品详情页）：返回非空字符串即视为已接管，
+        // 直接输出并跳过主题 product.php；未接管时回退到主题模板（其内的 mall_product_sku /
+        // mall_product_price 注入钩子仍作兜底）。
+        $hosted = \zapcms\Hook::applyFilters('node_product_render', '', $node, $node['node_type'] ?? pageState()->nodeMimeType);
+        if (is_string($hosted) && trim($hosted) !== '') {
+            echo $hosted;
+            return;
+        }
+
         view('product', ['node' => $node]);
     }
 
