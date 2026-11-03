@@ -38,21 +38,34 @@ $this->layout('layouts/common');
                         <div class="row g-2">
                             <?php foreach ($locales as $item): ?>
                                 <div class="col-md-4">
-                                    <div class="form-check border rounded p-2">
-                                        <input class="form-check-input" type="radio" name="default_locale"
-                                               id="default_<?php echo e($item['code']); ?>"
-                                               value="<?php echo e($item['code']); ?>"
-                                               <?php echo $item['is_default'] ? 'checked' : ''; ?>>
-                                        <label class="form-check-label w-100" for="default_<?php echo e($item['code']); ?>">
-                                            <small class="d-block text-muted">设为默认</small>
-                                            <strong><?php echo e($item['title']); ?></strong>
-                                            <small class="d-block text-muted"><?php echo e($item['code']); ?></small>
-                                        </label>
+                                    <div class="border rounded p-2 h-100 d-flex justify-content-between align-items-start locale-card">
+                                        <div class="form-check mb-0">
+                                            <input class="form-check-input" type="radio" name="default_locale"
+                                                   id="default_<?php echo e($item['code']); ?>"
+                                                   value="<?php echo e($item['code']); ?>"
+                                                   <?php echo $item['is_default'] ? 'checked' : ''; ?>>
+                                            <label class="form-check-label w-100" for="default_<?php echo e($item['code']); ?>">
+                                                <small class="d-block text-muted">设为默认</small>
+                                                <strong><?php echo e($item['title']); ?></strong>
+                                                <small class="d-block text-muted"><?php echo e($item['code']); ?></small>
+                                            </label>
+                                        </div>
+                                        <?php if (!empty($item['is_default'])): ?>
+                                            <span class="badge text-bg-primary flex-shrink-0 ms-2">默认</span>
+                                        <?php else: ?>
+                                            <button type="button" class="btn btn-sm btn-outline-danger flex-shrink-0 ms-2 btn-remove-locale"
+                                                    title="移除该语言">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        <?php endif; ?>
                                         <input type="hidden" name="locales[]" value="<?php echo e($item['code']); ?>">
                                     </div>
                                 </div>
                             <?php endforeach; ?>
                         </div>
+                        <p class="form-text mb-0">
+                            默认语言不可移除；如需删除默认语言，请先把其它语言设为默认并保存，再回来移除。
+                        </p>
 
                         <?php if ($restLocales !== []): ?>
                             <hr>
@@ -126,6 +139,21 @@ $this->layout('layouts/common');
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // 已启用语言：非默认语言可移除，移除后其 locales[] 隐藏域随卡片一起消失
+    document.querySelectorAll('.btn-remove-locale').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var card = btn.closest('.locale-card');
+            if (!card) {
+                return;
+            }
+            if (document.querySelectorAll('.locale-card').length <= 1) {
+                alert('至少保留一个语言');
+                return;
+            }
+            card.remove();
+        });
+    });
+
     var saveBtn = document.getElementById('save-languages');
     if (!saveBtn) {
         return;

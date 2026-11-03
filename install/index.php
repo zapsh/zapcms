@@ -249,6 +249,14 @@ function importBaseDataAction()
         \zapcms\services\Option::update('website.slogan', $websiteSlogan);
         \zapcms\services\Option::update('website.email', $websiteEmail);
 
+        // 安装时选择的默认语言：写入 options（languages.available / languages.default），
+        // 避免新站语言状态未初始化。只启用这一个语言，多语言逻辑保持关闭。
+        $locale = \zapcms\services\Locale::normalize((string) ($website['locale'] ?? 'zh-CN'));
+        if ($locale === '') {
+            $locale = \zapcms\services\Locale::FALLBACK_LOCALE;
+        }
+        \zapcms\services\Locale::save([$locale], $locale);
+
         \zap\DB::update('admin', [
             'username' => $websiteUsername,
             'password' => \zap\util\Password::hash($websitePassword),

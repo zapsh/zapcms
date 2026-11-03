@@ -21,11 +21,26 @@
                     <input type="text" class="form-control form-control-sm" id="websiteSlogan"
                            name="website[slogan]" placeholder="副标题" value="OpenSource CMS">
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-3">
                     <label for="websiteEmail" class="form-label small fw-semibold">邮箱 <span class="text-muted fw-normal">(可选)</span></label>
                     <input type="email" class="form-control form-control-sm" id="websiteEmail"
                            name="website[email]" placeholder="admin@example.com"
                            value="admin@<?= htmlspecialchars($_SERVER['HTTP_HOST'] ?? 'localhost') ?>">
+                </div>
+                <div class="col-md-3">
+                    <label for="websiteLocale" class="form-label small fw-semibold">默认语言</label>
+                    <select class="form-select form-select-sm" id="websiteLocale" name="website[locale]">
+                        <option value="zh-CN" selected>简体中文 (zh-CN)</option>
+                        <option value="zh-TW">繁体中文 (zh-TW)</option>
+                        <option value="en">英语 (en)</option>
+                        <option value="ja">日语 (ja)</option>
+                        <option value="ko">韩语 (ko)</option>
+                        <option value="fr">法语 (fr)</option>
+                        <option value="de">德语 (de)</option>
+                        <option value="es">西班牙语 (es)</option>
+                        <option value="ru">俄语 (ru)</option>
+                        <option value="pt">葡萄牙语 (pt)</option>
+                    </select>
                 </div>
                 <div class="col-md-3">
                     <label for="adminUser" class="form-label small fw-semibold">管理员用户名</label>

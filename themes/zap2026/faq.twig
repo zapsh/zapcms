@@ -6,22 +6,42 @@
     <div class="row">
         {{ include('partials/_sidebar.twig') }}
         <div class="col-sm-9">
-            <div class="content-wrap">
-                <div class="faq-search-wrap">
-                    <i class="fa fa-search faq-search-icon"></i>
-                    <input type="text" id="faq_search" class="faq-search-input" placeholder="搜索常见问题…" autocomplete="off">
+            <div class="content-wrap faq-page">
+                <div class="faq-toolbar">
+                    <div class="faq-search-wrap">
+                        <i class="fa fa-search faq-search-icon"></i>
+                        <input type="text" id="faq_search" class="faq-search-input" placeholder="搜索常见问题…" autocomplete="off">
+                    </div>
+                    <button type="button" class="faq-toggle-all" id="faq_toggle_all">全部展开</button>
                 </div>
-                <div class="faq-list">
+                <div class="faq-list" id="faq_list">
                     {% if nodes is empty %}
-                        <p class="text-muted">暂无常见问题</p>
+                        <div class="faq-no-result">
+                            <i class="fa fa-inbox"></i>
+                            暂无常见问题
+                        </div>
                     {% else %}
                         {% for node in nodes %}
-                            <div class="faq-card">
-                                <h4 class="faq-question"><i class="fa fa-question-circle"></i> {{ node.title }}</h4>
-                                <div class="faq-answer">{{ node.content|raw }}</div>
+                            <div class="faq-item{% if loop.first %} open{% endif %}">
+                                <div class="faq-question" role="button" tabindex="0"
+                                     aria-expanded="{{ loop.first ? 'true' : 'false' }}">
+                                    <span class="faq-q-icon">Q</span>
+                                    <span class="faq-q-text">{{ node.title }}</span>
+                                    <i class="fa fa-chevron-down faq-chevron"></i>
+                                </div>
+                                <div class="faq-answer">
+                                    <div class="faq-answer-inner">
+                                        <span class="faq-a-icon">A</span>
+                                        <div class="faq-a-content">{{ node.content|raw }}</div>
+                                    </div>
+                                </div>
                             </div>
                         {% endfor %}
                     {% endif %}
+                    <div class="faq-no-result" id="faq_no_result" style="display:none;">
+                        <i class="fa fa-search"></i>
+                        没有找到相关问题
+                    </div>
                 </div>
                 {{ include('partials/_pagination.twig', { page: page ?? null }) }}
             </div>
@@ -31,16 +51,85 @@
 
 <script>
 (function () {
-    var input = document.getElementById('faq_search');
-    if (!input) return;
-    var cards = document.querySelectorAll('.faq-card');
-    input.addEventListener('input', function () {
-        var kw = input.value.trim().toLowerCase();
-        cards.forEach(function (card) {
-            var text = card.textContent.toLowerCase();
-            card.style.display = (kw === '' || text.indexOf(kw) > -1) ? '' : 'none';
-        });
+    var list = document.getElementById('faq_list');
+    if (!list) return;
+
+    function items() {
+        return list.querySelectorAll('.faq-item');
+    }
+
+    function setOpen(item, open) {
+        item.classList.toggle('open', open);
+        var q = item.querySelector('.faq-question');
+        if (q) {
+            q.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+    }
+
+    // 点击问题展开 / 收起
+    list.addEventListener('click', function (e) {
+        var q = e.target.closest('.faq-question');
+        if (!q || !list.contains(q)) {
+            return;
+        }
+        var item = q.closest('.faq-item');
+        if (item) {
+            setOpen(item, !item.classList.contains('open'));
+        }
     });
+
+    // 键盘可达：Enter / Space 切换
+    list.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' && e.key !== ' ') {
+            return;
+        }
+        var q = e.target.closest('.faq-question');
+        if (!q) {
+            return;
+        }
+        e.preventDefault();
+        q.click();
+    });
+
+    // 搜索过滤
+    var input = document.getElementById('faq_search');
+    var emptyTip = document.getElementById('faq_no_result');
+    if (input) {
+        input.addEventListener('input', function () {
+            var kw = input.value.trim().toLowerCase();
+            var visible = 0;
+            items().forEach(function (item) {
+                var hit = kw === '' || item.textContent.toLowerCase().indexOf(kw) > -1;
+                item.style.display = hit ? '' : 'none';
+                if (hit) {
+                    visible++;
+                }
+            });
+            if (emptyTip) {
+                emptyTip.style.display = visible === 0 ? '' : 'none';
+            }
+        });
+    }
+
+    // 全部展开 / 收起
+    var toggleAll = document.getElementById('faq_toggle_all');
+    if (toggleAll) {
+        toggleAll.addEventListener('click', function () {
+            var all = items();
+            var anyClosed = false;
+            all.forEach(function (item) {
+                if (item.style.display !== 'none' && !item.classList.contains('open')) {
+                    anyClosed = true;
+                }
+            });
+            all.forEach(function (item) {
+                if (item.style.display !== 'none') {
+                    setOpen(item, anyClosed);
+                }
+            });
+            toggleAll.textContent = anyClosed ? '全部收起' : '全部展开';
+        });
+    }
 })();
 </script>
 {% endblock %}
