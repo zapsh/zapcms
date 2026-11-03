@@ -18,8 +18,8 @@ IS_AJAX !== true && $this->layout('layouts/common');
                 <button type="button" class="btn btn-outline-success btn-sm" onclick="save()">
                     <i class="fa fa-save me-1"></i>保存
                 </button>
-                <button type="button" class="btn btn-success btn-sm" onclick="addOrEdit(0)">
-                    <i class="fa fa-plus me-1"></i>添加
+                <button type="button" class="btn btn-success btn-sm" onclick="addOrEdit(0,0)">
+                    <i class="fa fa-plus me-1"></i>添加栏目
                 </button>
             </div>
         </div>
@@ -28,21 +28,22 @@ IS_AJAX !== true && $this->layout('layouts/common');
         <script>
             function checkAll(el) {
                 $('.zap_catalog').prop('checked', $(el).prop('checked'));
+                updateSelectedCount();
             }
         </script>
         <form action="post" id="reqForm">
             <div class="table-responsive">
-                <table class="table table-hover table-striped text-nowrap mb-0">
+                <table class="table table-hover table-striped text-nowrap align-middle mb-0 catalog-table">
                     <thead>
                         <tr class="table-light">
-                            <th scope="col" style="width:40px" class="text-center align-middle">
+                            <th scope="col" style="width:40px" class="text-center">
                                 <input class="form-check-input" type="checkbox" onclick="checkAll(this)"/>
                             </th>
                             <th scope="col" style="width:60px">排序</th>
                             <th scope="col" class="w-100">栏目名称</th>
                             <th scope="col" class="d-none d-md-table-cell">SEO</th>
                             <th scope="col" class="d-none d-lg-table-cell">模型</th>
-                            <th scope="col" style="width:70px">操作</th>
+                            <th scope="col" style="width:120px" class="text-center">操作</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -59,13 +60,13 @@ IS_AJAX !== true && $this->layout('layouts/common');
                         $level = $admin_menu['level'] -1;
                         $paddingLeft = $level * 1.5;
                         ?>
-                        <tr class="catalog-row" data-level="<?php echo $level > 0 ? $level : ''; ?>">
-                            <td class="text-center align-middle">
+                        <tr class="catalog-row" data-level="<?php echo $level > 0 ? $level : ''; ?>" data-id="<?php echo e($admin_menu['id']); ?>">
+                            <td class="text-center">
                                 <input name="catalog[<?php echo e($admin_menu['id']); ?>][id]"
                                        value="<?php echo e($admin_menu['id']); ?>"
-                                       class="form-check-input zap_catalog" type="checkbox"/>
+                                       class="form-check-input zap_catalog" type="checkbox" onchange="updateSelectedCount()"/>
                             </td>
-                            <td class="align-middle">
+                            <td>
                                 <input name="catalog[<?php echo e($admin_menu['id']); ?>][sort_order]"
                                        value="<?php echo e($admin_menu['sort_order']); ?>"
                                        class="form-control form-control-sm sort-input"
@@ -90,10 +91,18 @@ IS_AJAX !== true && $this->layout('layouts/common');
                             <td class="align-middle d-none d-lg-table-cell">
                                 <span class="badge text-bg-light"><?php echo \zapcms\services\NodeType::getTitle($admin_menu['node_type']); ?></span>
                             </td>
-                            <td class="align-middle">
-                                <button type="button" class="btn btn-outline-success btn-sm" onclick="addOrEdit(<?php echo e($admin_menu['id']); ?>)">
-                                    <i class="fa fa-cog"></i>
-                                </button>
+                            <td class="align-middle text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-secondary" title="编辑" onclick="addOrEdit(<?php echo e($admin_menu['id']); ?>,0)">
+                                        <i class="fa fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" title="添加子栏目" onclick="addOrEdit(0,<?php echo e($admin_menu['id']); ?>)">
+                                        <i class="fa fa-plus"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger" title="删除" onclick="removeOne(<?php echo e($admin_menu['id']); ?>)">
+                                        <i class="fa fa-trash"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         <?php
@@ -107,7 +116,7 @@ IS_AJAX !== true && $this->layout('layouts/common');
                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="remove()">
                     <i class="fa fa-trash me-1"></i>删除所选栏目
                 </button>
-                <small class="text-muted ms-2">勾选表格中的栏目后，点击此处删除</small>
+                <span id="selectedCount" class="ms-2 text-muted small">已选 0 项</span>
             </div>
         </form>
     </div>
@@ -131,6 +140,8 @@ IS_AJAX !== true && $this->layout('layouts/common');
 .table tbody td.title-cell {
     padding-left: 0;
 }
+.catalog-table tbody tr { transition: background-color .15s ease; }
+.catalog-table tbody tr:hover { background-color: #f1fdf6; }
 .catalog-title {
     display: flex;
     align-items: center;
@@ -163,6 +174,8 @@ IS_AJAX !== true && $this->layout('layouts/common');
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.btn-group .btn { border-color: #dee2e6; }
+.btn-group .btn:hover { z-index: 2; }
 @media (max-width: 767px) {
     .table { font-size: 0.8rem; }
     .table th, .table td { padding: 0.5rem 0.35rem; }
@@ -176,6 +189,7 @@ IS_AJAX !== true && $this->layout('layouts/common');
 <script>
     $(function (){
         Zap.EnableToolTip();
+        updateSelectedCount();
     })
 
     function save(){
@@ -193,30 +207,74 @@ IS_AJAX !== true && $this->layout('layouts/common');
         })
     }
 
+    function confirmDelete(msg, callback){
+        if (typeof Swal === 'undefined') {
+            if (window.confirm(msg)) { callback(); }
+            return;
+        }
+        Swal.fire({
+            title: '确认删除',
+            text: msg,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '删除',
+            cancelButtonText: '取消',
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d'
+        }).then(function (result) {
+            if (result.isConfirmed) { callback(); }
+        });
+    }
+
     function remove(){
-        const checkedCatalog = $('.zap_catalog:checked').serialize();
-        if(checkedCatalog.length === 0){
+        const checked = $('.zap_catalog:checked');
+        if(checked.length === 0){
             ZapToast.alert('请选择需要删除的栏目',{bgColor:bgWarning,position:Toast_Pos_Center});
             return;
         }
-        $.ajax({
-            url:'<?php echo Url::action("Catalog@remove");?>',
-            method:'post',
-            data:checkedCatalog,
-            success:function (data){
-                ZapToast.alert(data.msg,{bgColor:data.code===0?bgSuccess:bgDanger,position:Toast_Pos_Center});
-                Zap.reload();
-            }
-        })
+        confirmDelete('确定要删除选中的 ' + checked.length + ' 个栏目吗？其子栏目将一并删除，且不可恢复。', function(){
+            $.ajax({
+                url:'<?php echo Url::action("Catalog@remove");?>',
+                method:'post',
+                data:checked.serialize(),
+                success:function (data){
+                    ZapToast.alert(data.msg,{bgColor:data.code===0?bgSuccess:bgDanger,position:Toast_Pos_Center});
+                    Zap.reload();
+                }
+            });
+        });
     }
 
-    function addOrEdit(cid){
+    function removeOne(id){
+        confirmDelete('确定删除该栏目吗？其子栏目将一并删除，且不可恢复。', function(){
+            var payload = {};
+            payload['catalog[' + id + '][id]'] = id;
+            $.ajax({
+                url:'<?php echo Url::action("Catalog@remove");?>',
+                method:'post',
+                data:payload,
+                success:function (data){
+                    ZapToast.alert(data.msg,{bgColor:data.code===0?bgSuccess:bgDanger,position:Toast_Pos_Center});
+                    Zap.reload();
+                }
+            });
+        });
+    }
+
+    function updateSelectedCount(){
+        var n = $('.zap_catalog:checked').length;
+        $('#selectedCount').text('已选 ' + n + ' 项');
+    }
+
+    function addOrEdit(cid, pid){
+        cid = cid || 0;
+        pid = pid || 0;
         m = ZapModal.create({
             id:'addCatalog',
-            title: (cid ? '修改' : '添加') + '栏目',
+            title: cid ? '修改栏目' : (pid ? '添加子栏目' : '添加栏目'),
             content:ZapModal.loadding(),
             backdrop:false,
-            url:'<?php echo Url::action("Catalog@form");?>?modalId=addCatalog&pid=0&cid='+cid,
+            url:'<?php echo Url::action("Catalog@form");?>?modalId=addCatalog&pid='+pid+'&cid='+cid,
             buttons:[{close:true,title:"关闭"},{title:"保存",class:'btn-success'}],
             btn2:function (){
                 $.ajax({

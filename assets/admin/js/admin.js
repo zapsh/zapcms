@@ -565,8 +565,14 @@ Zap.reload=function(settings){
     }
     settings = Object.assign(defaultSettings,settings);
     if(settings.id === null){
-        // 当前后台布局没有 #zContent，退回内容容器 .app-content
-        settings.id = document.getElementById('zContent') ? '#zContent' : '.app-content';
+        // 优先只替换内容容器本身（保留外层 container 的左右内边距），最后才退回 .app-content
+        if(document.getElementById('zContent')){
+            settings.id = '#zContent';
+        }else if(document.querySelector('.app-content > .container-fluid')){
+            settings.id = '.app-content > .container-fluid';
+        }else{
+            settings.id = '.app-content';
+        }
     }
     if(settings.url === null){
         settings.url = location.href;

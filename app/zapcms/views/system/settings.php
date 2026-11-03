@@ -139,18 +139,11 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                        value="<?php echo e($options['website.tel']); ?>" />
                             </div>
                             <div class="col-md-6">
-                                <label for="website.api_url" class="form-label small">更新镜像API地址</label>
-                                <input type="text" class="form-control form-control-sm" id="website.api_url"
-                                       placeholder="https://mirrors.zap.cn/zapcms" name="options[website.api_url]"
-                                       value="<?php echo e($options['website.api_url'] ?? ''); ?>" />
-                                <div class="form-text">用于检查系统核心更新（镜像源）</div>
-                            </div>
-                            <div class="col-md-6">
                             <label for="website.market_api" class="form-label small">插件市场数据源</label>
                             <input type="text" class="form-control form-control-sm" id="website.market_api"
                                    placeholder="https://api.zap.cn/zapcms/v1" name="options[website.market_api]"
                                    value="<?php echo e($options['website.market_api'] ?? ''); ?>" />
-                            <div class="form-text">市场数据 API 基址（如 api.zap.cn），应指向 packagemgr 的 V1 接口。留空则回退上方镜像地址的旧接口。插件压缩包下载走 COS（mirrors.zap.cn，默认已放行）；自托管市场无 COS 时，其下载域名需在 config 的 security.allowed_market_hosts 中放行</div>
+                            <div class="form-text">市场数据 API 基址（如 api.zap.cn），应指向 packagemgr 的 V1 接口。留空则回退默认镜像（mirrors.zap.cn）的旧接口。插件压缩包下载走 COS（mirrors.zap.cn，默认已放行）；自托管市场无 COS 时，其下载域名需在 config 的 security.allowed_market_hosts 中放行</div>
                             </div>
                         </div>
                     </div>

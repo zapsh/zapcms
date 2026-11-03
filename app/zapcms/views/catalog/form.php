@@ -16,10 +16,10 @@ use zapcms\services\NodeType;
             <select class="form-select form-select-sm" id="catalog_pid" name="catalog[pid]">
                 <option value="0">- 无 -</option>
                 <?php
-                Catalog::instance()->forEachAll(function ($row) use ($catalog) {
+                Catalog::instance()->forEachAll(function ($row) use ($catalog, $pid) {
                     ?>
                     <option value="<?php echo e($row['id']); ?>"
-                        <?php echo $catalog['pid'] == $row['id'] ? 'selected' : ''; ?>
+                        <?php echo ($catalog['pid'] ?? ($pid ?? 0)) == $row['id'] ? 'selected' : ''; ?>
                         <?php echo !empty($catalog['path']) && \zap\util\Str::startsWith($row['path'], $catalog['path']) ? 'disabled' : null; ?>>
                         <?php echo str_repeat('— ', max(0, intval($row['level']) - 1)); ?><?php echo e($row['title']); ?>
                     </option>
@@ -32,7 +32,7 @@ use zapcms\services\NodeType;
             <label for="catalog_node_type" class="form-label small">内容模型</label>
             <select class="form-select form-select-sm" id="catalog_node_type" name="catalog[node_type]" onchange="chNodeType(this)">
                 <?php foreach (NodeType::getNodeTypes() as $key => $row): ?>
-                    <option value="<?php echo e($row['type_name']); ?>" <?php echo $row['type_name'] == $catalog['node_type'] ? 'selected' : null; ?>>
+                    <option value="<?php echo e($row['type_name']); ?>" <?php echo $row['type_name'] == ($catalog['node_type'] ?? '') ? 'selected' : null; ?>>
                         <?php echo e($row['title']); ?>
                     </option>
                 <?php endforeach; ?>
@@ -46,9 +46,17 @@ use zapcms\services\NodeType;
         </div>
 
         <div class="col-md-6 <?php if_echo('link-url' === ($catalog['node_type'] ?? ''), 'd-none'); ?>" id="node_slug_id">
-            <label for="catalog_slug" class="form-label small">别名</label>
-            <input type="text" class="form-control form-control-sm" id="catalog_slug" name="catalog[slug]"
-                   value="<?php echo htmlspecialchars($catalog['slug'] ?? '', ENT_QUOTES); ?>" placeholder="字母、中文、数字和-_">
+            <label for="catalog_slug" class="form-label small">别名 <span class="text-muted small">(slug)</span></label>
+            <div class="input-group input-group-sm">
+                <input type="text" class="form-control form-control-sm font-monospace" id="catalog_slug" name="catalog[slug]"
+                       value="<?php echo htmlspecialchars($catalog['slug'] ?? '', ENT_QUOTES); ?>" placeholder="自动生成">
+                <button class="btn btn-outline-secondary" type="button" onclick="generateCatalogSlug()" title="根据栏目名称自动生成">
+                    <i class="fa fa-magic"></i>
+                </button>
+            </div>
+            <div id="catalog_slug_preview" class="form-text small text-success" style="display:none;">
+                <i class="fa fa-link me-1"></i><span></span>
+            </div>
         </div>
 
         <div class="col-md-6">
@@ -465,8 +473,54 @@ use zapcms\services\NodeType;
         }
     })();
 
-    // 触发 link_type 初始状态
+    // ===================== 别名自动生成 =====================
+    var catalogSlugConfig = {
+        separator: '<?php echo option('slug.separator', '-'); ?>',
+        style: '<?php echo option('slug.style', 'default'); ?>',
+        ajaxUrl: '<?php echo url_action('System@ajaxSlug'); ?>'
+    };
+
+    function generateCatalogSlug() {
+        var title = $('#catalog_title').val().trim();
+        if (!title) return;
+        var sep = catalogSlugConfig.separator;
+        if (catalogSlugConfig.style === 'pinyin' || catalogSlugConfig.style === 'translate') {
+            $.getJSON(catalogSlugConfig.ajaxUrl, { title: title }, function (res) {
+                if (res.code === 0 && res.slug) {
+                    $('#catalog_slug').val(res.slug);
+                    updateCatalogSlugPreview();
+                }
+            });
+        } else {
+            var slug = title.toLowerCase();
+            slug = slug.replace(/[^\w\u4e00-\u9fa5]+/g, sep);
+            slug = slug.replace(new RegExp('^' + sep.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '+|' + sep.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '+$', 'g'), '');
+            $('#catalog_slug').val(slug);
+            updateCatalogSlugPreview();
+        }
+    }
+
+    function updateCatalogSlugPreview() {
+        var slug = $('#catalog_slug').val().trim();
+        var preview = $('#catalog_slug_preview');
+        if (slug) {
+            preview.find('span').text('<?php echo site_url('/'); ?>' + slug + '<?php echo htmlspecialchars((string) @config('config.suffix', '')); ?>');
+            preview.show();
+        } else {
+            preview.hide();
+        }
+    }
+
+    // 触发 link_type 初始状态 & 别名交互
     $(function () {
         chLinkType(document.getElementById('catalog_link_type'));
+        $('#catalog_slug').on('input', updateCatalogSlugPreview);
+        // 别名留空时，失焦后按栏目名称自动生成
+        $('#catalog_title').on('change', function () {
+            if (!$('#catalog_slug').val().trim()) {
+                generateCatalogSlug();
+            }
+        });
+        updateCatalogSlugPreview();
     });
 </script>

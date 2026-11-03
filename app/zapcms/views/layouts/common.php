@@ -26,7 +26,7 @@ use \zap\facades\Url;
     <script src="<?php echo base_url();?>/assets/sweetalert2.all.min.js"></script>
     <script src="<?php echo base_url();?>/assets/jquery/jquery-3.6.4.min.js"></script>
     <link href="<?php echo base_url();?>/assets/fontawesome/6.4.2/css/all.css" rel="stylesheet">
-    <script src="<?php echo base_url();?>/assets/admin/js/admin.js"></script>
+    <script src="<?php echo base_url();?>/assets/admin/js/admin.js?v=<?php echo (int) @filemtime(APP_ROOT . '/assets/admin/js/admin.js'); ?>"></script>
     <script>
         window.ZAP_BASE_URL = '<?php echo base_url(Z_ADMIN_PREFIX);?>';
         window.ZAP_ASSETS_URL = '<?php echo base_url();?>/assets/admin';
@@ -211,7 +211,7 @@ use \zap\facades\Url;
             <!--end::App Content Header-->
 
             <div class="app-content">
-                <div class="container-fluid px-4 py-3">
+                <div class="container-fluid px-4 py-3" id="zContent">
                     <?php \zapcms\AdminHook::echo('admin_content_before'); ?>
                     <?php echo $this->block('content');?>
                     <?php \zapcms\AdminHook::echo('admin_content_after'); ?>
