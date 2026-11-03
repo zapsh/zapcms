@@ -1,0 +1,55 @@
+{% set state = pageState %}
+{% set nid = state.nodeId ?? null %}
+{% set hasNid = nid is not null and nid != '' %}
+<header id="zHeader" class="z-header">
+    <div class="container z-header-inner">
+        <a href="{{ home_url() }}" class="z-brand">
+            <img src="{{ theme_url('img/zap_logo_orange.svg') }}" width="112" alt="{{ option('website.title', 'ZAP CMS') }}">
+        </a>
+
+        <button class="z-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#zNav"
+                aria-controls="zNav" aria-expanded="false" aria-label="展开导航">
+            <i class="fa fa-bars"></i>
+        </button>
+
+        <div class="collapse z-nav" id="zNav">
+            <ul class="z-menu">
+                <li class="z-item{% if state.isHome %} is-active{% endif %}">
+                    <a href="{{ home_url() }}" class="z-link">首页</a>
+                </li>
+                {% for menu in catalogMenu %}
+                    {% set children = menu.children|default([]) %}
+                    {% set hasChildren = children is not empty %}
+                    {% set isActive = hasNid and (
+                        (menu.id ~ '') == (nid ~ '')
+                        or (menu.link_object is not null and menu.link_object != '' and (menu.link_object ~ '') == (nid ~ ''))
+                    ) %}
+                    <li class="z-item{% if hasChildren %} has-dropdown{% endif %}{% if isActive %} is-active{% endif %}">
+                        <a href="{{ node_url(menu) }}" title="{{ menu.title }}"
+                           class="z-link{% if hasChildren %} z-link--toggle{% endif %}">
+                            {{ menu.title }}{% if hasChildren %}<i class="fa fa-angle-down z-caret"></i>{% endif %}
+                        </a>
+                        {% if hasChildren %}
+                        <ul class="z-dropdown">
+                            {% for child in children %}
+                                {% set childActive = hasNid and (child.id ?? null) is not null and ((child.id ~ '') == (nid ~ '')) %}
+                                <li{% if childActive %} class="is-active"{% endif %}>
+                                    <a href="{{ node_url(child) }}" title="{{ child.title }}">{{ child.title }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+
+            <div class="z-tools">
+                <form class="z-search" action="{{ append_url_suffix(locale_site_url('/search')) }}" role="search">
+                    <input type="text" name="q" placeholder="搜索..." autocomplete="off">
+                    <button type="submit" aria-label="搜索"><i class="fa fa-search"></i></button>
+                </form>
+                {{ render_language_switcher('z-lang')|raw }}
+            </div>
+        </div>
+    </div>
+</header>

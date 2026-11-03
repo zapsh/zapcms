@@ -1,0 +1,55 @@
+{% extends 'layout/default.twig' %}
+
+{% block content %}
+{% do pageState.offsetSet('isSearch', true) %}
+{% set keyword = (query ?? '')|trim %}
+{% set total = page is not empty ? page.total() : (data_list|default([])|length) %}
+{% set typeLabels = { article: '文章', product: '产品', faq: 'FAQ', catalog: '栏目', page: '页面' } %}
+
+{{ include('partials/_breadcrumb.twig') }}
+<div class="container">
+    <div class="row">
+        {{ include('partials/_sidebar.twig', { node: { title: '搜索' }, subCatalogList: pageState.subCatalogList ?? [] }) }}
+        <div class="col-sm-9">
+            <div class="content-wrap search-page">
+                <form class="search-form" method="get" action="{{ append_url_suffix(site_url('/search')) }}">
+                    <div class="faq-search-wrap">
+                        <i class="fa fa-search faq-search-icon"></i>
+                        <input type="text" name="q" class="faq-search-input" placeholder="请输入关键词，如：网站建设、产品名称…" autocomplete="off" value="{{ keyword }}">
+                        {% if keyword != '' %}
+                            <a class="faq-search-clear" href="{{ append_url_suffix(site_url('/search')) }}" title="清除搜索词">&times;</a>
+                        {% endif %}
+                    </div>
+                    <button class="search-btn" type="submit"><i class="fa fa-search"></i> 搜索</button>
+                </form>
+
+                {% if keyword == '' %}
+                    <div class="search-empty"><i class="fa fa-search"></i><p>请输入关键词开始搜索</p></div>
+                {% elseif data_list is empty %}
+                    <div class="search-empty"><i class="fa fa-frown-o"></i><p>未找到与 “<strong>{{ keyword }}</strong>” 相关的内容</p><p class="search-suggest">建议：检查关键词是否输错，或尝试更换更短、更常见的关键词</p></div>
+                {% else %}
+                    <div class="search-stats">共找到 <strong>{{ total }}</strong> 条与 “<strong>{{ keyword }}</strong>” 相关的结果</div>
+                    {% for node in data_list %}
+                        <article class="search-result-item">
+                            <h4 class="search-result-title"><a href="{{ node_url(node) }}">{{ node.title }}</a></h4>
+                            <div class="search-meta">
+                                <span class="search-tag search-tag--{{ node.node_type }}">
+                                    {{ typeLabels[node.node_type] ?? (node.node_type ?? '内容') }}
+                                </span>
+                                {% if node.pub_time is not empty %}
+                                    <span><i class="fa fa-calendar"></i> {{ node.pub_time|date('Y-m-d') }}</span>
+                                {% endif %}
+                                {% if node.views is not empty %}
+                                    <span><i class="fa fa-eye"></i> {{ node.views }} 次浏览</span>
+                                {% endif %}
+                            </div>
+                            <p class="search-result-desc">{{ (node.content|striptags)|slice(0, 160) }}</p>
+                        </article>
+                    {% endfor %}
+                    {{ include('partials/_pagination.twig', { page: page ?? null }) }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

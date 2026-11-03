@@ -1,0 +1,46 @@
+{% extends 'layout/default.twig' %}
+
+{% block content %}
+{{ include('partials/_breadcrumb.twig') }}
+<div class="container">
+    <div class="row">
+        {{ include('partials/_sidebar.twig') }}
+        <div class="col-sm-9">
+            <div class="content-wrap">
+                <div class="faq-search-wrap">
+                    <i class="fa fa-search faq-search-icon"></i>
+                    <input type="text" id="faq_search" class="faq-search-input" placeholder="搜索常见问题…" autocomplete="off">
+                </div>
+                <div class="faq-list">
+                    {% if nodes is empty %}
+                        <p class="text-muted">暂无常见问题</p>
+                    {% else %}
+                        {% for node in nodes %}
+                            <div class="faq-card">
+                                <h4 class="faq-question"><i class="fa fa-question-circle"></i> {{ node.title }}</h4>
+                                <div class="faq-answer">{{ node.content|raw }}</div>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                {{ include('partials/_pagination.twig', { page: page ?? null }) }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var input = document.getElementById('faq_search');
+    if (!input) return;
+    var cards = document.querySelectorAll('.faq-card');
+    input.addEventListener('input', function () {
+        var kw = input.value.trim().toLowerCase();
+        cards.forEach(function (card) {
+            var text = card.textContent.toLowerCase();
+            card.style.display = (kw === '' || text.indexOf(kw) > -1) ? '' : 'none';
+        });
+    });
+})();
+</script>
+{% endblock %}

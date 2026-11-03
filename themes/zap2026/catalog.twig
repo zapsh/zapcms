@@ -1,0 +1,45 @@
+{% extends 'layout/default.twig' %}
+
+{% block content %}
+{{ include('partials/_breadcrumb.twig') }}
+<div class="container">
+    <div class="row">
+        {{ include('partials/_sidebar.twig') }}
+        <div class="col-sm-9">
+            <div class="content-wrap">
+                {% set catalogNode = pageState.node ?? {} %}
+                {% set isProductCatalog = (catalogNode.node_type ?? '') == 'catalog' and (catalogNode.mime_type ?? '') == 'product' %}
+                {% set adv = isProductCatalog ? hook('mall_product_list', catalogNode.id ?? 0) : '' %}
+                {% if adv != '' %}
+                    {{ adv|raw }}
+                {% else %}
+                <div class="row">
+                    {% if nodes is empty %}
+                        <div class="col-sm-12"><p class="text-muted">暂无内容</p></div>
+                    {% else %}
+                        {% for node in nodes %}
+                            {% set imgW = node_config(node.node_type ?? 'article', 'list_image_width', 270) %}
+                            {% set imgH = node_config(node.node_type ?? 'article', 'list_image_height', 210) %}
+                            <div class="col-sm-4">
+                                <div class="post-content">
+                                    <a href="{{ node_url(node) }}">
+                                        <img class="img-fluid" src="{{ thumb(node.image, imgW, imgH) }}" alt="{{ node.title }}" />
+                                    </a>
+                                    <div class="content-wrap">
+                                        <h4><a href="{{ node_url(node) }}">{{ node.title }}</a></h4>
+                                        <ul class="list-inline post-meta">
+                                            <li><i class="fa fa-calendar"></i> {{ node.pub_time|date('Y-m-d') }}</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                {{ include('partials/_pagination.twig', { page: page ?? null }) }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% set state = pageState %}
+{% set node = node|default({}) %}
+{% set nodeId = nodeId|default(state.nodeId ?? 0) %}
+{% set catalogs = subCatalogList|default(state.subCatalogList ?? []) %}
+
+{% if catalogs is not empty %}
+    {% set catalogPaths = state.catalogPaths ?? [] %}
+    {% set firstCatalog = catalogPaths[0] ?? null %}
+    {% set firstCatalogTitle = firstCatalog.title ?? '' %}
+    {% set lastCatalog = catalogPaths is not empty ? catalogPaths|last : null %}
+    {% set lastCatalogId = lastCatalog.id ?? 0 %}
+    <aside class="sidebar col-sm-3">
+        <div class="widget">
+            <h4>{{ firstCatalogTitle ? firstCatalogTitle : (node.title ?? '') }}</h4>
+            <ul>
+                {% for catalog in catalogs %}
+                    {% set isLinkUrl = (catalog.node_type ?? '') == 'link-url' %}
+                    {% set href = node_url(catalog) %}
+                    {% set linkTarget = isLinkUrl ? (catalog.link_target ?? '') : '' %}
+                    <li{% if lastCatalogId == catalog.id %} class="current"{% endif %}>
+                        <a href="{{ href }}"
+                           title="{{ catalog.title }}"
+                           {% if linkTarget == '_blank' %}target="_blank" rel="noopener"{% endif %}>
+                            {{ catalog.title }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </aside>
+{% endif %}

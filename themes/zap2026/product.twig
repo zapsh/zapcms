@@ -1,0 +1,55 @@
+{% extends 'layout/default.twig' %}
+
+{% block content %}
+{% set nodeType = node.node_type ?? 'product' %}
+{% set detailW = node_config(nodeType, 'detail_image_width', 750) %}
+{% set detailH = node_config(nodeType, 'detail_image_height', 480) %}
+{% set imageUrl = thumb(node.image ?? '', detailW, detailH) %}
+{{ include('partials/_breadcrumb.twig') }}
+<div class="container">
+    <div class="row">
+        {{ include('partials/_sidebar.twig') }}
+        <div class="col-sm-9">
+            <div class="content-wrap">
+                <div class="product-detail">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="product-gallery text-center">
+                                <img src="{{ imageUrl }}" class="product-detail-img img-fluid" alt="{{ node.title }}">
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <h2 class="product-title">{{ node.title }}</h2>
+                            {% set priceHtml = '<span class="product-price-label">价格</span><span class="product-price-currency">¥</span><span class="product-price-value">' ~ number_format(node.meta.price|default(0), 2) ~ '</span>' %}
+                            {% set priceHtml = apply_filters('mall_product_price', priceHtml, node) %}
+                            {% if priceHtml != '' %}
+                            <div class="product-price">{{ priceHtml|raw }}</div>
+                            {% endif %}
+                            {{ hook('mall_product_sku', node)|raw }}
+                            {% if node.excerpt is not empty %}
+                            <p class="product-excerpt text-muted">{{ node.excerpt }}</p>
+                            {% endif %}
+                            <div class="product-meta">
+                                {% if node.pub_time is not empty %}
+                                <span class="text-muted"><i class="fa fa-calendar"></i> {{ node.pub_time|date('Y-m-d') }}</span>
+                                {% endif %}
+                                {% if node.hits is not empty %}
+                                <span class="text-muted">&nbsp;&nbsp;<i class="fa fa-eye"></i> {{ node.hits }} 次浏览</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% if node.content is not empty %}
+                    <div class="product-content">
+                        <h3 class="section-title">产品详情</h3>
+                        <div class="post-content">
+                            {{ node.content|raw }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

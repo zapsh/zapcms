@@ -1,0 +1,37 @@
+{% extends 'layout/default.twig' %}
+
+{% block content %}
+{% set nodeType = node.node_type ?? 'article' %}
+{{ include('partials/_breadcrumb.twig') }}
+<div class="container">
+    <div class="row">
+        {{ include('partials/_sidebar.twig') }}
+        <div class="col-sm-9">
+            <div class="content-wrap detail-wrap">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <article class="single-post">
+                            <header class="entry-header">
+                                <h1 class="entry-title">{{ node.title }}</h1>
+                                <ul class="entry-meta">
+                                    <li><i class="fa fa-calendar"></i> {{ node.pub_time|date('Y-m-d') }}</li>
+                                    <li><i class="fa fa-eye"></i> {{ node.hits|default(0) }} 次浏览</li>
+                                </ul>
+                            </header>
+                            {% if node.image is not empty %}
+                            <div class="post-thumbnail">
+                                <img src="{{ thumb(node.image, node_config(nodeType, 'detail_image_width', 750), node_config(nodeType, 'detail_image_height', 480)) }}"
+                                     class="img-fluid" alt="{{ node.title }}">
+                            </div>
+                            {% endif %}
+                            <div class="entry-content">
+                                {{ node.content|raw }}
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

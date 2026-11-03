@@ -1,0 +1,5 @@
+{% if page is defined and page is not null and page.total() > page.perPage() %}
+<div class="pagination-wrapper">
+    {{ page.render()|raw }}
+</div>
+{% endif %}

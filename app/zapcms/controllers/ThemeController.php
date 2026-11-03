@@ -55,33 +55,22 @@ class ThemeController extends AdminController
             Response::redirect(url_action('theme'))->with('info', '当前主题不支持自定义');
         }
 
-        $themeSettings = Option::getArray($theme,'REGEXP');
         $customSettings = IOUtils::readJsonFile($themeFile,true) ?:[];
-        $themeSettings = array_merge($customSettings['options'] ?? [],$themeSettings);
+        $options = Theme::instance()->getOptions($theme);
         view('theme.settings',[
             'settings'=>$customSettings,
-            'options'=>$themeSettings
+            'options'=>$options
         ]);
     }
 
     public function saveSettings()
     {
         if(req()->isPost()){
-            $settings = req()->post('settings');
+            $settings = req()->post('settings') ?:[];
             $theme = Option::get('website.theme','basic');
-            $themeSettingsKeys = Option::getKeys($theme,'REGEXP');
-            foreach ($settings as $key=>$value){
-                if(is_object($value) || is_array($value)){
-                    $value = json_encode($value);
-                }
-                if(in_array($key, $themeSettingsKeys)){
-                    Option::update($key,$value);
-                }else{
-                    Option::add($key,$value);
-                }
-
-            }
-
+            Theme::instance()->saveOptions($theme, $settings);
+            Cache::delete('options_website');
+            Cache::delete('options_'.$theme);
         }
         \response(['code'=>0,'msg'=>'保存成功'])->withJson();
     }

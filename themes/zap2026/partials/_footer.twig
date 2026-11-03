@@ -1,0 +1,35 @@
+<footer class="z-footer">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-12">
+                <a href="{{ home_url() }}" class="z-footer-brand">
+                    <img src="{{ theme_url('img/zap_logo_orange.svg') }}" width="120" alt="{{ option('website.title', 'ZAP CMS') }}" />
+                </a>
+                <p class="z-footer-about">{{ (option('zap2026_home.about_us', ''))|striptags|slice(0, 120) }}</p> 
+                <div class="z-footer-contact">
+                    {% if option('website.tel') %}<p><i class="fa fa-phone"></i> {{ option('website.tel') }}</p>{% endif %}
+                    {% if option('website.email') %}<p><i class="fa fa-envelope-o"></i> {{ option('website.email') }}</p>{% endif %}
+                    {% if option('website.address') %}<p><i class="fa fa-map-marker"></i> {{ option('website.address') }}</p>{% endif %}
+                </div>
+            </div>
+            {% for menu in footerCatalogMenu %}
+                {% if '4' in (menu.show_position ?? '')|split(',') %}
+                <div class="col-lg-2 col-6">
+                    <h4 class="z-footer-title">{{ menu.title }}</h4>
+                    <ul class="z-footer-links">
+                        {% for child in menu.children|default([]) %}
+                            {% if '4' in (child.show_position ?? '')|split(',') %}
+                            <li><a href="{{ node_url(child) }}" title="{{ child.title }}">{{ child.title }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="z-footer-bottom">
+            <span>Copyright &copy; {{ now|date('Y') }} {{ option('website.copyright') }}</span>
+            <span class="z-footer-powered"><a href="https://www.zap.cn/zapcms">Powered by ZapCMS</a></span>
+        </div>
+    </div>
+</footer>

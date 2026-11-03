@@ -1,0 +1,154 @@
+{% extends 'layout/default.twig' %}
+
+{% block content %}
+{% set banners = option_json('zap2026_home.slide', '[]', true) %}
+{% set latestNews = pageState.getLatestNews() %}
+
+<main class="site-main">
+    {# ── Hero ── #}
+    <section class="z-hero">
+        <div class="container">
+            {% if banners is iterable and banners is not empty %}
+            <div class="z-hero-media">
+                <div class="swiper">
+                    <div class="swiper-wrapper">
+                        {% for banner in banners %}
+                            {% set slideTarget = (banner.target ?? '_self') == '_blank' ? '_blank' : '_self' %}
+                            <div class="swiper-slide">
+                                <a href="{{ banner.link ?? '#' }}" target="{{ slideTarget }}"
+                                   {% if slideTarget == '_blank' %}rel="noopener"{% endif %}
+                                   style="display:block;width:100%;height:100%;background:url('{{ banner.img_path }}') center center / cover no-repeat;"></a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="swiper-pagination"></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="z-features">
+                <div class="z-feature">
+                    <span class="z-feature-icon"><i class="fa fa-rocket"></i></span>
+                    <div>
+                        <h4>开箱即用</h4>
+                        <p>零配置快速搭建企业官网</p>
+                    </div>
+                </div>
+                <div class="z-feature">
+                    <span class="z-feature-icon"><i class="fa fa-cubes"></i></span>
+                    <div>
+                        <h4>模块化内容</h4>
+                        <p>文章 / 产品 / FAQ 多模型</p>
+                    </div>
+                </div>
+                <div class="z-feature">
+                    <span class="z-feature-icon"><i class="fa fa-shield"></i></span>
+                    <div>
+                        <h4>安全可靠</h4>
+                        <p>持续更新与安全维护</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ── 关于我们 ── #}
+    {% set about = option('zap2026_home.about_us') %}
+    {% if about %}
+    <section class="z-section z-about">
+        <div class="container">
+            <div class="row g-4 g-lg-5 align-items-start">
+                <div class="col-lg-4">
+                    <span class="z-eyebrow">About Us</span>
+                    <h2 class="z-section-title">关于我们</h2>
+                    <p class="z-section-sub">专注企业数字化，<br>打造有温度的产品。</p>
+                </div>
+                <div class="col-lg-8">
+                    <div class="z-about-content">{{ about|raw }}</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    {# ── 服务项目 ── #}
+    {% set serviceTitle = option('zap2026_home.service_title') %}
+    {% if serviceTitle %}
+        {% set count = 0 %}
+        {% for i in 1..6 %}{% if option('zap2026_home.service' ~ i ~ '_title') %}{% set count = count + 1 %}{% endif %}{% endfor %}
+        {% set col = count <= 3 ? 4 : (count <= 4 ? 3 : 4) %}
+        <section class="z-section z-services">
+            <div class="container">
+                <div class="z-section-head">
+                    <div>
+                        <span class="z-eyebrow">{{ option('zap2026_home.service_subtitle') }}</span>
+                        <h2 class="z-section-title">{{ serviceTitle }}</h2>
+                    </div>
+                </div>
+                <div class="row g-4">
+                    {% set idx = 0 %}
+                    {% for i in 1..6 %}
+                        {% set stitle = option('zap2026_home.service' ~ i ~ '_title') %}
+                        {% if stitle %}
+                        {% set idx = idx + 1 %}
+                        <div class="col-lg-{{ col }} col-md-6">
+                            <div class="z-card">
+                                <span class="z-card-num">{{ '%02d'|format(idx) }}</span>
+                                {% set sicon = option('zap2026_home.service' ~ i ~ '_icon') %}
+                                {% if sicon %}<div class="z-card-icon"><i class="{{ sicon }}"></i></div>{% endif %}
+                                <h3 class="z-card-title">{{ stitle }}</h3>
+                                <p class="z-card-text">{{ option('zap2026_home.service' ~ i ~ '_content') }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    {% endif %}
+
+    {# ── 最新动态 ── #}
+    {% if latestNews is not empty %}
+    <section class="z-section z-news">
+        <div class="container">
+            <div class="z-section-head">
+                <div>
+                    <span class="z-eyebrow">Latest News</span>
+                    <h2 class="z-section-title">最新动态</h2>
+                </div>
+            </div>
+            <div class="z-news-list">
+                {% for news in latestNews %}
+                    {% set w = node_config(news.node_type ?? 'article', 'list_image_width', 400) %}
+                    {% set h = node_config(news.node_type ?? 'article', 'list_image_height', 300) %}
+                    <a href="{{ node_url(news) }}" class="z-news-item">
+                        <div class="z-news-thumb">
+                            <img src="{{ thumb(news.image, w, h) }}" alt="{{ news.title }}">
+                        </div>
+                        <div class="z-news-body">
+                            <span class="z-news-date"><i class="fa fa-calendar"></i> {{ news.pub_time|date('Y-m-d') }}</span>
+                            <h3 class="z-news-title">{{ news.title }}</h3>
+                            <p class="z-news-excerpt">{{ (news.content|striptags)|slice(0, 90) }}</p>
+                            <span class="z-news-more">阅读全文 <i class="fa fa-arrow-right"></i></span>
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+</main>
+
+<script>
+    if (typeof Swiper !== 'undefined') {
+        new Swiper('.z-hero .swiper', {
+            loop: true,
+            speed: 1000,
+            autoplay: { delay: 5000, disableOnInteraction: false },
+            effect: 'fade',
+            fadeEffect: { crossFade: true },
+            pagination: { el: '.z-hero .swiper-pagination', clickable: true }
+        });
+    }
+</script>
+{% endblock %}

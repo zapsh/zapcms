@@ -1,0 +1,48 @@
+{% extends 'layout/default.twig' %}
+
+{% block content %}
+<style>.product-thumb { width: 100%; height: 210px; object-fit: cover; display: block; }</style>
+{{ include('partials/_breadcrumb.twig') }}
+<div class="container">
+    <div class="row">
+        {{ include('partials/_sidebar.twig') }}
+        <div class="col-sm-9">
+            <div class="content-wrap">
+                {% set currentCatalog = pageState.nodeId ?? 0 %}
+                {% set adv = hook('mall_product_list', currentCatalog) %}
+                {% if adv != '' %}
+                    {{ adv|raw }}
+                {% else %}
+                <div class="row">
+                    {% if nodes is empty %}
+                        <div class="col-sm-12"><p class="text-muted">暂无内容</p></div>
+                    {% else %}
+                        {% for node in nodes %}
+                            {% set imgW = node_config(node.node_type ?? 'article', 'list_image_width', 270) %}
+                            {% set imgH = node_config(node.node_type ?? 'article', 'list_image_height', 210) %}
+                            <div class="col-sm-4">
+                                <div class="post-content">
+                                    <a href="{{ node_url(node) }}">
+                                        <img class="img-fluid product-thumb" src="{{ thumb(node.image, imgW, imgH) }}" alt="{{ node.title }}" />
+                                    </a>
+                                    <div class="content-wrap">
+                                        <h5><a href="{{ node_url(node) }}">{{ node.title }}</a></h5>
+                                        {% if node.meta.price is not empty %}
+                                        <div class="product-price">
+                                            <span class="product-price-currency">¥</span>
+                                            <span class="product-price-value">{{ number_format(node.meta.price, 2) }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                {{ include('partials/_pagination.twig', { page: page ?? null }) }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
