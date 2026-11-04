@@ -58,11 +58,13 @@ class AuthController extends Controller
                 'last_access_time'=> $admin->last_access_time,
             ]);
 
+            // 无论 AJAX 还是整页提交，都写入登录审计日志
+            \zapcms\models\AdminLog::log('管理员登录', "用户 {$admin->username} 登录成功", $admin->id, $admin->username);
+
             if (Request::isAjax()) {
                 Response::json(['code'=>0,'msg'=>'登录成功','redirect_to'=>Url::action('Index')]);
                 return;
             }
-            \zapcms\models\AdminLog::log('管理员登录', "用户 {$admin->username} 登录成功", $admin->id, $admin->username);
             Response::redirect(Url::action('Index'))->with('success', '登录成功');
             return;
         }
