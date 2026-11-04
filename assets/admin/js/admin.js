@@ -1268,11 +1268,13 @@ function ZapFaIcons(target,callback){
                     new CardWidget(el, Default$1).toggleMaximize();
                     break;
                 case 'treeview': {
-                    const item = el.closest(SELECTOR_NAV_ITEM);
+                    // data-zui-toggle="treeview" 在容器 <ul> 上，需从实际点击的元素向上找 .nav-item
+                    const item = t.closest(SELECTOR_NAV_ITEM) || el.closest(SELECTOR_NAV_ITEM);
                     if (!item || !item.querySelector(SELECTOR_TREEVIEW_MENU)) {
                         return;
                     }
-                    if (el.getAttribute('href') === '#') {
+                    const anchor = t.closest('a');
+                    if (anchor && anchor.getAttribute('href') === '#') {
                         event.preventDefault();
                     }
                     const config = {

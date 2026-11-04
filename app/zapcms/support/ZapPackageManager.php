@@ -1005,6 +1005,9 @@ class ZapPackageManager
             @file_put_contents(APP_ROOT . '/' . $relativePath, $content);
         }
 
+        // 4.2 清理上版本遗留的 hash 资源（仅当本次发布包包含 manifest.json 时生效）
+        $this->pruneStaleHashedAssets();
+
         // 6. 校验解压后的核心版本号，避免包与清单不匹配
         $packedVersion = $this->readCoreVersion();
         if ($packedVersion !== '' && version_compare($packedVersion, ltrim($newVersion, 'vV'), '!=')) {
@@ -1039,6 +1042,74 @@ class ZapPackageManager
         }
 
         return ['success' => true, 'message' => $message];
+    }
+
+    /**
+     * 升级解压后清理上版本遗留的 hash 资源
+     *
+     * Vite 构建产物文件名带内容 hash，每次升级文件名都不同；而解压覆盖只新增/覆盖、不删除，
+     * 导致旧 hash 的 js/css 残留在 assets/admin 下。本方法读取解压后最新的 manifest.json，
+     * 删除其中未列出的 hash 文件，同时保留手工维护的 admin.js 与图片等非 hash 资源。
+     *
+     * 仅当本次发布包包含 manifest.json（即走 hash 模式）时才执行实际清理；
+     * 纯静态兜底发布（无 manifest）时为空操作，不会误删未打包的资源。
+     *
+     * @return int 清理的文件数量
+     */
+    protected function pruneStaleHashedAssets(): int
+    {
+        $manifestPath = APP_ROOT . '/assets/admin/.vite/manifest.json';
+        if (!is_file($manifestPath)) {
+            return 0;
+        }
+
+        $data = json_decode((string)@file_get_contents($manifestPath), true);
+        if (!is_array($data)) {
+            return 0;
+        }
+
+        // 收集 manifest 中声明的合法文件名（所有 entry / chunk 的 file 字段）
+        $keep = [];
+        foreach ($data as $item) {
+            if (is_array($item) && isset($item['file'])) {
+                $keep[basename((string)$item['file'])] = true;
+            }
+        }
+        // 手工维护文件始终保留
+        $keep['admin.js'] = true;
+
+        $hashRe = '/-[A-Za-z0-9_-]{6,}\.(js|css)$/';
+        $dirs   = [
+            APP_ROOT . '/assets/admin/js',
+            APP_ROOT . '/assets/admin/css',
+        ];
+
+        $removed = 0;
+        foreach ($dirs as $dir) {
+            if (!is_dir($dir)) {
+                continue;
+            }
+            foreach (scandir($dir) as $file) {
+                if ($file === '.' || $file === '..') {
+                    continue;
+                }
+                $full = $dir . '/' . $file;
+                if (!is_file($full)) {
+                    continue; // 跳过子目录（如图片目录）
+                }
+                if (isset($keep[$file])) {
+                    continue; // manifest 中声明，保留
+                }
+                if (!preg_match($hashRe, $file)) {
+                    continue; // 非 hash 资源（admin.js、图片等），保留
+                }
+                if (@unlink($full)) {
+                    $removed++;
+                }
+            }
+        }
+
+        return $removed;
     }
 
     /**

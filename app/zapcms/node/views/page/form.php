@@ -16,7 +16,7 @@ $this->view->page_title = !empty($sub_title) ? $sub_title : ($title ?? '编辑')
 /**
  * @var \zapcms\models\Node $node
  * @var int $catalogId
- * @var array $catalog
+ * @var array|null $catalog
  * @var string $_controller
  * @var string $_action
  */
