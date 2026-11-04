@@ -13,6 +13,9 @@ use zap\view\View;
 
 class FinderController extends AdminController
 {
+    /** 单次目录树请求最多返回的节点数，防止超大目录拖慢弹窗 */
+    private int $treeNodeBudget = 500;
+
     function list(){
         // size 格式校验：仅允许 "宽x高" 或 original
         $size = (string)req()->get('size','');
@@ -107,6 +110,78 @@ class FinderController extends AdminController
             'pagination' => $pageHelper->render(),
             'forbid_upload' => $forbidUpload
         ]);
+    }
+
+    /**
+     * 左侧目录树数据（仅目录节点，不含文件）
+     */
+    public function tree()
+    {
+        $root = realpath(storage_path());
+        if ($root === false || !is_dir($root)) {
+            \response(['code' => 1, 'msg' => '存储目录不可用'])->withJson();
+            return;
+        }
+        \response(['code' => 0, 'data' => $this->buildFinderTree($root, '', 0)])->withJson();
+    }
+
+    /**
+     * 递归构建目录树。限制深度与单层节点数，避免超大目录拖慢弹窗。
+     * 跳过符号链接目录，防止越出 storage 或形成遍历环。
+     */
+    private function buildFinderTree(string $absDir, string $relPath, int $depth): array
+    {
+        if ($depth >= 8 || $this->treeNodeBudget <= 0) {
+            return [];
+        }
+        $items = @scandir($absDir);
+        if ($items === false) {
+            return [];
+        }
+        $nodes = [];
+        foreach ($items as $name) {
+            if (count($nodes) >= 200 || $this->treeNodeBudget <= 0) {
+                break;
+            }
+            if ($name === '.' || $name === '..') {
+                continue;
+            }
+            $full = $absDir . '/' . $name;
+            if (!is_dir($full) || is_link($full)) {
+                continue;
+            }
+            $this->treeNodeBudget--;
+            $childRel = $relPath === '' ? $name : $relPath . '/' . $name;
+            // thumbs 为系统缩略图缓存：保留节点便于浏览，但不递归遍历、禁止改名/删除
+            $isSystem = $relPath === '' && $name === 'thumbs';
+            $nodes[] = [
+                'name'     => $name,
+                'path'     => $childRel,
+                'count'    => $this->countFinderFiles($full),
+                'children' => $isSystem ? [] : $this->buildFinderTree($full, $childRel, $depth + 1),
+                'system'   => $isSystem,
+            ];
+        }
+        usort($nodes, static fn(array $a, array $b): int => strnatcasecmp($a['name'], $b['name']));
+        return $nodes;
+    }
+
+    /**
+     * 统计目录直属文件数（不含子目录），用于树节点角标
+     */
+    private function countFinderFiles(string $absDir): int
+    {
+        $items = @scandir($absDir);
+        if ($items === false) {
+            return 0;
+        }
+        $count = 0;
+        foreach ($items as $name) {
+            if ($name !== '.' && $name !== '..' && is_file($absDir . '/' . $name)) {
+                $count++;
+            }
+        }
+        return $count;
     }
 
     public function createDir()

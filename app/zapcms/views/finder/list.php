@@ -59,7 +59,67 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
             outline-color: var(--bs-danger, #dc3545);
             background: rgba(220, 53, 69, 0.05);
         }
+        /* 左侧目录树 + 右侧文件列表 */
+        .zap-finder-layout { display: flex; align-items: stretch; min-height: 320px; }
+        .zap-finder-tree-pane {
+            flex: 0 0 218px; max-width: 218px; padding-right: .5rem;
+            border-right: 1px solid var(--bs-border-color);
+            display: flex; flex-direction: column;
+        }
+        .zap-finder-tree-head {
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: .8rem; font-weight: 600; color: var(--bs-secondary-color);
+            padding: 0 .35rem .5rem;
+        }
+        #zapFinderTree { flex: 1 1 auto; overflow: auto; min-height: 240px; max-height: 430px; padding: 0 .25rem; }
+        .zap-finder-main { flex: 1 1 auto; min-width: 0; padding-left: .85rem; }
+        #zapFinderFileList { position: relative; }
+        #zapFinderTree .zf-tree-item {
+            display: flex; align-items: center; gap: .35rem;
+            padding: .3rem .4rem; border-radius: .35rem; cursor: pointer;
+            user-select: none; white-space: nowrap; font-size: .82rem;
+            color: var(--bs-body-color);
+            transition: background-color .15s ease, color .15s ease;
+        }
+        #zapFinderTree .zf-tree-item:hover { background: rgba(13, 110, 253, .07); }
+        #zapFinderTree .zf-tree-item.active {
+            background: var(--bs-primary-bg-subtle, #cfe2ff);
+            color: var(--bs-primary); font-weight: 600;
+        }
+        #zapFinderTree .zf-tree-item.zf-system .zf-tree-icon { color: var(--bs-secondary-color); }
+        #zapFinderTree .zf-tree-toggle { width: .85rem; flex-shrink: 0; text-align: center; font-size: .65rem; color: var(--bs-secondary-color); }
+        #zapFinderTree .zf-tree-toggle i { transition: transform .2s ease; }
+        #zapFinderTree .zf-tree-toggle i.zf-expanded { transform: rotate(90deg); }
+        #zapFinderTree .zf-tree-toggle .fa-minus { opacity: .35; font-size: .55rem; }
+        #zapFinderTree .zf-tree-icon { width: 1rem; flex-shrink: 0; text-align: center; color: #e8a33d; }
+        #zapFinderTree .zf-tree-item .fa-house { color: #868e96; }
+        #zapFinderTree .zf-tree-item.active .zf-tree-icon { color: var(--bs-primary); }
+        #zapFinderTree .zf-tree-badge {
+            flex-shrink: 0; min-width: 1.1rem; padding: .12rem .3rem; border-radius: 999px;
+            background: var(--bs-secondary-bg); color: var(--bs-secondary-color);
+            font-size: .65rem; line-height: 1; text-align: center;
+        }
+        #zapFinderTree .zf-tree-children { margin-left: .85rem; padding-left: .3rem; border-left: 1px solid var(--bs-border-color); }
+        /* 右键菜单必须浮在 Bootstrap modal(z-index 1055) 之上 */
+        .zap-finder-ctx { position: fixed !important; z-index: 2000 !important; display: none; min-width: 168px; padding: .35rem 0; }
+        .zap-finder-ctx .dropdown-item { display: flex; align-items: center; gap: .55rem; padding: .4rem .85rem; font-size: .85rem; cursor: pointer; }
+        .zap-finder-ctx .dropdown-item i { width: 1rem; text-align: center; }
+        .zap-finder-ctx .dropdown-item.disabled { opacity: .4; pointer-events: none; }
+        @media (max-width: 767.98px) {
+            .zap-finder-tree-pane { flex-basis: 160px; max-width: 160px; }
+            .zap-finder-main { padding-left: .5rem; }
+        }
     </style>
+    <div class="zap-finder-layout">
+        <aside class="zap-finder-tree-pane">
+            <div class="zap-finder-tree-head">
+                <span><i class="fa-solid fa-folder-tree me-1"></i>目录</span>
+                <button type="button" id="btn-tree-refresh" class="btn btn-sm btn-light py-0 px-1"
+                        title="刷新目录树" data-bs-toggle="tooltip"><i class="fa-solid fa-rotate"></i></button>
+            </div>
+            <div id="zapFinderTree"></div>
+        </aside>
+        <div class="zap-finder-main">
     <div id="zapFinderFileList">
         <input type="file" id="zapUploadFinder" multiple style="display: none;">
         <div class="progress zap-progress mb-2" style="height: 2px;position: absolute;top: 0;width: 100%;left: 0;">
@@ -119,6 +179,20 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         </div>
         <?php if ($initialize) { ?>
     </div>
+        </div>
+    </div>
+    <div id="zapFinderContextMenu" class="dropdown-menu zap-finder-ctx" role="menu">
+        <button type="button" class="dropdown-item" data-act="create" role="menuitem">
+            <i class="fa-solid fa-folder-plus"></i>新建目录</button>
+        <button type="button" class="dropdown-item" data-act="rename" role="menuitem">
+            <i class="fa-solid fa-pen"></i>重命名</button>
+        <div class="dropdown-divider"></div>
+        <button type="button" class="dropdown-item text-danger" data-act="delete" role="menuitem">
+            <i class="fa-regular fa-trash-can"></i>删除</button>
+        <div class="dropdown-divider"></div>
+        <button type="button" class="dropdown-item" data-act="refresh" role="menuitem">
+            <i class="fa-solid fa-rotate"></i>刷新</button>
+    </div>
     <script>
         Zap.EnableToolTip();
         const FinderUrl = '<?php echo url_action('finder@list') ?>?path=';
@@ -127,13 +201,24 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         const IMG_SIZE = <?php echo json_encode((string)$size); ?>;
         const zapFinderFileList = $('#finderContent');
         const progressBar = $('#zapFinderFileList .progress-bar');
+        const FinderTreeUrl = '<?php echo url_action('Finder@tree'); ?>';
+        const FinderApi = {
+            createDir: '<?php echo url_action('Finder@createDir'); ?>',
+            rename: '<?php echo url_action('Finder@rename'); ?>',
+            remove: '<?php echo url_action('Finder@delete'); ?>'
+        };
+        let finderTreeData = [];
+        // 已展开的目录路径集合，重绘目录树时用于还原展开状态
+        const finderExpanded = new Set(['']);
+        const $finderContextMenu = $('#zapFinderContextMenu');
+        let finderContextTarget = null;
 
         function getFinderConfig() {
             const cfg = (window.zapFinder && window.zapFinder.finderConfig) ? window.zapFinder.finderConfig : null;
             return cfg || {target: TARGET_LIST.join('|'), callback: '', size: IMG_SIZE};
         }
         function reloadFileList() {
-            zapFinderFileList.load(FinderUrl + $('#cur-path').val(), loadCallback);
+            openPath(currentPath());
         }
 
         $('#btn-refresh').on('click', function (event) {
@@ -142,7 +227,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         });
         $('#btn-parent').on('click', function (event) {
             event.preventDefault()
-            zapFinderFileList.load(FinderUrl + $('#parent-path').val(), loadCallback);
+            openPath($('#parent-path').val());
         })
 
         $('#btn-folder').on('click', function (event) {
@@ -347,7 +432,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
             }, 200);
         });
         function doSearch() {
-            zapFinderFileList.load(FinderUrl + $('#cur-path').val() + '&search=' + encodeURIComponent($('#input-search').val()), loadCallback);
+            zapFinderFileList.load(FinderUrl + encodeURIComponent(currentPath()) + '&search=' + encodeURIComponent($('#input-search').val()), loadCallback);
         }
         $('#button-search').on('click', function () {
             doSearch();
@@ -441,10 +526,352 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
 
         function loadCallback(response, status, xhr) {
             updateUploadState();
+            // 分页 / 目录跳转后同步左侧目录树的高亮与展开状态
+            syncFinderTree();
             if (status === "error") {
                 ZapToast.alert(response, {bgColor: bgDanger})
             }
         }
+
+        /* ==================== 左侧目录树 ==================== */
+        function currentPath() {
+            return String($('#cur-path').val() || '');
+        }
+
+        function parentPathOf(path) {
+            const p = String(path || '');
+            const i = p.lastIndexOf('/');
+            return i < 0 ? '' : p.substring(0, i);
+        }
+
+        // 展开目标路径及其所有祖先，便于跳转到深层目录时自动展开
+        function finderExpandAncestors(path) {
+            finderExpanded.add('');
+            let cur = '';
+            String(path || '').split('/').filter(Boolean).forEach(function (seg) {
+                cur = cur ? cur + '/' + seg : seg;
+                finderExpanded.add(cur);
+            });
+        }
+
+        function buildFinderTreeNode(node, isRoot) {
+            const hasChildren = Array.isArray(node.children) && node.children.length > 0;
+            const nodePath = String(node.path || '');
+            const name = isRoot ? '全部文件' : String(node.name || '');
+            const expanded = finderExpanded.has(nodePath);
+
+            // 全部用 jQuery 的 .text()/.attr() 写入，避免目录名中的特殊字符造成 XSS
+            const $item = $('<div>').addClass('zf-tree-item')
+                .attr({'data-path': nodePath, 'data-name': isRoot ? '' : name})
+                .attr('data-system', node.system ? '1' : '0')
+                .toggleClass('active', currentPath() === nodePath)
+                .toggleClass('zf-system', !!node.system);
+            $item.append($('<span class="zf-tree-toggle">').html(hasChildren
+                ? '<i class="fa-solid fa-chevron-right' + (expanded ? ' zf-expanded' : '') + '"></i>'
+                : '<i class="fa-solid fa-minus"></i>'));
+            $item.append($('<i>').addClass('zf-tree-icon fa-solid ' +
+                (isRoot ? 'fa-house' : (expanded && hasChildren ? 'fa-folder-open' : 'fa-folder'))));
+            $item.append($('<span class="zf-tree-label text-truncate flex-fill">').text(name).attr('title', name));
+            if (node.count > 0) {
+                $item.append($('<span class="zf-tree-badge">').text(node.count));
+            }
+
+            const $children = $('<div class="zf-tree-children">');
+            if (hasChildren) {
+                node.children.forEach(function (child) {
+                    $children.append(buildFinderTreeNode(child, false));
+                });
+            }
+            if (!expanded) {
+                $children.hide();
+            }
+            return $('<div class="zf-tree-node">').append($item, $children);
+        }
+
+        function renderFinderTree() {
+            const $tree = $('#zapFinderTree');
+            if (!$tree.length) return;
+            $tree.empty().append(buildFinderTreeNode({
+                name: '全部文件', path: '', count: 0, children: finderTreeData
+            }, true));
+        }
+
+        function reloadFinderTree() {
+            $.getJSON(FinderTreeUrl).done(function (res) {
+                if (!res || res.code !== 0) return;
+                finderTreeData = Array.isArray(res.data) ? res.data : [];
+                renderFinderTree();
+            });
+        }
+
+        function syncFinderTree() {
+            finderExpandAncestors(currentPath());
+            renderFinderTree();
+        }
+
+        function openPath(path) {
+            zapFinderFileList.load(FinderUrl + encodeURIComponent(String(path || '')), loadCallback);
+        }
+
+        $('#zapFinderTree').on('click', '.zf-tree-toggle', function (e) {
+            e.stopPropagation();
+            const $node = $(this).closest('.zf-tree-node');
+            const $children = $node.children('.zf-tree-children');
+            if (!$children.children().length) return;
+            const $item = $node.children('.zf-tree-item');
+            const path = String($item.attr('data-path') || '');
+            const opening = !$children.is(':visible');
+            $children.toggle(opening);
+            $item.find('.zf-tree-toggle i').toggleClass('zf-expanded', opening);
+            $item.find('.zf-tree-icon').toggleClass('fa-folder-open', opening).toggleClass('fa-folder', !opening);
+            if (opening) {
+                finderExpanded.add(path);
+            } else {
+                finderExpanded.delete(path);
+            }
+        });
+
+        $('#zapFinderTree').on('click', '.zf-tree-item', function () {
+            const path = String($(this).attr('data-path') || '');
+            finderExpandAncestors(path);
+            renderFinderTree();
+            openPath(path);
+        });
+
+        $('#btn-tree-refresh').on('click', function (e) {
+            e.preventDefault();
+            reloadFinderTree();
+        });
+
+        /* ==================== 右键菜单 ==================== */
+        // dir      = 父目录，用于重命名/删除
+        // createIn = 新建目录的落点（右键点中的目录本身）
+        function finderTreeTarget($item) {
+            const path = String($item.attr('data-path') || '');
+            const name = String($item.attr('data-name') || '');
+            return {
+                dir: name ? parentPathOf(path) : '',
+                createIn: path,
+                name: name,
+                nodePath: path,
+                isDir: true,
+                system: $item.attr('data-system') === '1',
+                label: name || '根目录'
+            };
+        }
+
+        function finderGridTarget($a) {
+            const name = String($a.closest('.col').find('.form-check-input').val() || '');
+            const cur = currentPath();
+            const isDir = $a.data('type') === 'dir';
+            // 文件没有 nodePath，删除/改名时不会误判为「当前所在目录」
+            const nodePath = name && isDir ? (cur ? cur + '/' + name : name) : '';
+            return {
+                dir: cur,
+                createIn: isDir && name ? nodePath : cur,
+                name: name,
+                nodePath: nodePath,
+                isDir: isDir,
+                system: name === 'thumbs' && cur === '',
+                label: name || '当前目录'
+            };
+        }
+
+        function finderBlankTarget() {
+            return {
+                dir: currentPath(), createIn: currentPath(), name: '',
+                nodePath: '', isDir: true, system: false, label: '当前目录'
+            };
+        }
+
+        function showFinderContextMenu(e, target) {
+            finderContextTarget = target;
+            const canEdit = !!target.name && !target.system;
+            $finderContextMenu.find('[data-act="rename"], [data-act="delete"]').toggleClass('disabled', !canEdit);
+            $finderContextMenu.css({display: 'block', left: 0, top: 0});
+            const w = $finderContextMenu.outerWidth();
+            const h = $finderContextMenu.outerHeight();
+            const left = Math.max(4, Math.min(e.clientX, window.innerWidth - w - 8));
+            const top = Math.max(4, Math.min(e.clientY, window.innerHeight - h - 8));
+            $finderContextMenu.css({left: left + 'px', top: top + 'px'});
+            e.preventDefault();
+        }
+
+        function hideFinderContextMenu() {
+            $finderContextMenu.hide();
+            finderContextTarget = null;
+        }
+
+        $('#zapFinderTree').on('contextmenu', '.zf-tree-item', function (e) {
+            showFinderContextMenu(e, finderTreeTarget($(this)));
+        });
+        $('#zapFinderTree').on('contextmenu', function (e) {
+            if (!$(e.target).closest('.zf-tree-item').length) {
+                showFinderContextMenu(e, finderBlankTarget());
+            }
+        });
+        zapFinderFileList.on('contextmenu', 'a.dirList', function (e) {
+            showFinderContextMenu(e, finderGridTarget($(this)));
+        });
+        zapFinderFileList.on('contextmenu', function (e) {
+            if (!$(e.target).closest('a.dirList').length) {
+                showFinderContextMenu(e, finderBlankTarget());
+            }
+        });
+        // 弹窗可能被重建，先解绑再绑定，避免同名 handler 重复累积
+        $(document).off('mousedown.zapFinderCtx').on('mousedown.zapFinderCtx', function (e) {
+            if (!$(e.target).closest('#zapFinderContextMenu').length) hideFinderContextMenu();
+        });
+        $(document).off('keydown.zapFinderCtx').on('keydown.zapFinderCtx', function (e) {
+            if (e.key === 'Escape') hideFinderContextMenu();
+        });
+
+        function finderToast(data) {
+            const ok = !!(data && data.code === 0);
+            try {
+                ZapToast.alert(data && data.msg ? data.msg : (ok ? '操作成功' : '操作失败'), {
+                    delay: 2500, bgColor: ok ? bgSuccess : bgDanger
+                });
+            } catch (err) { /* 提示失败不影响后续刷新 */ }
+            return ok;
+        }
+
+        function finderPathInside(path, nodePath) {
+            return !!nodePath && (path === nodePath || path.indexOf(nodePath + '/') === 0);
+        }
+
+        function finderPrompt(title, value, okText, onOk) {
+            const id = 'zapFinderInputModal';
+            const inputHtml = $('<input>', {
+                type: 'text', 'class': 'form-control', id: id + '-input', value: value || ''
+            })[0].outerHTML;
+            ZapModal.create({
+                id: id,
+                title: title,
+                dialog_class: 'modal-dialog-centered modal-sm',
+                header_class: 'bg-primary text-white',
+                content: inputHtml + '<div class="form-text mt-2">名称不能包含 \\ / : * ? " &lt; &gt; |</div>',
+                buttons: [{title: '取消', class: 'btn-secondary', close: true}, {title: okText, class: 'btn-primary'}],
+                btn2: function () {
+                    const v = $.trim($('#' + id + '-input').val());
+                    if (v === '') {
+                        ZapToast.alert('名称不能为空', {delay: 2500, bgColor: bgWarning});
+                        return;
+                    }
+                    if (/[\/\\:*?"<>|]/.test(v)) {
+                        ZapToast.alert('名称包含非法字符 \\ / : * ? " < > |', {delay: 2500, bgColor: bgWarning});
+                        return;
+                    }
+                    const modalEl = document.getElementById(id);
+                    if (modalEl && bootstrap.Modal.getInstance(modalEl)) {
+                        bootstrap.Modal.getInstance(modalEl).hide();
+                    }
+                    onOk(v);
+                }
+            }, true).show();
+            setTimeout(function () {
+                $('#' + id + '-input').trigger('focus').select();
+            }, 200);
+        }
+
+        function finderCreateDir(dir) {
+            finderPrompt('新建目录', '', '创建', function (name) {
+                $.ajax({
+                    url: FinderApi.createDir, method: 'post',
+                    data: {dir_name: name, path: dir}, dataType: 'json',
+                    success: function (res) {
+                        if (!finderToast(res)) return;
+                        finderExpandAncestors(dir || '');
+                        reloadFinderTree();
+                        if ((dir || '') === currentPath()) reloadFileList();
+                    }
+                });
+            });
+        }
+
+        function finderRenameItem(t) {
+            finderPrompt('重命名', t.name, '保存', function (name) {
+                $.ajax({
+                    url: FinderApi.rename, method: 'post',
+                    data: {old_name: t.name, new_name: name, path: t.dir}, dataType: 'json',
+                    success: function (res) {
+                        if (!finderToast(res)) return;
+                        const cur = currentPath();
+                        if (t.isDir && finderPathInside(cur, t.nodePath)) {
+                            // 当前所在目录（或其祖先）被改名，跳转到改名后的路径
+                            const rest = cur.substring(t.nodePath.length);
+                            const nextPath = (t.dir ? t.dir + '/' : '') + name + rest;
+                            finderExpandAncestors(nextPath);
+                            reloadFinderTree();
+                            openPath(nextPath);
+                        } else {
+                            finderExpandAncestors(t.dir || '');
+                            reloadFinderTree();
+                            reloadFileList();
+                        }
+                    }
+                });
+            });
+        }
+
+        function finderDeleteItem(t) {
+            const id = 'zapFinderCtxDeleteModal';
+            ZapModal.create({
+                id: id, title: '确认删除',
+                dialog_class: 'modal-dialog-centered modal-sm',
+                header_class: 'bg-danger text-white',
+                content: '<div class="text-center"><p class="mb-2">确定删除 <b class="zf-del-name"></b>？</p>' +
+                    '<span class="text-danger">此操作不可恢复！目录会被递归删除。</span></div>',
+                buttons: [{title: '取消', class: 'btn-secondary', close: true}, {title: '删除', class: 'btn-danger'}],
+                btn2: function () {
+                    const modalEl = document.getElementById(id);
+                    if (modalEl && bootstrap.Modal.getInstance(modalEl)) {
+                        bootstrap.Modal.getInstance(modalEl).hide();
+                    }
+                    $.ajax({
+                        url: FinderApi.remove, method: 'post',
+                        // 后端 req()->post('finder_item') 按数组读取
+                        data: {path: t.dir, 'finder_item[]': t.name}, dataType: 'json',
+                        success: function (res) {
+                            if (!finderToast(res)) return;
+                            const cur = currentPath();
+                            if (t.isDir && finderPathInside(cur, t.nodePath)) {
+                                // 当前所在目录（或其祖先）被删除，退回父目录
+                                finderExpandAncestors(t.dir || '');
+                                reloadFinderTree();
+                                openPath(t.dir || '');
+                            } else {
+                                finderExpandAncestors(t.dir || '');
+                                reloadFinderTree();
+                                reloadFileList();
+                            }
+                        }
+                    });
+                }
+            }, true).show();
+            $('#' + id + ' .zf-del-name').text(t.name);
+        }
+
+        $finderContextMenu.on('click', '[data-act]', function (e) {
+            e.preventDefault();
+            const act = $(this).attr('data-act');
+            const t = finderContextTarget;
+            hideFinderContextMenu();
+            if (!t) return;
+            if (act === 'create') {
+                finderCreateDir(t.createIn);
+            } else if (act === 'rename' && t.name && !t.system) {
+                finderRenameItem(t);
+            } else if (act === 'delete' && t.name && !t.system) {
+                finderDeleteItem(t);
+            } else if (act === 'refresh') {
+                reloadFinderTree();
+                reloadFileList();
+            }
+        });
+
+        finderExpandAncestors(currentPath());
+        reloadFinderTree();
 
         var upload = new ZAPUploader('#zapFinderFileList', {
             // 支持拖拽上传整个目录（插件通过 webkitGetAsEntry 遍历子目录并保留结构）
