@@ -211,7 +211,7 @@ use \zap\facades\Url;
             <!--end::App Content Header-->
 
             <div class="app-content">
-                <div class="container-fluid px-4 py-3" id="zContent">
+                <div class="container-fluid py-3" id="zContent">
                     <?php \zapcms\AdminHook::echo('admin_content_before'); ?>
                     <?php echo $this->block('content');?>
                     <?php \zapcms\AdminHook::echo('admin_content_after'); ?>

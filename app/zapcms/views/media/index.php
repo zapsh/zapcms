@@ -169,6 +169,11 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         background: rgba(16, 185, 129, 0.05);
         border-radius: 0.5rem;
     }
+    /* 目录树右键菜单：浮在 Bootstrap modal(1055) 之上 */
+    .media-tree-ctx { position: fixed !important; z-index: 2000 !important; display: none; min-width: 176px; padding: .35rem 0; }
+    .media-tree-ctx .dropdown-item { display: flex; align-items: center; gap: .55rem; padding: .4rem .85rem; font-size: .85rem; cursor: pointer; }
+    .media-tree-ctx .dropdown-item i { width: 1rem; text-align: center; }
+    .media-tree-ctx .dropdown-item.disabled { opacity: .4; pointer-events: none; }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -324,6 +329,20 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
     </div>
 </div>
 
+<!-- 目录树右键菜单 -->
+<div id="mediaTreeContextMenu" class="dropdown-menu media-tree-ctx" role="menu">
+    <button type="button" class="dropdown-item" data-act="create" role="menuitem">
+        <i class="fa-solid fa-folder-plus"></i>在此新建文件夹</button>
+    <button type="button" class="dropdown-item" data-act="rename" role="menuitem">
+        <i class="fa-solid fa-pen"></i>重命名</button>
+    <div class="dropdown-divider"></div>
+    <button type="button" class="dropdown-item text-danger" data-act="delete" role="menuitem">
+        <i class="fa-regular fa-trash-can"></i>删除</button>
+    <div class="dropdown-divider"></div>
+    <button type="button" class="dropdown-item" data-act="refresh" role="menuitem">
+        <i class="fa-solid fa-rotate"></i>刷新目录树</button>
+</div>
+
 <script>
     Zap.EnableToolTip();
     const MediaApi = {
@@ -342,7 +361,9 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         view: 'grid',      // grid | list
         dirs: [],
         files: [],
-        selected: new Set()
+        selected: new Set(),
+        // 右键菜单可指定操作落点；null 表示沿用当前目录 media.path
+        actionPath: null
     };
 
     // ============ 目录树 ============
@@ -372,6 +393,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         const item = $('<div>')
             .addClass('tree-item' + (isActive ? ' active' : ''))
             .attr('data-path', node.path)
+            .attr('data-name', isRoot ? '' : node.name)
             .append(
                 $('<span>').addClass('tree-toggle').html(
                     hasChildren
@@ -452,10 +474,32 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         }
     }
 
-    function loadTree() {
+    function loadTree(after) {
         $.get(MediaApi.tree, function (data) {
             if (data && data.code === 0) {
                 renderTree(data.data, $('#media-tree'));
+                syncTreeActive();
+                if (typeof after === 'function') after();
+            }
+        });
+    }
+
+    // 展开指定路径的整条祖先链，让新建/改名后的节点可见
+    function expandTreeTo(path) {
+        const targets = [''];
+        let acc = '';
+        String(path || '').split('/').filter(Boolean).forEach(function (seg) {
+            acc = acc ? acc + '/' + seg : seg;
+            targets.push(acc);
+        });
+        $('#media-tree .tree-item').each(function () {
+            const $item = $(this);
+            if (targets.indexOf(String($item.data('path') || '')) < 0) return;
+            const $children = $item.next('.tree-children');
+            if ($children.length && $children.children().length && !$children.is(':visible')) {
+                $children.show();
+                $item.find('.tree-caret').addClass('expanded');
+                $item.find('.tree-folder-icon').addClass('fa-folder-open').removeClass('fa-folder');
             }
         });
     }
@@ -707,13 +751,16 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
     }
 
     // ============ 新建文件夹 ============
-    function openMkdir() {
+    function openMkdir(basePath) {
+        // 右键菜单传入落点目录；工具栏直接绑定本函数时参数是事件对象，回落到当前目录
+        media.actionPath = (typeof basePath === 'string') ? basePath : null;
         $('#mkdir-name').val('');
         new bootstrap.Modal('#mkdirModal').show();
         setTimeout(function () { $('#mkdir-name').trigger('focus'); }, 200);
     }
     $('#btn-mkdir').on('click', openMkdir);
     $('#btn-mkdir-ok').on('click', function () {
+        const targetPath = media.actionPath === null ? media.path : media.actionPath;
         // 支持多级目录：统一分隔符、去掉首尾与重复斜杠
         const name = $.trim($('#mkdir-name').val())
             .replace(/\\/g, '/')
@@ -727,22 +774,25 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         }
         const $btn = $(this);
         $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>创建中...');
-        $.post(MediaApi.createDir, {path: media.path, dir_name: name}, function (data) {
+        $.post(MediaApi.createDir, {path: targetPath, dir_name: name}, function (data) {
             const isOk = data && data.code === 0;
             ZapToast.alert(data && data.msg ? data.msg : (isOk ? '创建成功' : '创建失败'), {bgColor: isOk ? bgSuccess : bgDanger});
             if (isOk) {
                 bootstrap.Modal.getInstance('#mkdirModal').hide();
-                loadBrowse();
-                loadTree();
+                loadTree(function () { expandTreeTo(targetPath); });
+                if (targetPath === media.path) loadBrowse();
             }
         }, 'json').always(function () {
+            media.actionPath = null;
             $btn.prop('disabled', false).html('创建');
         });
     });
     $('#mkdir-name').on('keydown', function (e) { if (e.key === 'Enter') $('#btn-mkdir-ok').trigger('click'); });
 
     // ============ 重命名 ============
-    function openRename(oldName) {
+    function openRename(oldName, basePath) {
+        // 右键菜单重命名目录时传入该目录的父路径；文件列表调用时不传
+        media.actionPath = (typeof basePath === 'string') ? basePath : null;
         $('#rename-name').val(oldName);
         $('#rename-old').text('原名称：' + oldName);
         new bootstrap.Modal('#renameModal').show();
@@ -758,17 +808,25 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         if (newName === '') { ZapToast.alert('请输入新名称', {bgColor: bgWarning}); return; }
         if (/[\/\\:*?"<>|]/.test(newName)) { ZapToast.alert('名称不能包含 \\ / : * ? " < > | 等字符', {bgColor: bgWarning}); return; }
         const oldName = $.trim($('#rename-old').text().replace('原名称：', ''));
+        const targetPath = media.actionPath === null ? media.path : media.actionPath;
         const $btn = $(this);
         $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>保存中...');
-        $.post(MediaApi.rename, {path: media.path, old_name: oldName, new_name: newName}, function (data) {
+        $.post(MediaApi.rename, {path: targetPath, old_name: oldName, new_name: newName}, function (data) {
             const isOk = data && data.code === 0;
             ZapToast.alert(data && data.msg ? data.msg : (isOk ? '重命名成功' : '重命名失败'), {bgColor: isOk ? bgSuccess : bgDanger});
             if (isOk) {
                 bootstrap.Modal.getInstance('#renameModal').hide();
+                // 改的是当前目录或其祖先时，同步把浏览路径切换到改名后的路径
+                const oldFull = targetPath ? targetPath + '/' + oldName : oldName;
+                if (media.path === oldFull || media.path.indexOf(oldFull + '/') === 0) {
+                    const rest = media.path.substring(oldFull.length);
+                    media.path = (targetPath ? targetPath + '/' : '') + newName + rest;
+                }
                 loadBrowse();
                 loadTree();
             }
         }, 'json').always(function () {
+            media.actionPath = null;
             $btn.prop('disabled', false).html('保存');
         });
     });
@@ -1076,6 +1134,125 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
 
     // 防止拖到窗口其他区域时浏览器直接打开文件
     $(document).on('dragover drop', function (e) { e.preventDefault(); });
+
+    // ============ 目录树右键菜单 ============
+    const $treeCtx = $('#mediaTreeContextMenu');
+    let treeCtxTarget = null;
+
+    function treeParentPath(path) {
+        const p = String(path || '');
+        const i = p.lastIndexOf('/');
+        return i < 0 ? '' : p.substring(0, i);
+    }
+
+    // createIn = 新建文件夹的落点；parent = 重命名/删除时所在的父目录
+    function treeContextFromItem($item) {
+        const path = String($item.data('path') || '');
+        if (path === '') {
+            return {path: '', createIn: '', parent: '', name: '', label: '根目录'};
+        }
+        return {
+            path: path,
+            createIn: path,
+            parent: treeParentPath(path),
+            name: String($item.attr('data-name') || path.split('/').pop()),
+            label: path
+        };
+    }
+
+    function treeContextBlank() {
+        return {path: media.path, createIn: media.path, parent: media.path, name: '', label: '当前目录'};
+    }
+
+    function showTreeCtx(e, target) {
+        treeCtxTarget = target;
+        $treeCtx.find('[data-act="rename"], [data-act="delete"]').toggleClass('disabled', !target.name);
+        $treeCtx.css({display: 'block', left: 0, top: 0});
+        const w = $treeCtx.outerWidth();
+        const h = $treeCtx.outerHeight();
+        const left = Math.max(4, Math.min(e.clientX, window.innerWidth - w - 8));
+        const top = Math.max(4, Math.min(e.clientY, window.innerHeight - h - 8));
+        $treeCtx.css({left: left + 'px', top: top + 'px'});
+        e.preventDefault();
+    }
+
+    function hideTreeCtx() {
+        $treeCtx.hide();
+        treeCtxTarget = null;
+    }
+
+    // loadTree() 会重建整棵树，因此这里必须用事件委托
+    $('#media-tree').on('contextmenu', '.tree-item', function (e) {
+        showTreeCtx(e, treeContextFromItem($(this)));
+    });
+    $('#media-tree').on('contextmenu', function (e) {
+        if (!$(e.target).closest('.tree-item').length) {
+            showTreeCtx(e, treeContextBlank());
+        }
+    });
+    $('#media-tree').on('scroll', hideTreeCtx);
+    $(document).off('mousedown.mediaTreeCtx keydown.mediaTreeCtx')
+        .on('mousedown.mediaTreeCtx', function (e) {
+            if (!$(e.target).closest('#mediaTreeContextMenu').length) hideTreeCtx();
+        })
+        .on('keydown.mediaTreeCtx', function (e) {
+            if (e.key === 'Escape') hideTreeCtx();
+        });
+    $(window).off('scroll.mediaTreeCtx resize.mediaTreeCtx')
+        .on('scroll.mediaTreeCtx resize.mediaTreeCtx', hideTreeCtx);
+
+    function confirmTreeDelete(t) {
+        ZapModal.create({
+            id: 'mediaTreeDeleteModal',
+            title: '确认删除文件夹',
+            dialog_class: 'modal-dialog-centered modal-sm',
+            header_class: 'bg-danger text-white',
+            content: '<div class="text-center"><p class="mb-2">确定删除文件夹 <b class="media-tree-del-name"></b>？</p>' +
+                '<span class="text-danger">该文件夹及其所有内容会被递归删除，不可恢复！</span></div>',
+            buttons: [
+                {title: '取消', class: 'btn-secondary', close: true},
+                {title: '删除', class: 'btn-danger'}
+            ],
+            btn2: function () {
+                $.post(MediaApi.delete, {path: t.parent, names: [t.name]}, function (data) {
+                    const isOk = data && data.code === 0;
+                    ZapToast.alert(data && data.msg ? data.msg : (isOk ? '删除成功' : '删除失败'), {bgColor: isOk ? bgSuccess : bgDanger});
+                    if (!isOk) return;
+                    const el = document.getElementById('mediaTreeDeleteModal');
+                    if (el && bootstrap.Modal.getInstance(el)) bootstrap.Modal.getInstance(el).hide();
+                    // 删除的是当前目录或其祖先时退回父目录
+                    if (media.path === t.path || media.path.indexOf(t.path + '/') === 0) {
+                        media.path = t.parent;
+                        media.search = '';
+                        $('#media-search').val('');
+                    }
+                    media.selected.clear();
+                    loadBrowse();
+                    loadTree();
+                }, 'json');
+            }
+        }, true).show();
+        // 用 .text() 写入名称，避免目录名中的特殊字符造成 XSS
+        $('#mediaTreeDeleteModal .media-tree-del-name').text(t.name);
+    }
+
+    $treeCtx.on('click', '[data-act]', function (e) {
+        e.preventDefault();
+        const act = $(this).attr('data-act');
+        const t = treeCtxTarget;
+        hideTreeCtx();
+        if (!t) return;
+        if (act === 'create') {
+            openMkdir(t.createIn);
+        } else if (act === 'rename' && t.name) {
+            openRename(t.name, t.parent);
+        } else if (act === 'delete' && t.name) {
+            confirmTreeDelete(t);
+        } else if (act === 'refresh') {
+            loadTree();
+            loadBrowse();
+        }
+    });
 
     // ============ 初始化 ============
     loadTree();
