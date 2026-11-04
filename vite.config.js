@@ -47,6 +47,9 @@ export default defineConfig({
     emptyOutDir: false,
     // 生成 .vite/manifest.json，供 PHP 侧解析带 hash 的产物文件名
     manifest: true,
+    // 关闭 modulepreload：默认 base 为 /，预加载会生成 /js/cm-lang-*.js（丢了 assets/admin 前缀），
+    // 在子目录部署下也会错。动态 import 本身是相对路径，不依赖预加载。
+    modulePreload: false,
     cssCodeSplit: true,
     target: 'es2020',
     rollupOptions: {

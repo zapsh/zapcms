@@ -25,10 +25,13 @@ const BASE_THEME = EditorView.theme({
     color: 'var(--bs-secondary-color)',
     borderRight: '1px solid var(--bs-border-color)',
   },
-  '.cm-activeLine': { backgroundColor: 'var(--bs-secondary-bg)' },
+  // 当前行必须用半透明底色：CM6 的选中层画在行背景之下，
+  // 不透明底色会把选中区域整个盖住（表现为“选中色 = 当前行高亮色”）。
+  '.cm-activeLine': { backgroundColor: 'rgba(var(--bs-body-color-rgb), 0.06)' },
   '.cm-activeLineGutter': { backgroundColor: 'var(--bs-secondary-bg)' },
+  // 选中色用半透明主色，和当前行高亮保持明显区分
   '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
-    backgroundColor: 'var(--bs-primary-bg-subtle) !important',
+    backgroundColor: 'rgba(var(--bs-primary-rgb), 0.32) !important',
   },
 });
 
