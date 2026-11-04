@@ -108,11 +108,14 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
                 <br/>
 
             </div>
+            <?php if ($pagination !== '') { ?>
             <div class="row justify-content-center mt-2">
                 <div class="col-12">
-                    <?php echo e($pagination); ?>
+                    <?php // Pagination::render() 内部已对 URL / class 做 htmlspecialchars，此处直接输出，不能再次转义 ?>
+                    <?php echo $pagination; ?>
                 </div>
             </div>
+            <?php } ?>
         </div>
         <?php if ($initialize) { ?>
     </div>
@@ -396,9 +399,15 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
                 }
             }
         })
+        // 分页链接局部刷新：#finderContent 内容会被 .load() 整体替换，
+        // 因此必须用事件委托；跳过当前页与无效链接，避免重复请求。
         zapFinderFileList.on('click', 'nav a', function (event) {
             event.preventDefault()
             event.stopPropagation()
+            const $item = $(this).closest('li');
+            if ($item.hasClass('active') || $item.hasClass('disabled')) {
+                return;
+            }
             const href = $(this).attr('href');
             if (href && href !== '#') {
                 zapFinderFileList.load(href, loadCallback);
