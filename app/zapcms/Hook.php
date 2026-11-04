@@ -101,7 +101,7 @@ class Hook
     /**
      * 移除回调（主要用于测试）。不传 $tag 则清空全部。
      */
-    public static function clear(string $tag = null): void
+    public static function clear(?string $tag = null): void
     {
         if ($tag === null) {
             self::$events  = [];

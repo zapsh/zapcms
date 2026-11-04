@@ -75,9 +75,9 @@
 </head>
 <body class="login-page bg-body-secondary">
 
-    <!-- Toast 容器（避免使用屏幕居中容器，防止遮挡表单） -->
-    <div id="topCenterToast" class="toast-container position-fixed p-3 top-0 start-50 translate-middle-x"></div>
-    <div id="topRightToast" class="toast-container position-fixed p-3 top-0 end-0"></div>
+    <!-- 顶部 Toast 容器：登录反馈统一在此弹出，浮于页面最上层且不遮挡表单 -->
+    <div id="topCenterToast" class="toast-container position-fixed p-3 top-0 start-50 translate-middle-x" style="z-index: 1090;"></div>
+    <div id="topRightToast" class="toast-container position-fixed p-3 top-0 end-0" style="z-index: 1090;"></div>
 
     <div class="login-box auth-login-box">
         <!-- Logo & 标题 -->
@@ -96,8 +96,9 @@
             <div class="card-body login-card-body">
                 <p class="login-box-msg">请输入账号和密码登录</p>
 
-                <!-- Flash 消息区域：内联展示，避免遮挡输入框 -->
                 <?php
+                // Flash 消息（退出登录 / 未登录跳转 / 限流 / 非 AJAX 登录失败）
+                // 统一改为页面顶部 Toast 弹出；此处只收集文本，由底部脚本负责渲染。
                 $flashAll = session()->flash();
                 $flashVariant = [
                     'error'   => 'danger',
@@ -106,20 +107,13 @@
                     'success' => 'success',
                     'info'    => 'info',
                 ];
-                $flashIcon = [
-                    'danger'  => 'fa-circle-exclamation',
-                    'warning' => 'fa-triangle-exclamation',
-                    'success' => 'fa-circle-check',
-                    'info'    => 'fa-circle-info',
-                ];
-                if (!empty($flashAll)):
-                    foreach ($flashAll as $flashKey => $flashMsg):
+                $loginFlashMessages = [];
+                if (!empty($flashAll)) {
+                    foreach ($flashAll as $flashKey => $flashMsg) {
                         if ($flashKey === '__old__') { continue; }
-                        if ($flashKey === '_validation_errors') {
-                            $variant = 'danger';
-                        } else {
-                            $variant = $flashVariant[$flashKey] ?? 'info';
-                        }
+                        $variant = $flashKey === '_validation_errors'
+                            ? 'danger'
+                            : ($flashVariant[$flashKey] ?? 'info');
                         if (is_array($flashMsg)) {
                             $parts = [];
                             array_walk_recursive($flashMsg, function ($v) use (&$parts) {
@@ -130,19 +124,10 @@
                             $text = (string) $flashMsg;
                         }
                         if (trim($text) === '') { continue; }
+                        $loginFlashMessages[] = ['variant' => $variant, 'text' => $text];
+                    }
+                }
                 ?>
-                <div class="alert alert-<?php echo $variant; ?> d-flex align-items-center py-2 px-3 mb-3 small" role="alert">
-                    <i class="fas <?php echo $flashIcon[$variant] ?? 'fa-circle-info'; ?> me-2"></i>
-                    <div class="flex-grow-1"><?php echo e($text); ?></div>
-                    <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="关闭"></button>
-                </div>
-                <?php
-                    endforeach;
-                endif;
-                ?>
-
-                <!-- AJAX 登录反馈（错误 / 成功） -->
-                <div id="loginAlert" aria-live="polite"></div>
 
                 <form id="loginForm" action="" method="post" autocomplete="off">
                     <input type="hidden" name="token" value="<?php echo csrf_token();?>">
@@ -213,24 +198,43 @@
 
         var submitting = false;
 
-        function clearLoginAlert() {
-            $('#loginAlert').empty();
+        // 服务端 flash 消息（退出登录、未登录跳转、限流等）同样在顶部弹出
+        <?php
+        // HEX_* 防止消息里的 </script> 提前闭合脚本标签
+        $loginFlashJson = json_encode($loginFlashMessages, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        echo 'var loginFlashMessages = ' . ($loginFlashJson !== false ? $loginFlashJson : '[]') . ';';
+        ?>
+
+        // ZapToast.notify 会把消息直接写入 innerHTML，必须先做 HTML 转义
+        function escapeLoginMsg(value) {
+            return $('<div>').text(value == null ? '' : String(value)).html();
         }
 
-        function showLoginAlert(msg, variant) {
-            variant = variant || 'danger';
-            var icon = variant === 'success' ? 'fa-circle-check'
-                     : (variant === 'warning' ? 'fa-triangle-exclamation' : 'fa-circle-exclamation');
-            var text = $('<div>').text(msg == null ? '' : String(msg)).html();
-            var html = '<div class="alert alert-' + variant + ' d-flex align-items-center py-2 px-3 mb-3 small" role="alert">'
-                     + '<i class="fas ' + icon + ' me-2"></i>'
-                     + '<div class="flex-grow-1">' + text + '</div>'
-                     + '<button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="关闭"></button>'
-                     + '</div>';
-            $('#loginAlert').html(html);
+        function showLoginToast(msg, variant, delay) {
+            var colors = {
+                success: bgSuccess, danger: bgDanger,
+                warning: bgWarning, info: bgInfo
+            };
+            var icons = {
+                success: 'fa-solid fa-circle-check',
+                danger: 'fa-solid fa-circle-exclamation',
+                warning: 'fa-solid fa-triangle-exclamation',
+                info: 'fa-solid fa-circle-info'
+            };
+            ZapToast.alert(escapeLoginMsg(msg), {
+                bgColor: colors[variant] || bgInfo,
+                icon: icons[variant] || icons.info,
+                position: Toast_Pos_TopCenter,
+                delay: delay || 2500
+            });
         }
 
         $(function () {
+            // 页面加载后把 flash 逐条弹到顶部
+            (loginFlashMessages || []).forEach(function (item) {
+                showLoginToast(item.text, item.variant, 3500);
+            });
+
             // 密码显示 / 隐藏
             $('#togglePassword').on('click', function () {
                 var $input = $('#user_pass');
@@ -259,17 +263,16 @@
             var token     = $('input[name="token"]').val();
 
             if (username == '') {
-                ZapToast.alert({title: '请输入账号', bg: bgDanger});
+                showLoginToast('请输入账号', 'danger');
                 $('#user_login').focus();
                 return false;
             }
             if (password == '') {
-                ZapToast.alert({title: '请输入密码', bg: bgDanger});
+                showLoginToast('请输入密码', 'danger');
                 $('#user_pass').focus();
                 return false;
             }
 
-            clearLoginAlert();
             loginSystem(username, password, token);
             return false;
         });
@@ -294,12 +297,12 @@
                 timeout: 15000,
                 success: function (ret) {
                     if (ret.code == 0) {
-                        showLoginAlert(ret.msg || '登录成功，正在跳转...', 'success');
+                        showLoginToast(ret.msg || '登录成功，正在跳转...', 'success', 2000);
                         setTimeout(function () {
                             window.location.href = ret.redirect_to || (ret.data && ret.data.redirect) || indexUrl;
                         }, 500);
                     } else {
-                        showLoginAlert(ret.msg || '登录失败', 'danger');
+                        showLoginToast(ret.msg || '登录失败', 'danger');
                         btn.prop('disabled', false).html('<i class="fas fa-sign-in-alt me-1"></i>登录');
                         submitting = false;
                         // 刷新 CSRF Token
@@ -310,7 +313,7 @@
                 },
                 error: function (xhr, status, error) {
                     var msg = (xhr && xhr.responseJSON && xhr.responseJSON.msg) || '请求失败，请稍后重试';
-                    showLoginAlert(msg, 'danger');
+                    showLoginToast(msg, 'danger');
                     btn.prop('disabled', false).html('<i class="fas fa-sign-in-alt me-1"></i>登录');
                     submitting = false;
                 }
