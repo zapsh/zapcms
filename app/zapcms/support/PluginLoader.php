@@ -24,13 +24,97 @@
 
 namespace zapcms\support;
 
+use zap\facades\Cache;
 use zapcms\Hook;
 use zapcms\services\Option;
 
 class PluginLoader
 {
+    /** options 键前缀 */
+    const OPTION_PREFIX = 'mod.installed.';
+
+    /**
+     * 分组缓存 key：与 get_options('mod.installed.', 'REGEXP') 的
+     * '_opts_' . 前缀 命名规则保持一致，便于统一失效。
+     */
+    const CACHE_KEY = '_opts_mod.installed.';
+
+    /** 未配置 cache.ttl 时使用的兜底秒数 */
+    const CACHE_TTL_FALLBACK = 10000;
+
+    /** @var array<string,string>|null 请求级缓存 */
+    private static ?array $installedCache = null;
+
     /** @var bool 同请求内只引导一次 */
     private static bool $booted = false;
+
+    /**
+     * 读取已安装模块的 options 快照（跨请求缓存，避免每次请求都查 options 表）。
+     *
+     * 缓存值统一存 JSON 字符串：FileCache 可序列化任意类型，但 RedisCache 的
+     * set()/get() 只能处理字符串，直接存数组会在 Redis 站点上导致数据损坏。
+     * 缓存缺失、损坏或驱动故障时回源查库；options 表不可用时异常继续向外抛，
+     * 由 bootAll() 静默跳过，保持原有安装期/表损坏时的行为。
+     *
+     * @return array<string,string> option_name => 安装快照 JSON 文本
+     */
+    public static function installedMods(): array
+    {
+        if (self::$installedCache !== null) {
+            return self::$installedCache;
+        }
+
+        $ttl = (int) config('cache.ttl', 0);
+        if ($ttl <= 0) {
+            $ttl = self::CACHE_TTL_FALLBACK;
+        }
+
+        $rows = null;
+        try {
+            $cached = Cache::get(self::CACHE_KEY);
+            if (is_string($cached) && $cached !== '') {
+                $decoded = json_decode($cached, true);
+                if (is_array($decoded)) {
+                    $rows = $decoded;
+                }
+            }
+        } catch (\Throwable $e) {
+            // 缓存驱动不可用：忽略，直接回源
+        }
+
+        if ($rows === null) {
+            // DB 异常继续向外抛，由 bootAll() 静默跳过
+            $rows = Option::getArray(self::OPTION_PREFIX, 'REGEXP');
+            try {
+                Cache::set(self::CACHE_KEY, json_encode($rows, JSON_UNESCAPED_UNICODE), $ttl);
+            } catch (\Throwable $e) {
+                // 写缓存失败不影响本次引导
+            }
+        }
+
+        return self::$installedCache = $rows;
+    }
+
+    /**
+     * 使已安装模块快照缓存失效。
+     *
+     * 安装 / 卸载 / 启用 / 禁用 / 更新模块后必须调用，否则下一个请求
+     * 仍按旧列表引导：启停不生效、卸载后引导脚本仍可能被 include。
+     */
+    public static function forgetCache(): void
+    {
+        self::$installedCache = null;
+
+        try {
+            Cache::delete(self::CACHE_KEY);
+            if (function_exists('app') && app() !== null) {
+                // option('mod.*') 的请求级分组缓存（App 实现了 ArrayAccess）
+                app()->offsetUnset('options_mod');
+            }
+        } catch (\Throwable $e) {
+            // 缓存不可用时忽略：下次请求会回源查库，只是少了缓存
+        }
+    }
 
     public static function bootAll(): void
     {
@@ -40,7 +124,7 @@ class PluginLoader
         self::$booted = true;
 
         try {
-            $rows = Option::getArray('mod.installed.', 'REGEXP');
+            $rows = self::installedMods();
         } catch (\Throwable $e) {
             return; // options 表不可用时静默跳过
         }
@@ -48,7 +132,7 @@ class PluginLoader
         $isAdmin = defined('IN_ZAPCMS_ADMIN');
 
         foreach ($rows as $key => $json) {
-            $name = substr($key, strlen('mod.installed.'));
+            $name = substr($key, strlen(self::OPTION_PREFIX));
             $info = is_string($json) ? (json_decode($json, true) ?: []) : [];
             if (empty($info['status'])) {
                 continue;

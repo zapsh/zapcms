@@ -334,14 +334,10 @@ function installHtaccessAction()
     $content = "Options +FollowSymLinks -Indexes\n"
         . "RewriteEngine On\n"
         . "RewriteBase {$rewriteBase}\n\n"
-        . "# 禁止访问敏感目录\n"
         . "RewriteRule ^(app|config|vendor|var|\\.git|\\.idea)/ - [R=403,L]\n\n"
-        . "# 禁止下载敏感文件\n"
         . "RewriteRule ^(composer\\.(json|lock)|Dockerfile|console|README\\.md|LICENSE|CHANGELOG\\.md|\\.env|\\.env\\..*)$ - [R=403,L]\n\n"
-        . "# 禁止执行 storage/ 下的 PHP\n"
         . "RewriteCond %{REQUEST_URI} ^/storage/\n"
         . "RewriteRule \\.php$ - [R=403,L]\n\n"
-        . "# 主路由规则\n"
         . "RewriteCond %{REQUEST_FILENAME} !-d\n"
         . "RewriteCond %{REQUEST_FILENAME} !-f\n"
         . "RewriteRule ^ index.php [QSA,PT,L]\n";
@@ -514,9 +510,6 @@ function checkRewrite(): array
     $htHasRewrite = $htExists
         && preg_match('/RewriteEngine|try_files/i', (string) @file_get_contents($htPath)) === 1;
 
-    // 现场探测：请求一条干净 URL /z-admin 是否真的被路由到 index.php。
-    // 开启重写 → 抵达 index.php → 未安装时 302 跳转安装页（请求已进 PHP）→ 2xx/3xx 即生效；
-    // 未开启重写 → 服务器找不到该文件 → 404；SPA 误配 → 500。
     $probe  = probeHttp(installBaseUrl() . '/z-admin');
     $status = $probe['status'];
     $pass   = $status >= 200 && $status < 400;
@@ -553,8 +546,6 @@ function buildEnvChecks(): array
         || in_array('pgsql', $allDrivers)
         || in_array('sqlite', $allDrivers);
 
-    // 运行时目录（如 var/）不在安装包内，缺失时先尝试自动创建再判断可写，
-    // 避免环境检测因“目录不存在”而误判为不可写。
     $checkWritable = function (string $path): bool {
         $full = base_path($path);
         if (!is_dir($full)) {
@@ -563,8 +554,6 @@ function buildEnvChecks(): array
         return is_dir($full) && is_writable($full);
     };
 
-    // 配置文件（config/*.php）在安装前可能尚不存在，由安装程序负责生成。
-    // 因此：文件已存在则判断其自身可写；不存在则判断所在目录可写（能被创建即可）。
     $checkFileWritable = function (string $path): bool {
         $full = base_path($path);
         if (is_file($full)) {

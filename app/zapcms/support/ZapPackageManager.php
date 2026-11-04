@@ -1560,6 +1560,7 @@ class ZapPackageManager
     {
         $info['updated_at'] = time();
         Option::replace($this->modOptionKey($name), json_encode($info, JSON_UNESCAPED_UNICODE), 0, 1);
+        PluginLoader::forgetCache();
         return true;
     }
 
@@ -1584,6 +1585,7 @@ class ZapPackageManager
             'updated_at'   => time(),
         ];
         Option::replace($this->modOptionKey($name), json_encode($record, JSON_UNESCAPED_UNICODE), 0, 1);
+        PluginLoader::forgetCache();
         return true;
     }
 
@@ -1593,6 +1595,7 @@ class ZapPackageManager
     protected function removeInstalledModOption(string $name): bool
     {
         Option::remove($this->modOptionKey($name));
+        PluginLoader::forgetCache();
         return true;
     }
 

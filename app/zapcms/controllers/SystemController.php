@@ -56,7 +56,7 @@ class SystemController extends AdminController
                 'maintenance' => (bool)option('server.maintenance', false),
                 'admin_prefix' => option('server.admin_prefix', 'z-admin'),
             ],
-            // 缓存设置当前值（保存在 options 表 cache.*，未设置时取 config/cache.php 默认值）
+            // 缓存设置当前值（保存在 options 表 cache.*，未设置时取运行时默认值）
             'cache' => [
                 'status' => option('cache.status', config('cache.status', 'disabled')),
                 'default' => option('cache.default', config('cache.default', 'file')),
@@ -106,6 +106,8 @@ class SystemController extends AdminController
 
     /**
      * 将缓存设置（status / default / ttl / redis_*）保存到 options 表（cache.*）
+     *
+     * 保存后必须让启动配置快照失效，否则下一个请求仍按旧配置创建缓存驱动。
      */
     private function saveCacheOptions(array $cache): void
     {
@@ -143,6 +145,8 @@ class SystemController extends AdminController
             // 清除单个 option 缓存
             \zap\facades\Cache::delete($optionName);
         }
+        // 启动配置快照失效：下次请求重新从 options 表构建缓存驱动配置
+        app_cache_config_forget();
     }
 
     /**

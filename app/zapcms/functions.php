@@ -12,6 +12,91 @@ function mod_path(string $mod_name): string
 }
 
 /**
+ * 缓存运行参数快照文件。
+ *
+ * 「缓存怎么初始化」的配置本身不能存在 Cache facade 里 —— 读它需要先有驱动实例，
+ * 形成自举。因此单独用一个 PHP 数组文件做快照：首次请求查 options 表并写入，
+ * 之后直接 include，不再访问数据库。后台保存 cache.* 时删掉快照即可重建。
+ * 文件以 .php 结尾且只 return 数组，即使被直接访问也不会输出内容。
+ */
+function app_cache_config_file(): string
+{
+    return APP_ROOT . '/var/cache_config.php';
+}
+
+/**
+ * 删除快照，强制下次请求重新从 options 表读取。
+ */
+function app_cache_config_forget(): void
+{
+    $file = app_cache_config_file();
+    if (is_file($file)) {
+        @unlink($file);
+    }
+}
+
+/**
+ * 读取缓存运行参数（必须在任何 Cache:: 调用之前执行）。
+ *
+ * 原 config/cache.php 的默认值已内联在此，数据库 options 表是唯一权威来源。
+ * 返回平铺的 cache.* 键 => 字符串值，并做合法性收敛。
+ */
+function app_cache_config(): array
+{
+    $defaults = [
+        'default'        => 'file',
+        'status'         => 'disabled',
+        'ttl'            => '10000',
+        'redis_host'     => '127.0.0.1',
+        'redis_port'     => '6379',
+        'redis_password' => '',
+        'redis_database' => '0',
+        'redis_prefix'   => 'zapcms:',
+    ];
+
+    $file = app_cache_config_file();
+    if (is_file($file)) {
+        $cached = @include $file;
+        if (is_array($cached)) {
+            return array_merge($defaults, $cached);
+        }
+    }
+
+    // 首次（或快照被清除后）：从 options 表读取
+    try {
+        $rows = \zapcms\services\Option::getArray('cache', 'REGEXP');
+    } catch (\Throwable $e) {
+        // 数据库不可用：用默认值，且不写快照，避免把异常状态固化下来
+        return $defaults;
+    }
+
+    $config = $defaults;
+    foreach ($rows as $name => $value) {
+        $key = (string)$name;
+        if (strncmp($key, 'cache.', 6) === 0 && is_scalar($value)) {
+            $config[substr($key, 6)] = (string)$value;
+        }
+    }
+    $config['status']  = in_array($config['status'], ['enabled', 'disabled'], true) ? $config['status'] : 'disabled';
+    $config['default'] = in_array($config['default'], ['file', 'redis'], true) ? $config['default'] : 'file';
+    $config['ttl']     = (string)max(0, (int)$config['ttl']);
+
+    // 原子写快照；写失败不影响本次请求，只退化为每次查库
+    $dir = dirname($file);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    $tmp = $file . '.tmp.' . getmypid();
+    if (@file_put_contents($tmp, "<?php\nreturn " . var_export($config, true) . ";\n", LOCK_EX) !== false) {
+        if (!@rename($tmp, $file)) {
+            @unlink($tmp);
+        }
+    }
+
+    return $config;
+}
+
+/**
  * 获取单个配置项（带缓存）
  *
  * @param string $option_name

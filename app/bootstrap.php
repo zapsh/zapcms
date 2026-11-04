@@ -176,16 +176,46 @@ $app = new \zap\App(dirname(__DIR__));
 // ──────────────────── 运行参数（server.* / cache.*）从 options 表读取 ────────────────────
 // 维护模式、调试、日志、后台前缀等不再写入 config/config.php，统一保存在数据库 options 表，
 // 后台“基础设置 > 服务器 / 缓存”中修改后立即生效。
-// 读取优先走缓存（get_options），缓存驱动异常（如 Redis 不可用）时退化为直连数据库，保证站点可用。
+//
+// 缓存配置必须最先就绪：Cache 驱动在第一次 get_options() 时就会实例化，并把
+// status / default / redis 连接参数固化在实例里（见 Cache::make / getInstance）。
+// 过去先 get_options('cache') 再 config_set，后台设置始终作用于一个按旧默认值建好的
+// 驱动，因此怎么改都不生效。现在由 app_cache_config() 读快照（首次查库并写入）后
+// 立即种入 config，之后的第一次 Cache:: 调用读到的就是数据库里的真实设置。
+$cacheConfig = app_cache_config();
+foreach ($cacheConfig as $key => $value) {
+    config_set('cache.' . $key, $value);
+}
+config_set('cache.redis', [
+    'client'   => 'redis',
+    'params'   => [
+        $cacheConfig['redis_host'],
+        (int)$cacheConfig['redis_port'],
+        5.0,
+    ],
+    'password' => $cacheConfig['redis_password'],
+    'database' => (int)$cacheConfig['redis_database'],
+    // 键前缀：避免清理缓存时 flushDB 误删同库其它应用的数据
+    'prefix'   => $cacheConfig['redis_prefix'],
+]);
+
+// 主动探测驱动：Redis 连不上时本请求内退回「文件缓存 + 禁用」，保证站点仍可访问；
+// options 表里的设置保持不变，Redis 恢复后自动重新启用。
+try {
+    \zap\facades\Cache::has('__zap_cache_probe__');
+} catch (\Throwable $e) {
+    config_set('cache.default', 'file');
+    config_set('cache.status', 'disabled');
+}
+
+// 读取 server.* 优先走缓存（get_options），缓存驱动异常时退化为直连数据库
 try {
     $serverOptions = get_options('server', 'REGEXP');
-    $cacheOptions  = get_options('cache', 'REGEXP');
 } catch (\PDOException $e) {
     check_database_error($e);
     throw $e;
 } catch (\Throwable $e) {
     $serverOptions = \zapcms\services\Option::getArray('server', 'REGEXP');
-    $cacheOptions  = \zapcms\services\Option::getArray('cache', 'REGEXP');
 }
 
 $maintenance = (bool)($serverOptions['server.maintenance'] ?? false);
@@ -201,23 +231,6 @@ if (config('config.debug', false)) {
 } else {
     error_reporting(0);
 }
-
-// 缓存设置（cache.*）覆盖 config/cache.php 默认值
-foreach ($cacheOptions as $name => $value) {
-    config_set('cache.' . substr($name, 6), $value);
-}
-config_set('cache.redis', [
-    'client'   => 'redis',
-    'params'   => [
-        config('cache.redis_host', '127.0.0.1'),
-        (int)config('cache.redis_port', 6379),
-        5.0,
-    ],
-    'password' => (string)config('cache.redis_password', ''),
-    'database' => (int)config('cache.redis_database', 0),
-    // 键前缀：避免清理缓存时 flushDB 误删同库其它应用的数据
-    'prefix'   => (string)config('cache.redis_prefix', 'zapcms:'),
-]);
 
 // Maintenance Mode 开关（server.maintenance，保存在 options 表）：
 // 开启时仅放行后台请求，前台访问返回 503 维护页面

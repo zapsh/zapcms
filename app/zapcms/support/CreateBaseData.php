@@ -226,7 +226,7 @@ class CreateBaseData
                 ['id' => 1073, 'option_name' => 'upload.name_rule', 'option_value' => 'original', 'sort_order' => 0, 'autoload' => 1],
                 ['id' => 1074, 'option_name' => 'server.maintenance', 'option_value' => '0', 'sort_order' => 0, 'autoload' => 1],
                 ['id' => 1075, 'option_name' => 'server.log', 'option_value' => '1', 'sort_order' => 0, 'autoload' => 1],
-                ['id' => 1076, 'option_name' => 'server.debug', 'option_value' => '1', 'sort_order' => 0, 'autoload' => 1],
+                ['id' => 1076, 'option_name' => 'server.debug', 'option_value' => '0', 'sort_order' => 0, 'autoload' => 1],
                 ['id' => 1077, 'option_name' => 'server.admin_prefix', 'option_value' => 'z-admin', 'sort_order' => 0, 'autoload' => 1],
                 ['id' => 1078, 'option_name' => 'cache.status', 'option_value' => 'disabled', 'sort_order' => 0, 'autoload' => 1],
                 ['id' => 1079, 'option_name' => 'cache.default', 'option_value' => 'file', 'sort_order' => 0, 'autoload' => 1],

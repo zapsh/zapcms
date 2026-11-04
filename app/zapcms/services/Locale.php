@@ -29,6 +29,16 @@ class Locale
     /** 会话/配置文件里的键名 */
     const SESSION_KEY = 'zap_locale';
 
+    /** 未配置 cache.ttl 时使用的兜底秒数（与 get_options / NodeType 保持一致） */
+    const CACHE_TTL_FALLBACK = 10000;
+
+    /**
+     * 分组缓存 key（option('languages.*') 使用），保存语言设置时需要一并失效
+     */
+    const CACHE_GROUP_KEY = '_opts_languages';
+    /** 请求容器里 option('languages.*') 的分组键 */
+    const OPTION_GROUP_CONTAINER_KEY = 'options_languages';
+
     /**
      * 常用语言名称字典（code => [中文名, 本地语言名]）
      */
@@ -74,6 +84,34 @@ class Locale
     public static function normalize(string $locale): string
     {
         return Language::normalizeLocale($locale);
+    }
+
+    /**
+     * 读取语言配置（跨请求缓存，避免每次请求都查 options 表）。
+     *
+     * Cache::get 的第二参为 callable 时，缓存未命中会执行回调并把结果写回；
+     * 缓存 key 直接使用 option 名，与 get_option() 共用，forgetCache() 也按同名删除。
+     * option('languages.*') 另走 _opts_languages 分组缓存，由 forgetCache() 单独失效。
+     * 缓存驱动不可用（Redis 未启动、缓存目录不可写等）时退回直查数据库，
+     * 保证多语言功能不会因缓存故障而整体不可用。
+     */
+    protected static function cachedOption(string $key, string $default = ''): string
+    {
+        $ttl = (int) config('cache.ttl', 0);
+        if ($ttl <= 0) {
+            $ttl = static::CACHE_TTL_FALLBACK;
+        }
+
+        try {
+            $value = Cache::get($key, static function () use ($key, $default) {
+                return Option::get($key, $default);
+            }, $ttl);
+        } catch (Throwable $e) {
+            return (string) Option::get($key, $default);
+        }
+
+        // 缓存内容异常（例如 callable 返回 null 时 FileCache 会把闭包本身返回）时回落
+        return is_string($value) ? $value : $default;
     }
 
     /**
@@ -126,7 +164,7 @@ class Locale
 
         $default = '';
         try {
-            $default = static::normalize((string) Option::get(static::OPTION_DEFAULT, ''));
+            $default = static::normalize(static::cachedOption(static::OPTION_DEFAULT, ''));
         } catch (Throwable $e) {
             $default = '';
         }
@@ -442,12 +480,15 @@ class Locale
         static::$current = null;
 
         try {
-            Cache::delete('options_languages');
-            Cache::delete(static::OPTION_DEFAULT);
+            // cachedOption() 直接用 option 名作为 key，这里逐个失效
             Cache::delete(static::OPTION_AVAILABLE);
+            Cache::delete(static::OPTION_DEFAULT);
+            // option('languages.*') 走 get_options() 的分组缓存，也要失效
+            Cache::delete(static::CACHE_GROUP_KEY);
 
             if (function_exists('app') && app() !== null) {
-                app()->remove('options_languages');
+                // App 没有 remove()，但实现了 ArrayAccess，可清掉请求级分组缓存
+                app()->offsetUnset(static::OPTION_GROUP_CONTAINER_KEY);
             }
         } catch (Throwable $e) {
             // 缓存不可用时忽略
@@ -462,7 +503,7 @@ class Locale
     protected static function readOptionList(string $key): array
     {
         try {
-            $raw = Option::get($key, '');
+            $raw = static::cachedOption($key, '');
         } catch (Throwable $e) {
             return [];
         }
