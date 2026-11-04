@@ -373,7 +373,7 @@ const editorInstances = {};
 let activeFilePath = null;
 let editorSeq = 0;
 
-// 编辑器按需加载：首次打开文件时才下载 CodeMirror 6（assets/admin/js/editor.js）
+// 编辑器按需加载：首次打开文件时才下载 CodeMirror 6（Vite 构建产物 editor-[hash].js）
 let zapEditorPromise = null;
 function loadZapEditor() {
     if (window.ZapEditor) {
@@ -385,7 +385,7 @@ function loadZapEditor() {
     zapEditorPromise = new Promise(function(resolve, reject) {
         const script = document.createElement('script');
         script.type = 'module';
-        script.src = (window.ZAP_ASSETS_URL || '') + '/js/editor.js';
+        script.src = (window.ZAP_ASSETS_URL || '') + '/<?php echo \zapcms\support\Vite::jsPath('editor'); ?>';
         script.onload = function() {
             window.ZapEditor ? resolve(window.ZapEditor) : reject(new Error('编辑器初始化失败'));
         };
