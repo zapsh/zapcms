@@ -889,7 +889,7 @@ class ZQuery
 
         $current  = $this->current_page();
         $total    = $this->max_num_pages;
-        $baseUrl  = $options['base_url'] ?? strtok($_SERVER['REQUEST_URI'], '?');
+        $baseUrl  = $options['base_url'] ?? (strtok((string)($_SERVER['REQUEST_URI'] ?? ''), '?') ?: '/');
         $prevText = $options['prev_text'] ?? '&laquo; 上一页';
         $nextText = $options['next_text'] ?? '下一页 &raquo;';
         $showAll  = $options['show_all'] ?? false;

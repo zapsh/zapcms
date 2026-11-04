@@ -238,8 +238,8 @@ use \zap\facades\Url;
  
     
     <script src="<?php echo \zapcms\support\Vite::js('bootstrap.bundle'); ?>"></script>
-    <script src="<?php echo base_url();?>/assets/admin/js/zap-admin.js"></script>
     
+
 
     <script>
         <?php

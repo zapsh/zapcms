@@ -204,8 +204,7 @@
     <script src="<?php echo \zapcms\support\Vite::js('bootstrap.bundle'); ?>"></script>
 
     <!-- ZAP Admin JS -->
-    <script src="<?php echo base_url();?>/assets/admin/js/admin.js"></script>
-    <script src="<?php echo base_url();?>/assets/admin/js/zap-admin.js"></script>
+    <script src="<?php echo base_url();?>/assets/admin/js/admin.js?v=<?php echo (int) @filemtime(APP_ROOT . '/assets/admin/js/admin.js'); ?>"></script>
 
     <script>
         var loginUrl  = "<?php echo url_action('Auth@signIn');?>";

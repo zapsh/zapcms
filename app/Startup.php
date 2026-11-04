@@ -52,8 +52,11 @@ class Startup
         $this->router = $router;
 
         // 计算当前请求 URI（去除查询参数，解码中文等字符）
-        $this->currentUri = urldecode(strtok($_SERVER['REQUEST_URI'], '?') ?: '/');
-        $this->baseUrl = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
+        // CLI / 定时任务等场景下 $_SERVER 中可能不存在 REQUEST_URI、SCRIPT_NAME，使用空字符串兜底
+        $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+        $this->currentUri = urldecode(strtok($requestUri, '?') ?: '/');
+        $this->baseUrl = $scriptName !== '' ? rtrim(dirname($scriptName), '/') : '';
 
         // ──── ZQuery 统一查询 API ────
         $this->router->match(['GET', 'POST'], '/api/zquery', function () {
