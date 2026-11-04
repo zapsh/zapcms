@@ -1,237 +1,184 @@
 <?php
 
-use zapcms\services\NodeType;
+use zapcms\services\Dashboard;
 
 $page_title = '控制台';
 $this->layout('layouts/common');
 ?>
 
-<!--begin::Stats Row - Small Boxes-->
-<div class="row">
-    <?php
-    $box_colors = ['text-bg-primary', 'text-bg-success', 'text-bg-warning', 'text-bg-info', 'text-bg-danger', 'text-bg-secondary'];
-    $box_icons  = [
-        'fa fa-file-alt',
-        'fa fa-th',
-        'fa fa-camera',
-        'fa fa-layer-group',
-        'fa fa-images',
-        'fa fa-folder',
-    ];
-    $color_idx  = 0;
-    $icon_idx   = 0;
-    foreach ($node_types_statistics as $type => $count):
-        $color = $box_colors[$color_idx % count($box_colors)];
-        $icon  = $box_icons[$icon_idx % count($box_icons)];
-        $title = NodeType::getTitle($type);
-        $color_idx++;
-        $icon_idx++;
-    ?>
-    <div class="col-lg-3 col-6">
-        <div class="small-box <?php echo e($color); ?>">
-            <div class="inner">
-                <h3><?php echo e($count); ?></h3>
-                <p><?php echo e($title); ?></p>
-            </div>
-            <i class="<?php echo e($icon); ?> small-box-icon fs-1"></i>
-            <a href="<?php echo url_action("Node@{$type}"); ?>" class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover">
-                管理 <?php echo e($title); ?> <i class="fa fa-chevron-right"></i>
-            </a>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="text-muted small">你好，<?php echo e(\zapcms\services\Auth::user('full_name', '')); ?></span>
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-dashboard-customize"
+            data-bs-toggle="modal" data-bs-target="#dashboardCustomizeModal">
+        <i class="fa fa-table-columns me-1"></i>自定义首页
+    </button>
+</div>
+
+<?php echo $before_html; ?>
+
+<div class="row" id="dashboardWidgets">
+    <?php foreach ($active as $widget): ?>
+        <div class="<?php echo e($widget['col']); ?>" data-widget="<?php echo e($widget['id']); ?>">
+            <?php echo Dashboard::renderWidget($widget, $admin_id); ?>
         </div>
-    </div>
     <?php endforeach; ?>
-</div>
-<!--end::Stats Row-->
-
-<!--begin::Main Content Row-->
-<div class="row">
-    <!--begin::Pages Section-->
-    <div class="col-lg-7">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fa fa-file card-header-icon text-primary"></i> 单页管理
-                </h3>
-                <div class="card-tools">
-                    <span class="badge text-bg-secondary"><?php echo count($pages); ?> 个页面</span>
-                </div>
-            </div>
-            <div class="card-body p-0">
-                <?php if (empty($pages)): ?>
-                <div class="p-4 text-center text-muted">
-                    <i class="fa fa-inbox fs-1 d-block mb-2"></i>
-                    暂无单页内容
-                </div>
-                <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="ps-3">标题</th>
-                                <th>状态</th>
-                                <th class="text-end pe-3">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($pages as $page): ?>
-                            <tr>
-                                <td class="ps-3">
-                                    <a href="<?php echo url_action("Node@page/edit/{$page['id']}"); ?>" class="text-decoration-none">
-                                        <i class="fa fa-file-alt text-success me-1"></i>
-                                        <?php echo htmlspecialchars($page['title']); ?>
-                                    </a>
-                                </td>
-                                <td>
-                                    <?php if (!empty($page['status'])): ?>
-                                    <span class="badge text-bg-success">已发布</span>
-                                    <?php else: ?>
-                                    <span class="badge text-bg-warning">草稿</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="text-end pe-3">
-                                    <a href="<?php echo url_action("Node@page/edit/{$page['id']}"); ?>"
-                                       class="btn btn-sm btn-outline-primary"
-                                       title="编辑">
-                                        <i class="fa fa-edit"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-    <!--end::Pages Section-->
-
-    <!--begin::Website Info-->
-    <div class="col-lg-5">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fa fa-info-circle card-header-icon text-info"></i> 网站信息
-                </h3>
-            </div>
-            <div class="card-body p-0">
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><i class="fa fa-language me-2 text-muted"></i>系统语言</span>
-                        <span class="fw-semibold"><?php echo req()->language(); ?></span>
-                    </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><i class="fa fa-palette me-2 text-muted"></i>站点模版</span>
-                        <span class="fw-semibold"><?php echo option('website.theme', 'basic'); ?></span>
-                    </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><i class="fa fa-upload me-2 text-muted"></i>上传限制</span>
-                        <span class="fw-semibold"><?php echo ini_get('upload_max_filesize'); ?></span>
-                    </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><i class="fa fa-microchip me-2 text-muted"></i>内存限制</span>
-                        <span class="fw-semibold"><?php echo ini_get('memory_limit'); ?></span>
-                    </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><i class="fa fa-microchip me-2 text-muted"></i>PHP 版本</span>
-                        <span class="fw-semibold"><?php echo PHP_VERSION; ?></span>
-                    </div>
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><i class="fa fa-database me-2 text-muted"></i>数据库</span>
-                        <span class="fw-semibold"><?php echo \zap\DB::connection()->getAttribute(PDO::ATTR_DRIVER_NAME); ?></span>
-                    </div>
+    <?php if (empty($active)): ?>
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-body text-center text-muted py-5">
+                    <i class="fa fa-table-columns fs-1 d-block mb-2"></i>
+                    当前没有显示任何组件，点击右上角「自定义首页」添加。
                 </div>
             </div>
         </div>
-    </div>
-    <!--end::Website Info-->
+    <?php endif; ?>
 </div>
-<!--end::Main Content Row-->
 
-<!--begin::System Info-->
-<?php
-$driver = \zap\DB::connection()->getAttribute(PDO::ATTR_DRIVER_NAME);
-// 获取数据库版本
-if ($driver === 'mysql') {
-    $rows = \zap\DB::select("SELECT VERSION()");
-    $dbVer = $rows[0]['VERSION()'] ?? '';
-} elseif ($driver === 'sqlite') {
-    $dbh = new \PDO('sqlite::memory:');
-    if ($dbh) {
-        $dbVer = $dbh->query('select sqlite_version()')->fetchColumn(0);
-        $dbh = null;
-    } else {
-        $dbVer = '当前环境不支持sqlite3';
-    }
-} else {
-    $dbVer = '';
-}
-?>
-<div class="row">
-    <div class="col-12">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3 class="card-title">
-                    <i class="fa fa-server card-header-icon text-secondary"></i> 系统信息
-                </h3>
-                <div class="card-tools">
-                    <button type="button" class="btn btn-tool" data-zui-toggle="card-collapse" aria-label="折叠">
-                        <i data-zui-icon="expand" class="fa fa-plus"></i>
-                        <i data-zui-icon="collapse" class="fa fa-minus"></i>
-                    </button>
-                </div>
+<?php echo $after_html; ?>
+
+<!-- 自定义控制台 -->
+<div class="modal fade" id="dashboardCustomizeModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h6 class="modal-title"><i class="fa fa-table-columns me-1"></i>自定义控制台</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-striped mb-0">
-                        <tbody>
-                        <tr>
-                            <td class="fw-semibold" style="width: 160px;">
-                                <i class="fa fa-cube me-2 text-primary"></i>ZapCMS 版本
-                            </td>
-                            <td>v<?php echo ZAP_CMS_VERSION . '-' . ZAP_CMS_RELEASE_DATE; ?></td>
-                            <td class="fw-semibold" style="width: 120px;">
-                                <i class="fa fa-code me-2 text-success"></i>PHP 版本
-                            </td>
-                            <td><?php echo PHP_VERSION . ' (' . php_sapi_name() . ')'; ?></td>
-                        </tr>
-                        <tr>
-                            <td class="fw-semibold">
-                                <i class="fa fa-database me-2 text-warning"></i><?php echo e($driver); ?>
-                            </td>
-                            <td>v<?php echo e($dbVer); ?></td>
-                            <td class="fw-semibold">
-                                <i class="fa fa-shield-alt me-2 text-info"></i>OpenSSL
-                            </td>
-                            <td><?php echo defined("OPENSSL_VERSION_TEXT") ? OPENSSL_VERSION_TEXT : '不支持'; ?></td>
-                        </tr>
-                        <tr>
-                            <td class="fw-semibold">
-                                <i class="fa fa-image me-2 text-danger"></i>PHP GD
-                            </td>
-                            <td><?php $gdInfo = gd_info(); echo current($gdInfo); ?></td>
-                            <td class="fw-semibold">
-                                <i class="fa fa-plug me-2 text-secondary"></i>PDO 驱动
-                            </td>
-                            <td><?php echo join(' / ', PDO::getAvailableDrivers()); ?></td>
-                        </tr>
-                        <tr>
-                            <td class="fw-semibold">
-                                <i class="fa fa-globe me-2 text-primary"></i>Web Server
-                            </td>
-                            <td colspan="3"><?php echo \zap\http\Request::server('SERVER_SOFTWARE'); ?></td>
-                        </tr>
-                        <tr>
-                            <td class="fw-semibold">
-                                <i class="fa fa-desktop me-2 text-success"></i>操作系统
-                            </td>
-                            <td colspan="3"><?php echo php_uname(); ?></td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-2">
+                    设置仅对当前管理员生效。勾选显示、取消勾选隐藏，用箭头调整显示顺序。
+                </p>
+                <div id="dashboardWidgetList" class="list-group"></div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary me-auto" id="btn-dashboard-reset">
+                    <i class="fa fa-rotate-left me-1"></i>恢复默认
+                </button>
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-sm btn-primary" id="btn-dashboard-save">保存</button>
             </div>
         </div>
     </div>
 </div>
-<!--end::System Info-->
+
+<script>
+    (function () {
+        const Api = {
+            list: '<?php echo url_action('Index@dashboardWidgets'); ?>',
+            save: '<?php echo url_action('Index@saveDashboardWidgets'); ?>',
+            reset: '<?php echo url_action('Index@resetDashboardWidgets'); ?>'
+        };
+        const $list = $('#dashboardWidgetList');
+        let items = [];
+
+        function syncEnabled() {
+            $list.children('.list-group-item').each(function (i) {
+                if (items[i]) {
+                    items[i].enabled = $(this).find('input[type="checkbox"]').is(':checked');
+                }
+            });
+        }
+
+        function render() {
+            $list.empty();
+            items.forEach(function (item, i) {
+                const $row = $('<div class="list-group-item d-flex align-items-center gap-2">')
+                    .attr('data-id', item.id);
+
+                $row.append($('<input type="checkbox" class="form-check-input mt-0 flex-shrink-0">')
+                    .prop('checked', !!item.enabled));
+                $row.append($('<i class="text-secondary" style="width:1.1rem">').addClass(item.icon || 'fa fa-cube'));
+
+                const $text = $('<div class="flex-grow-1 min-w-0">');
+                $text.append($('<div class="fw-semibold small">').text(item.title));
+                $text.append($('<div class="text-muted" style="font-size:.75rem">').text(item.description));
+                $row.append($text);
+
+                $row.append($('<button type="button" class="btn btn-sm btn-light py-0 px-2" data-move="up" title="上移">')
+                    .html('<i class="fa fa-arrow-up"></i>').prop('disabled', i === 0));
+                $row.append($('<button type="button" class="btn btn-sm btn-light py-0 px-2" data-move="down" title="下移">')
+                    .html('<i class="fa fa-arrow-down"></i>').prop('disabled', i === items.length - 1));
+
+                $list.append($row);
+            });
+        }
+
+        function load() {
+            $list.html('<div class="list-group-item text-center text-muted py-4">加载中...</div>');
+            $.getJSON(Api.list, function (res) {
+                const data = res && res.data;
+                items = (data && Array.isArray(data.items)) ? data.items : [];
+                render();
+            }).fail(function () {
+                $list.html('<div class="list-group-item text-center text-danger py-4">加载失败，请稍后重试</div>');
+            });
+        }
+
+        function collect() {
+            syncEnabled();
+            const order = [], hidden = [];
+            $list.children('.list-group-item').each(function () {
+                const id = $(this).attr('data-id');
+                order.push(id);
+                if (!$(this).find('input[type="checkbox"]').is(':checked')) {
+                    hidden.push(id);
+                }
+            });
+            return {order: order, hidden: hidden};
+        }
+
+        $('#dashboardCustomizeModal').on('show.bs.modal', load);
+
+        $list.on('click', '[data-move]', function () {
+            const idx = $(this).closest('.list-group-item').index();
+            const target = idx + ($(this).attr('data-move') === 'up' ? -1 : 1);
+            if (target < 0 || target >= items.length) return;
+            syncEnabled();
+            const tmp = items[idx];
+            items[idx] = items[target];
+            items[target] = tmp;
+            render();
+        });
+
+        $('#btn-dashboard-save').on('click', function () {
+            const $btn = $(this);
+            const payload = collect();
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>保存中...');
+            $.ajax({
+                url: Api.save,
+                method: 'post',
+                data: payload,
+                dataType: 'json',
+                success: function (res) {
+                    const ok = res && res.code === 0;
+                    try {
+                        ZapToast.alert(res && res.msg ? res.msg : (ok ? '已保存' : '保存失败'), {
+                            delay: 2000, bgColor: ok ? bgSuccess : bgDanger
+                        });
+                    } catch (err) { /* 提示失败不影响刷新 */ }
+                    if (ok) {
+                        setTimeout(function () { window.location.reload(); }, 500);
+                    }
+                },
+                error: function () {
+                    ZapToast.alert('请求失败，请稍后重试', {bgColor: bgDanger});
+                },
+                complete: function () {
+                    $btn.prop('disabled', false).html('保存');
+                }
+            });
+        });
+
+        $('#btn-dashboard-reset').on('click', function () {
+            $.post(Api.reset, {}, function (res) {
+                const ok = res && res.code === 0;
+                ZapToast.alert(res && res.msg ? res.msg : (ok ? '已恢复' : '操作失败'), {
+                    delay: 2000, bgColor: ok ? bgSuccess : bgDanger
+                });
+                if (ok) {
+                    setTimeout(function () { window.location.reload(); }, 500);
+                }
+            }, 'json');
+        });
+    })();
+</script>
