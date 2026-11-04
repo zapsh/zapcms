@@ -131,10 +131,10 @@
                         }
                         if (trim($text) === '') { continue; }
                 ?>
-                <div class="alert alert-<?php echo $variant; ?> alert-dismissible d-flex align-items-start py-2 px-3 mb-3 small" role="alert">
-                    <i class="fas <?php echo $flashIcon[$variant] ?? 'fa-circle-info'; ?> me-2 mt-1"></i>
+                <div class="alert alert-<?php echo $variant; ?> d-flex align-items-center py-2 px-3 mb-3 small" role="alert">
+                    <i class="fas <?php echo $flashIcon[$variant] ?? 'fa-circle-info'; ?> me-2"></i>
                     <div class="flex-grow-1"><?php echo e($text); ?></div>
-                    <button type="button" class="btn-close ms-2 mt-1" data-bs-dismiss="alert" aria-label="关闭"></button>
+                    <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="关闭"></button>
                 </div>
                 <?php
                     endforeach;
@@ -178,19 +178,6 @@
                         </button>
                     </div>
 
-                    <!-- 记住我 & 忘记密码 -->
-                    <div class="row mb-3">
-                        <div class="col-8">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="remember" id="remember" value="1">
-                                <label class="form-check-label" for="remember">记住我</label>
-                            </div>
-                        </div>
-                        <div class="col-4 text-end">
-                            <a href="javascript:;" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#forgotModal">忘记密码</a>
-                        </div>
-                    </div>
-
                     <!-- 登录按钮 -->
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary btn-login" id="btn-login">
@@ -209,27 +196,7 @@
             </a>
         </div>
         <div class="text-center mt-2 auth-login-footer">
-            &copy; <?php echo date('Y'); ?> ZAP CMS
-        </div>
-    </div>
-
-    <!-- 忘记密码提示 -->
-    <div class="modal fade" id="forgotModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h6 class="modal-title"><i class="fas fa-key me-1"></i>忘记密码</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
-                </div>
-                <div class="modal-body small">
-                    <p class="mb-2">出于安全考虑，后台不提供网页自助重置。请在服务器上执行以下命令重置密码：</p>
-                    <pre class="bg-body-tertiary rounded p-2 mb-2 small">php console zap:ResetPassword -u 用户名 -p 新密码</pre>
-                    <p class="mb-0 text-secondary">如无服务器权限，请联系站点管理员。</p>
-                </div>
-                <div class="modal-footer py-2">
-                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">知道了</button>
-                </div>
-            </div>
+            &copy; <?php echo date('Y'); ?> ZapCMS
         </div>
     </div>
 
@@ -256,10 +223,10 @@
             var icon = variant === 'success' ? 'fa-circle-check'
                      : (variant === 'warning' ? 'fa-triangle-exclamation' : 'fa-circle-exclamation');
             var text = $('<div>').text(msg == null ? '' : String(msg)).html();
-            var html = '<div class="alert alert-' + variant + ' alert-dismissible d-flex align-items-start py-2 px-3 mb-3 small" role="alert">'
-                     + '<i class="fas ' + icon + ' me-2 mt-1"></i>'
+            var html = '<div class="alert alert-' + variant + ' d-flex align-items-center py-2 px-3 mb-3 small" role="alert">'
+                     + '<i class="fas ' + icon + ' me-2"></i>'
                      + '<div class="flex-grow-1">' + text + '</div>'
-                     + '<button type="button" class="btn-close ms-2 mt-1" data-bs-dismiss="alert" aria-label="关闭"></button>'
+                     + '<button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="关闭"></button>'
                      + '</div>';
             $('#loginAlert').html(html);
         }
@@ -291,7 +258,6 @@
             var username  = $.trim($('#user_login').val());
             var password  = $.trim($('#user_pass').val());
             var token     = $('input[name="token"]').val();
-            var remember  = $('#remember').is(':checked') ? 1 : 0;
 
             if (username == '') {
                 ZapToast.alert({title: '请输入账号', bg: bgDanger});
@@ -305,11 +271,11 @@
             }
 
             clearLoginAlert();
-            loginSystem(username, password, token, remember);
+            loginSystem(username, password, token);
             return false;
         });
 
-        function loginSystem(username, password, token, remember)
+        function loginSystem(username, password, token)
         {
             if (submitting) { return; }
             submitting = true;
@@ -322,8 +288,7 @@
                 data: {
                     user_login: username,
                     user_pass: password,
-                    token: token,
-                    remember: remember
+                    token: token
                 },
                 dataType: 'json',
                 method: 'POST',

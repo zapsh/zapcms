@@ -146,7 +146,7 @@ class SystemController extends AdminController
     }
 
     /**
-     * 日志查看
+     * 日志查看（系统日志文件 + 数据库操作日志，合并在一个页面切换）
      */
     public function logs()
     {
@@ -154,18 +154,21 @@ class SystemController extends AdminController
 
         \view('system.logs', [
             'page_title'    => '日志查看',
-            'page_subtitle' => '查看运行日志，支持按级别与关键字筛选',
+            'page_subtitle' => '系统运行日志与数据库操作审计日志，可按级别 / 分类 / 关键字筛选',
             'breadcrumbs'   => [
                 ['title' => '控制台', 'url' => \zap\facades\Url::action('Index')],
                 ['title' => '日志查看'],
             ],
-            'log_files' => $viewer->files(),
-            'log_dir'   => $viewer->directory(),
+            'log_files'  => $viewer->files(),
+            'log_dir'    => $viewer->directory(),
+            'categories' => ['auth', 'user', 'content', 'system', 'security'],
         ]);
     }
 
     /**
      * 日志数据（AJAX：筛选 + 分页）
+     *
+     * source=file（默认）读系统日志文件；source=db 读数据库审计日志。
      */
     public function logsData()
     {
@@ -174,20 +177,34 @@ class SystemController extends AdminController
             return;
         }
 
-        $page  = max(1, (int)Request::post('page', 1));
-        $limit = 100;
+        $source = strtolower((string)Request::post('source', 'file'));
+        $page   = max(1, (int)Request::post('page', 1));
+        $limit  = 100;
 
         try {
             $viewer = new \zapcms\services\LogViewer();
-            $result = $viewer->read(
-                (string)Request::post('file', ''),
-                [
-                    'level'   => (string)Request::post('level', ''),
-                    'keyword' => (string)Request::post('keyword', ''),
-                ],
-                $limit,
-                ($page - 1) * $limit
-            );
+
+            if ($source === 'db') {
+                $result = $viewer->readDb(
+                    [
+                        'category' => (string)Request::post('category', ''),
+                        'level'    => (string)Request::post('level', ''),
+                        'keyword'  => (string)Request::post('keyword', ''),
+                    ],
+                    $limit,
+                    ($page - 1) * $limit
+                );
+            } else {
+                $result = $viewer->read(
+                    (string)Request::post('file', ''),
+                    [
+                        'level'   => (string)Request::post('level', ''),
+                        'keyword' => (string)Request::post('keyword', ''),
+                    ],
+                    $limit,
+                    ($page - 1) * $limit
+                );
+            }
 
             Response::json(['code' => 0, 'data' => $result]);
         } catch (\Throwable $e) {
@@ -196,10 +213,33 @@ class SystemController extends AdminController
     }
 
     /**
-     * 下载日志文件
+     * 下载日志（文件或数据库审计日志）
      */
     public function logsDownload()
     {
+        $source = strtolower((string)($_GET['source'] ?? 'file'));
+
+        if ($source === 'db') {
+            $rows = \zapcms\models\AdminLog::search([], 5000, 0)['entries'];
+            $out  = "时间\t级别\t分类\t用户\t内容\n";
+            foreach ($rows as $r) {
+                $text = ($r['title'] ?? '')
+                    . (($r['content'] ?? '') !== '' ? '：' . $r['content'] : '');
+                $out .= sprintf(
+                    "%s\t%s\t%s\t%s\t%s\n",
+                    date('Y-m-d H:i:s', (int)($r['request_time'] ?? 0)),
+                    $r['level'] ?? '',
+                    $r['category'] ?? '',
+                    $r['username'] ?? 'system',
+                    str_replace(["\r", "\n", "\t"], ' ', $text)
+                );
+            }
+            header('Content-Type: text/plain; charset=utf-8');
+            header('Content-Disposition: attachment; filename="admin_logs_' . date('Ymd_His') . '.txt"');
+            echo $out;
+            exit;
+        }
+
         $viewer = new \zapcms\services\LogViewer();
         $file   = $viewer->resolve((string)($_GET['file'] ?? ''));
 
@@ -217,7 +257,7 @@ class SystemController extends AdminController
     }
 
     /**
-     * 清空日志（指定文件或全部）
+     * 清空日志（指定文件或全部；source=db 时清空数据库审计日志）
      */
     public function logsClear()
     {
@@ -226,7 +266,19 @@ class SystemController extends AdminController
             return;
         }
 
+        $source = strtolower((string)Request::post('source', 'file'));
+
         try {
+            if ($source === 'db') {
+                $pdo   = \zap\DB::getPDO();
+                $table = $pdo->quoteTable('admin_logs');
+                $count = (int)$pdo->query("SELECT COUNT(*) FROM {$table}")->fetchColumn();
+                $pdo->rawExec("DELETE FROM {$table}");
+
+                Response::json(['code' => 0, 'msg' => "已清空 {$count} 条数据库日志"]);
+                return;
+            }
+
             $viewer = new \zapcms\services\LogViewer();
             $count  = $viewer->clear((string)Request::post('file', ''));
 

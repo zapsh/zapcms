@@ -75,7 +75,13 @@ $levels = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTICE', 'INFO
             <div class="card-body">
                 <!--begin::筛选-->
                 <div class="row g-2 mb-3">
-                    <div class="col-md-4">
+                    <div class="col-md-2">
+                        <select id="logSource" class="form-select form-select-sm">
+                            <option value="file">系统日志文件</option>
+                            <option value="db">数据库操作日志</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4" id="fileCol">
                         <select id="logFile" class="form-select form-select-sm">
                             <?php if (empty($log_files)): ?>
                                 <option value="">暂无日志文件</option>
@@ -89,7 +95,15 @@ $levels = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTICE', 'INFO
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4 d-none" id="categoryCol">
+                        <select id="logCategory" class="form-select form-select-sm">
+                            <option value="">全部分类</option>
+                            <?php foreach ($categories as $cat): ?>
+                                <option value="<?php echo e($cat); ?>"><?php echo e($cat); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
                         <select id="logLevel" class="form-select form-select-sm">
                             <option value="">全部级别</option>
                             <?php foreach ($levels as $level): ?>
@@ -101,7 +115,7 @@ $levels = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTICE', 'INFO
                         <input type="text" id="logKeyword" class="form-control form-control-sm"
                                placeholder="关键字（回车搜索）">
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-1">
                         <button type="button" class="btn btn-primary btn-sm w-100" onclick="logSearch()">
                             <i class="fa fa-magnifying-glass me-1"></i>搜索
                         </button>
@@ -150,7 +164,7 @@ $levels = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTICE', 'INFO
     var logDownloadUrl = '<?php echo Url::action('System@logsDownload'); ?>';
     var logClearUrl = '<?php echo Url::action('System@logsClear'); ?>';
 
-    var logState = {page: 1, limit: 100, total: 0, loading: false};
+    var logState = {page: 1, limit: 100, total: 0, loading: false, source: 'file'};
     var logTimer = null;
 
     var logLevelClass = {
@@ -171,12 +185,29 @@ $levels = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTICE', 'INFO
     }
 
     function logParams() {
-        return {
-            file: $('#logFile').val() || '',
+        var source = $('#logSource').val() || 'file';
+        var p = {
+            source: source,
             level: $('#logLevel').val() || '',
             keyword: $('#logKeyword').val() || '',
             page: logState.page
         };
+        if (source === 'db') {
+            p.category = $('#logCategory').val() || '';
+        } else {
+            p.file = $('#logFile').val() || '';
+        }
+        return p;
+    }
+
+    function toggleLogSource() {
+        if (($('#logSource').val() || 'file') === 'db') {
+            $('#fileCol').addClass('d-none');
+            $('#categoryCol').removeClass('d-none');
+        } else {
+            $('#fileCol').removeClass('d-none');
+            $('#categoryCol').addClass('d-none');
+        }
     }
 
     function logLoad(scrollBottom) {
@@ -184,7 +215,9 @@ $levels = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTICE', 'INFO
             return;
         }
 
-        if (!$('#logFile').val()) {
+        logState.source = $('#logSource').val() || 'file';
+
+        if (logState.source !== 'db' && !$('#logFile').val()) {
             $('#logList').html('<div class="log-empty">暂无日志文件</div>');
             $('#logMeta').text('—');
             return;
@@ -255,7 +288,7 @@ $levels = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTICE', 'INFO
     }
 
     $(function () {
-        $('#logFile, #logLevel').on('change', logSearch);
+        $('#logFile, #logCategory, #logLevel, #logSource').on('change', logSearch);
         $('#logKeyword').on('keydown', function (e) {
             if (e.key === 'Enter') {
                 logSearch();
@@ -279,6 +312,11 @@ $levels = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTICE', 'INFO
         $('#logDownload').on('click', function (e) {
             e.preventDefault();
 
+            if (($('#logSource').val() || 'file') === 'db') {
+                window.location.href = logDownloadUrl + '?source=db';
+                return;
+            }
+
             if (!$('#logFile').val()) {
                 return;
             }
@@ -289,8 +327,9 @@ $levels = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTICE', 'INFO
         $('#logClear').on('click', function (e) {
             e.preventDefault();
 
+            var source = $('#logSource').val() || 'file';
             var file = $('#logFile').val();
-            var label = file ? file : '全部日志';
+            var label = source === 'db' ? '数据库操作日志' : (file ? file : '全部日志');
 
             Swal.fire({
                 title: '确认清空' + label + '？',
@@ -309,7 +348,7 @@ $levels = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTICE', 'INFO
                     url: logClearUrl,
                     method: 'post',
                     dataType: 'json',
-                    data: {file: file || ''},
+                    data: {source: source, file: file || ''},
                     success: function (res) {
                         ZapToast.alert(res.msg, {
                             bgColor: res.code === 0 ? bgSuccess : bgDanger,
@@ -339,6 +378,7 @@ $levels = ['EMERGENCY', 'ALERT', 'CRITICAL', 'ERROR', 'WARNING', 'NOTICE', 'INFO
             }
         });
 
+        toggleLogSource();
         logLoad(false);
     });
 </script>

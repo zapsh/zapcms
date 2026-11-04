@@ -46,8 +46,10 @@ class CreateTables
             $table->integer('id')->autoIncrement();
             $table->integer('uid');
             $table->varchar('username', 255);
+            $table->varchar('category', 50)->default('system');
             $table->varchar('title', 255);
             $table->text('content');
+            $table->varchar('level', 20)->default('INFO');
             $table->varchar('ipaddress', 45);
             $table->text('request_url');
             $table->text('user_agent');
@@ -55,6 +57,9 @@ class CreateTables
 
             $table->addPrimaryKey('id');
             $table->addIndex('idx_uid',['uid']);
+            $table->addIndex('idx_admin_logs_category',['category']);
+            $table->addIndex('idx_admin_logs_level',['level']);
+            $table->addIndex('idx_admin_logs_request_time',['request_time']);
 
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });

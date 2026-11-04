@@ -163,6 +163,45 @@ class LogViewer
     }
 
     /**
+     * 读取数据库审计日志（admin_logs）。
+     *
+     * 返回结构与 read() 一致，便于前端统一渲染。
+     *
+     * @param array $filter  ['category' =>, 'level' =>, 'keyword' =>]
+     * @param int   $limit   每页条数
+     * @param int   $offset  偏移
+     *
+     * @return array{total:int, limit:int, offset:int, entries:array}
+     */
+    public function readDb(array $filter = [], int $limit = 100, int $offset = 0): array
+    {
+        $data    = \zapcms\models\AdminLog::search($filter, $limit, $offset);
+        $entries = [];
+
+        foreach ($data['entries'] as $row) {
+            $title   = (string)($row['title'] ?? '');
+            $content = (string)($row['content'] ?? '');
+            $message = $title . ($content !== '' ? '：' . $content : '');
+
+            $entries[] = [
+                'time'    => date('Y-m-d H:i:s', (int)($row['request_time'] ?? 0)),
+                'level'   => strtoupper((string)($row['level'] ?? 'INFO')),
+                'message' => $message,
+                'file'    => ($row['username'] ?? 'system')
+                    . (($row['ipaddress'] ?? '') !== '' ? '@' . $row['ipaddress'] : ''),
+                'raw'     => ($row['category'] ?? '') . ' ' . $title,
+            ];
+        }
+
+        return [
+            'total'   => $data['total'],
+            'limit'   => $limit,
+            'offset'  => $offset,
+            'entries' => $entries,
+        ];
+    }
+
+    /**
      * 读取文件尾部若干行。
      *
      * @return string[]
