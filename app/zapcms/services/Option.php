@@ -111,7 +111,7 @@ class Option
         return $rows[0]['option_value'];
     }
 
-    public static function getArray(string $option_name, string $type = '='): array
+    public static function getArray(string|array $option_name, string $type = '='): array
     {
         if(is_array($option_name) && $type == 'REGEXP'){
             $option_name = join('|',array_filter($option_name,'is_scalar'));
@@ -130,7 +130,7 @@ class Option
         return $options;
     }
 
-    public static function getKeys(string $option_name, string $type = '='): array
+    public static function getKeys(string|array $option_name, string $type = '='): array
     {
         if(is_array($option_name) && $type == 'REGEXP'){
             // 过滤掉非标量元素，避免误传多维数组时触发 Array to string conversion

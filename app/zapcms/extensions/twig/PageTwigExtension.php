@@ -75,8 +75,10 @@ class PageTwigExtension extends AbstractExtension implements GlobalsInterface
     public function getGlobals(): array
     {
         return [
-            'pageState' => pageState(),
-            'now'       => new \DateTime(),
+            'pageState'     => pageState(),
+            'now'           => new \DateTime(),
+            // 当前预览主题名（前台 Startup 注入；非预览时为 null）
+            'zPreviewTheme' => \app()->get('preview_theme_name'),
         ];
     }
 }

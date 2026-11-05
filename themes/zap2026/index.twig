@@ -1,9 +1,14 @@
 {% extends 'layout/default.twig' %}
 
 {% block content %}
-{% set banners = option_array('zap2026_home.slide', []) %}
+{# 无自定义轮播时使用主题内置默认图（与后台 admin/settings.php 的 $defaultSlides 保持一致） #}
+{% set defaultSlides = [
+    {'img_path': theme_url('img/banner1.png'), 'link': 'https://zap.cn', 'target': '_blank'},
+    {'img_path': theme_url('img/banner2.png'), 'link': 'https://zap.cn', 'target': '_blank'}
+] %}
+{% set banners = option_array('zap2026_home.slide', defaultSlides) %}
 {% if banners is empty %}
-    {% set banners = option_json('zap2026_home.slide', [], true) %}
+    {% set banners = option_json('zap2026_home.slide', defaultSlides, true) %}
 {% endif %}
 {% set latestNews = pageState.getLatestNews() %}
 

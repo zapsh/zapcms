@@ -96,12 +96,62 @@ class Startup
         $website = get_options('website', 'REGEXP');
         app()->set('options_website', $website);
 
-        config_set('config.theme', $website['website.theme'] ?? 'basic');
-        if (($website['website.theme'] ?? 'basic') !== 'basic') {
+        // ──── 主题预览（仅管理员，不改激活项）────
+        // 通过 ?preview_theme=xxx 进入，持久化到 session（30 分钟内有效），便于在预览站内跳转保持；
+        // 传空值（?preview_theme= 或 off）可立即退出预览。游客请求忽略，避免越权预览未启用主题。
+        $activeTheme  = $website['website.theme'] ?? 'basic';
+        $previewTheme = null;
+        if (\zapcms\services\Auth::isLogin()) {
+            if (isset($_GET['preview_theme'])) {
+                $reqTheme = (string) $_GET['preview_theme'];
+                if ($reqTheme === '' || $reqTheme === 'off' || $reqTheme === '0') {
+                    session()->remove('preview_theme');
+                    session()->remove('preview_theme_ts');
+                } else {
+                    session()->set('preview_theme', $reqTheme);
+                    session()->set('preview_theme_ts', time());
+                }
+            }
+            $sessTheme = (string) session()->get('preview_theme', '');
+            $sessTs    = (int) session()->get('preview_theme_ts', 0);
+            if ($sessTheme !== '' && (time() - $sessTs) < 1800) {
+                if ($sessTheme !== $activeTheme
+                    && preg_match('/^[a-z0-9_-]{1,255}$/i', $sessTheme) && is_dir(themes_path($sessTheme))) {
+                    $previewTheme = $sessTheme;
+                }
+            } elseif ($sessTheme !== '') {
+                // 预览过期：清理，避免长期残留到正常访问网站
+                session()->remove('preview_theme');
+                session()->remove('preview_theme_ts');
+            }
+        }
+        $theme = $previewTheme ?? $activeTheme;
+
+        // 暴露当前预览主题名给模板（用于在前台显示“预览中”提示条）
+        app()->set('preview_theme_name', $previewTheme);
+
+        // 全局注入“预览中”提示条：插到 <body> 之后（文档流顶部），
+        // 不依赖具体主题布局，所有主题（含 basic 等 PHP 模板主题）预览都生效；
+        // 仅当响应含 <body> 才注入，避免污染 JSON/API 响应。
+        if ($previewTheme !== null) {
+            ob_start(function (string $html) use ($previewTheme): string {
+                $bar = sprintf(
+                    '<div id="zPreviewBar" style="background:linear-gradient(90deg,#ff6a00,#ffb020);color:#fff;font-size:14px;padding:9px 16px;display:flex;align-items:center;gap:12px;">'
+                    . '<span><i class="fa fa-eye"></i> 正在预览主题 <strong>%s</strong>（非线上正式主题，仅管理员可见）</span>'
+                    . '<a href="?preview_theme=off" style="margin-left:auto;background:rgba(255,255,255,.95);color:#c2410c;padding:5px 14px;border-radius:6px;text-decoration:none;font-weight:600;white-space:nowrap;">退出预览</a>'
+                    . '</div>',
+                    htmlspecialchars($previewTheme, ENT_QUOTES)
+                );
+                $out = preg_replace('#<body([^>]*)>#i', '<body$1>' . $bar, $html, 1);
+                return is_string($out) ? $out : $html;
+            });
+        }
+
+        config_set('config.theme', $theme);
+        if ($theme !== 'basic') {
             View::paths(themes_path('basic'));
         }
 
-        $theme = $website['website.theme'] ?? 'basic';
         if (is_file(themes_path("{$theme}/functions.php"))) {
             include themes_path("{$theme}/functions.php");
         }

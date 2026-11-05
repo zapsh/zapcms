@@ -883,7 +883,9 @@ function render_language_switcher(string $class = 'list-inline float-end m-0', b
  */
 function theme_url(?string $path = null): string
 {
-    $theme = option('website.theme', 'basic');
+    // 优先用当前生效主题（config.theme）：正常请求等于激活主题；预览时等于被预览主题。
+    // 后台将 config.theme 设为 false，此时回落到 option('website.theme')，行为不变。
+    $theme = config('config.theme') ?: option('website.theme', 'basic');
     return site_url("themes/{$theme}/{$path}");
 }
 
@@ -915,7 +917,7 @@ function theme_asset(string $path): void
  */
 function theme_path(?string $path = null): string
 {
-    $theme = option('website.theme', 'basic');
+    $theme = config('config.theme') ?: option('website.theme', 'basic');
     return base_path("themes/{$theme}/{$path}");
 }
 

@@ -39,6 +39,12 @@ class ThemeController extends AdminController
             Cache::delete('options_'.$theme);
             Cache::delete('_opts_'.$theme);
 
+            // 退出预览态（若存在），避免已打开的预览标签仍停留在旧预览主题
+            if (session()->has('preview_theme')) {
+                session()->remove('preview_theme');
+                session()->remove('preview_theme_ts');
+            }
+
             AdminLog::info(AdminLog::CATEGORY_SYSTEM, '切换主题', '主题：' . $theme);
 
             // 返回重新渲染的卡片片段，前端拿到后直接替换 #themeGrid，无需整页刷新

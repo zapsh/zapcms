@@ -28,17 +28,24 @@ $currentTheme = $website_options['website.theme'] ?? '';
                 <small class="text-muted mt-auto mb-2">v<?php echo e($theme['version'] ?? ''); ?></small>
             </div>
             <div class="px-2 pb-2 mt-auto">
-                <?php if ($currentTheme === $theme['dirname']): ?>
-                <a href="<?php echo url_action('Theme@settings'); ?>"
-                   class="btn btn-outline-info btn-sm w-100">
-                    <i class="fa fa-cog me-1"></i>设置
-                </a>
-                <?php else: ?>
-                <button class="btn btn-outline-success btn-sm w-100"
-                        onclick="activationTheme('<?php echo e($theme['dirname']); ?>')" type="button">
-                    <i class="fa fa-check me-1"></i>启用
-                </button>
-                <?php endif; ?>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-outline-secondary btn-sm flex-fill"
+                       target="_blank" rel="noopener"
+                       href="<?php echo base_url('/') . '?preview_theme=' . rawurlencode($theme['dirname']); ?>">
+                        <i class="fa fa-eye me-1"></i>预览
+                    </a>
+                    <?php if ($currentTheme === $theme['dirname']): ?>
+                    <a href="<?php echo url_action('Theme@settings'); ?>"
+                       class="btn btn-outline-info btn-sm flex-fill">
+                        <i class="fa fa-cog me-1"></i>设置
+                    </a>
+                    <?php else: ?>
+                    <button class="btn btn-outline-success btn-sm flex-fill"
+                            onclick="activationTheme('<?php echo e($theme['dirname']); ?>')" type="button">
+                        <i class="fa fa-check me-1"></i>启用
+                    </button>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
