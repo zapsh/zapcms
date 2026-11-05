@@ -307,6 +307,30 @@ $this->layout('layouts/common');
     font-size: 0.8rem;
     color: var(--bs-secondary-color);
 }
+/* 文件树右键菜单 */
+.dev-tree-ctx {
+    position: fixed !important;
+    z-index: 2000 !important;
+    display: none;
+    min-width: 180px;
+    padding: .35rem 0;
+}
+.dev-tree-ctx .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .4rem .85rem;
+    font-size: .85rem;
+    cursor: pointer;
+}
+.dev-tree-ctx .dropdown-item i {
+    width: 1rem;
+    text-align: center;
+}
+.dev-tree-ctx .dropdown-item.disabled {
+    opacity: .4;
+    pointer-events: none;
+}
 </style>
 
 <div class="zap-dev-container">
@@ -362,6 +386,22 @@ $this->layout('layouts/common');
     </div>
 </div>
 
+<!-- 文件树右键菜单 -->
+<div id="devTreeContextMenu" class="dropdown-menu dev-tree-ctx" role="menu">
+    <button type="button" class="dropdown-item" data-act="newfile" role="menuitem">
+        <i class="fa-solid fa-file-circle-plus"></i>在此新建文件</button>
+    <button type="button" class="dropdown-item" data-act="newdir" role="menuitem">
+        <i class="fa-solid fa-folder-plus"></i>在此新建文件夹</button>
+    <div class="dropdown-divider"></div>
+    <button type="button" class="dropdown-item" data-act="rename" role="menuitem">
+        <i class="fa-solid fa-pen"></i>重命名</button>
+    <button type="button" class="dropdown-item text-danger" data-act="delete" role="menuitem">
+        <i class="fa-regular fa-trash-can"></i>删除</button>
+    <div class="dropdown-divider"></div>
+    <button type="button" class="dropdown-item" data-act="refresh" role="menuitem">
+        <i class="fa-solid fa-rotate"></i>刷新</button>
+</div>
+
 <script>
 const fileTreeView = $('#fileTreeView');
 const editorToolbar = $('#editorToolbar');
@@ -372,6 +412,14 @@ const statusInfo = $('#statusInfo');
 const editorInstances = {};
 let activeFilePath = null;
 let editorSeq = 0;
+
+// 文件操作接口
+const DevApi = {
+    createFile: '<?php echo url_action('Development@createFile'); ?>',
+    createDir:  '<?php echo url_action('Development@createDir'); ?>',
+    rename:     '<?php echo url_action('Development@rename'); ?>',
+    delete:     '<?php echo url_action('Development@delete'); ?>'
+};
 
 // 编辑器按需加载：首次打开文件时才下载 CodeMirror 6（Vite 构建产物 editor-[hash].js）
 let zapEditorPromise = null;
@@ -482,6 +530,67 @@ $(function() {
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
             e.preventDefault();
             saveCurrentFile();
+        }
+    });
+
+    // ============ 文件树右键菜单 ============
+    const $devCtx = $('#devTreeContextMenu');
+    let devCtxTarget = null;
+
+    function showDevCtx(e, target) {
+        devCtxTarget = target;
+        $devCtx.find('[data-act="rename"], [data-act="delete"]').toggleClass('disabled', !target.name);
+        $devCtx.css({display: 'block', left: 0, top: 0});
+        const w = $devCtx.outerWidth();
+        const h = $devCtx.outerHeight();
+        const left = Math.max(4, Math.min(e.clientX, window.innerWidth - w - 8));
+        const top = Math.max(4, Math.min(e.clientY, window.innerHeight - h - 8));
+        $devCtx.css({left: left + 'px', top: top + 'px'});
+        e.preventDefault();
+    }
+
+    function hideDevCtx() {
+        $devCtx.hide();
+        devCtxTarget = null;
+    }
+
+    // load 出来的节点是动态的，必须用事件委托
+    fileTreeView.on('contextmenu', '.list-group-item', function(e) {
+        e.stopPropagation();
+        showDevCtx(e, devTargetFromItem($(this)));
+    });
+    fileTreeView.on('contextmenu', function(e) {
+        if (!$(e.target).closest('.list-group-item').length) {
+            showDevCtx(e, devTargetBlank());
+        }
+    });
+    fileTreeView.on('scroll', hideDevCtx);
+    $(document).off('mousedown.devCtx keydown.devCtx')
+        .on('mousedown.devCtx', function(e) {
+            if (!$(e.target).closest('#devTreeContextMenu').length) hideDevCtx();
+        })
+        .on('keydown.devCtx', function(e) {
+            if (e.key === 'Escape') hideDevCtx();
+        });
+    $(window).off('scroll.devCtx resize.devCtx')
+        .on('scroll.devCtx resize.devCtx', hideDevCtx);
+
+    $devCtx.on('click', '[data-act]', function(e) {
+        e.preventDefault();
+        const act = $(this).attr('data-act');
+        const t = devCtxTarget;
+        hideDevCtx();
+        if (!t) return;
+        if (act === 'newfile') {
+            openDevNewFile(t.createIn);
+        } else if (act === 'newdir') {
+            openDevNewDir(t.createIn);
+        } else if (act === 'rename' && t.name) {
+            openDevRename(t.name, t.parent);
+        } else if (act === 'delete' && t.name) {
+            confirmDevDelete(t);
+        } else if (act === 'refresh') {
+            reloadDevDir(t.type === 'dir' ? t.path : t.createIn);
         }
     });
 });
@@ -787,6 +896,237 @@ function formatSize(bytes) {
     return (bytes / 1048576).toFixed(1) + ' MB';
 }
 
+// ─── 文件树右键菜单相关辅助 ───────────────────────────────
+
+function devParent(path) {
+    const p = String(path || '');
+    const i = p.lastIndexOf('/');
+    return i <= 0 ? '/' : p.substring(0, i);
+}
+
+function devJoin(dir, name) {
+    const d = String(dir || '');
+    if (d === '' || d === '/') return '/' + name;
+    return d.replace(/\/+$/, '') + '/' + name;
+}
+
+function devActiveDir() {
+    return activeFilePath ? devParent(activeFilePath) : '/';
+}
+
+function devTargetFromItem($item) {
+    const type = String($item.attr('data-type') || 'file');
+    const path = String($item.attr('data-path') || '');
+    const name = String($item.attr('data-filename') || path.split('/').pop());
+    if (type === 'dir') {
+        return {type: 'dir', path: path, createIn: path, parent: devParent(path), name: name};
+    }
+    const parent = devParent(path);
+    return {type: 'file', path: path, createIn: parent, parent: parent, name: name};
+}
+
+function devTargetBlank() {
+    const dir = devActiveDir();
+    return {type: 'blank', path: dir, createIn: dir, parent: dir, name: ''};
+}
+
+// 刷新某个目录节点（懒加载树）；根目录则整体重建
+function reloadDevDir(path) {
+    path = path || '/';
+    if (path === '/' || path === '') {
+        fileTreeView.children('.list-group').remove();
+        getDir('/', null);
+        return;
+    }
+    const $item = fileTreeView.find('.list-group-item.dir-item').filter(function() {
+        return String($(this).attr('data-path')) === path;
+    }).first();
+    if ($item.length) {
+        $item.next('.child-list').remove();
+        $item.data('loaded', true).addClass('expanded');
+        getDir(path, $item[0]);
+    } else {
+        fileTreeView.children('.list-group').remove();
+        getDir('/', null);
+    }
+}
+
+// 强制关闭某个路径（或其子路径）下已打开的所有标签
+function closeDevTabsUnder(prefix) {
+    const root = String(prefix || '').replace(/\/+$/, '');
+    if (!root) return;
+    Object.keys(editorInstances).forEach(function(p) {
+        if (p === root || p.indexOf(root + '/') === 0) {
+            const inst = editorInstances[p];
+            inst.editor.destroy();
+            inst.tab.remove();
+            inst.pane.remove();
+            delete editorInstances[p];
+            if (activeFilePath === p) {
+                activeFilePath = null;
+            }
+        }
+    });
+    if (!activeFilePath) {
+        const paths = Object.keys(editorInstances);
+        if (paths.length > 0) {
+            activateTab(paths[paths.length - 1]);
+        } else {
+            editorToolbar.hide();
+            welcomeScreen.show();
+            updateToolbar(null, null);
+            updateStatusBar('就绪');
+        }
+    }
+}
+
+// 通用输入弹窗
+function devPrompt(opts) {
+    const id = opts.id;
+    const content = '<div class="mb-1">'
+        + '<label class="form-label small text-secondary">' + escapeHtml(opts.label || '名称') + '</label>'
+        + '<input type="text" class="form-control form-control-sm dev-prompt-input"'
+        + ' placeholder="' + escAttr(opts.placeholder || '') + '"'
+        + ' value="' + escAttr(opts.value || '') + '">'
+        + '</div>';
+
+    ZapModal.create({
+        id: id,
+        title: opts.title,
+        dialog_class: 'modal-dialog-centered modal-sm',
+        header_class: 'bg-primary text-white',
+        content: content,
+        buttons: [
+            {title: '取消', class: 'btn-secondary', close: true},
+            {title: opts.okText || '确定', class: 'btn-primary'}
+        ],
+        btn2: function() {
+            const $input = $('#' + id).find('.dev-prompt-input');
+            const val = String($input.val() || '').trim();
+            if (!val) {
+                $input.addClass('is-invalid').trigger('focus');
+                return;
+            }
+            opts.onOk(val, function() {
+                const el = document.getElementById(id);
+                if (el && bootstrap.Modal.getInstance(el)) {
+                    bootstrap.Modal.getInstance(el).hide();
+                }
+            });
+        }
+    }, true).show();
+
+    setTimeout(function() {
+        $('#' + id).find('.dev-prompt-input').trigger('focus').trigger('select');
+    }, 200);
+
+    // 回车提交
+    $('#' + id).on('keydown', '.dev-prompt-input', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            $('#' + id).find('.modal-footer > button').eq(1).trigger('click');
+        }
+    });
+}
+
+function openDevNewFile(dir) {
+    devPrompt({
+        id: 'devNewFileModal',
+        title: '新建文件',
+        label: '文件名（含扩展名）',
+        placeholder: 'example.php',
+        okText: '创建',
+        onOk: function(name, done) {
+            $.post(DevApi.createFile, {path: dir, filename: name}, function(data) {
+                const ok = data && data.code === 0;
+                showToast((data && data.msg) ? data.msg : (ok ? '创建成功' : '创建失败'), ok ? 'success' : 'error');
+                if (!ok) return;
+                done();
+                reloadDevDir(dir);
+                if (data.path) {
+                    getDir(data.path, null);
+                }
+            }, 'json').fail(function() {
+                showToast('创建失败，网络错误', 'error');
+            });
+        }
+    });
+}
+
+function openDevNewDir(dir) {
+    devPrompt({
+        id: 'devNewDirModal',
+        title: '新建文件夹',
+        label: '文件夹名称',
+        placeholder: 'my-folder',
+        okText: '创建',
+        onOk: function(name, done) {
+            $.post(DevApi.createDir, {path: dir, dirname: name}, function(data) {
+                const ok = data && data.code === 0;
+                showToast((data && data.msg) ? data.msg : (ok ? '创建成功' : '创建失败'), ok ? 'success' : 'error');
+                if (!ok) return;
+                done();
+                reloadDevDir(dir);
+            }, 'json').fail(function() {
+                showToast('创建失败，网络错误', 'error');
+            });
+        }
+    });
+}
+
+function openDevRename(name, parent) {
+    devPrompt({
+        id: 'devRenameModal',
+        title: '重命名',
+        label: '新名称',
+        value: name,
+        okText: '确定',
+        onOk: function(newName, done) {
+            $.post(DevApi.rename, {path: parent, old_name: name, new_name: newName}, function(data) {
+                const ok = data && data.code === 0;
+                showToast((data && data.msg) ? data.msg : (ok ? '重命名成功' : '重命名失败'), ok ? 'success' : 'error');
+                if (!ok) return;
+                done();
+                closeDevTabsUnder(devJoin(parent, name));
+                reloadDevDir(parent);
+            }, 'json').fail(function() {
+                showToast('重命名失败，网络错误', 'error');
+            });
+        }
+    });
+}
+
+function confirmDevDelete(t) {
+    const isDir = t.type === 'dir';
+    ZapModal.create({
+        id: 'devDeleteModal',
+        title: isDir ? '确认删除文件夹' : '确认删除文件',
+        dialog_class: 'modal-dialog-centered modal-sm',
+        header_class: 'bg-danger text-white',
+        content: '<div class="text-center"><p class="mb-2">确定删除 <b>' + escapeHtml(t.name) + '</b>？</p>'
+            + '<span class="text-danger">此操作不可恢复！</span></div>',
+        buttons: [
+            {title: '取消', class: 'btn-secondary', close: true},
+            {title: '删除', class: 'btn-danger'}
+        ],
+        btn2: function() {
+            $.post(DevApi.delete, {path: t.parent, names: [t.name]}, function(data) {
+                const ok = data && data.code === 0;
+                showToast((data && data.msg) ? data.msg : (ok ? '删除成功' : '删除失败'), ok ? 'success' : 'error');
+                if (!ok) return;
+                const el = document.getElementById('devDeleteModal');
+                if (el && bootstrap.Modal.getInstance(el)) {
+                    bootstrap.Modal.getInstance(el).hide();
+                }
+                closeDevTabsUnder(devJoin(t.parent, t.name));
+                reloadDevDir(t.parent);
+            }, 'json').fail(function() {
+                showToast('删除失败，网络错误', 'error');
+            });
+        }
+    }, true).show();
+}
+
 function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
@@ -795,5 +1135,14 @@ function escapeHtml(str) {
 
 function escapeAttr(str) {
     return str.replace(/"/g, '\\"');
+}
+
+function escAttr(str) {
+    return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 </script>
