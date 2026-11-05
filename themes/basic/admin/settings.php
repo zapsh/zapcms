@@ -5,7 +5,6 @@ defined('IN_ZAPCMS_ADMIN') or die('No permission');
  * 
  *
  * 布局：左侧侧边栏导航 + 右侧内容区。
- * 其他主题可参考此文件结构快速制作自己的设置页。
  *
  * 约定：
  *   1. 侧边栏导航来自 themes/{主题名}/admin/_sidebar_settings.php

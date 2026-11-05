@@ -3,15 +3,6 @@ defined('IN_ZAPCMS_ADMIN') or die('No permission');
 
 /**
  * 首页设置
- *
- * 配置项（全部存于 options 表）：
- *   basic_home.slide            首页轮播图 Swiper，JSON 数组 [{img_path, link, target}, ...]
- *   basic_home.service_title    服务项目主标题
- *   basic_home.service_subtitle 服务项目副标题
- *   basic_home.service{n}_icon   第 n 项图标（FontAwesome 类，如 fa fa-code）
- *   basic_home.service{n}_title  第 n 项标题
- *   basic_home.service{n}_content 第 n 项描述
- *   basic_home.about_us         关于我们 HTML（summernote 富文本编辑）
  */
 
 use zap\facades\Cache;
@@ -68,8 +59,9 @@ if (req()->isPost()) {
             'target'   => ($target === '_blank' || $target === '_self') ? $target : '_blank',
         ];
     }
-    $slideJson = json_encode($slides, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-    saveOption('basic_home.slide', $slideJson);
+    option_del_array('basic_home.slide');
+    option_set_array('basic_home.slide', $slides);
+    \zapcms\services\Option::remove('basic_home.slide'); // 清掉旧版 JSON blob（若存在）
 
     // --- 2. 服务项目 ---
     $svcTitle    = trim((string) req()->post('service_title'));
@@ -90,10 +82,8 @@ if (req()->isPost()) {
     saveOption('basic_home.about_us', (string) req()->post('about_us'));
 
     clearHomeOptionCache();
-    echo '<div class="alert alert-success alert-dismissible fade show m-3" role="alert">
-            <i class="fa-solid fa-circle-check me-1"></i> 设置已保存
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>';
+    // POST-Redirect-GET：保存后跳回设置页，由后台布局的 showFlashMessages() 自动弹出 Toast 通知
+    \zap\http\Response::redirect(url_action('theme@settings', ['page' => '_settings']))->with('success', '设置已保存');
 }
 
 // ============ 读取当前值 ============
@@ -102,10 +92,7 @@ $defaultSlides = [
     ['img_path' => '/themes/basic/img/banner1.png', 'link' => 'https://zapcms.cn', 'target' => '_blank'],
     ['img_path' => '/themes/basic/img/banner2.png', 'link' => 'https://zapcms.cn', 'target' => '_blank'],
 ];
-$slides = option_get_json('basic_home.slide', $defaultSlides, true);
-if (!is_array($slides)) {
-    $slides = $defaultSlides;
-}
+$slides = option_get_array('basic_home.slide', $defaultSlides);
 
 // 服务项目
 $svcTitle    = option('basic_home.service_title') ?: '服务项目';

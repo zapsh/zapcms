@@ -2,53 +2,50 @@
 /*
  * 插件引导脚本
  *
- * 由 plugin.json 的 "boot" 字段指向本文件。系统初始化阶段，
- * PluginLoader::bootAll() 会在「前台与后台」各自动 include 本脚本一次。
- *
- * 在这里通过统一 Hook 总线 zapcms\Hook 注册「事件 / 过滤器」，
- * 即可在系统初始化时介入 CMS 行为——不再依赖仅后台视图层的 AdminHook 写法。
+ * 由 plugin.json 的 "boot" 字段指向本文件。
+ * PluginLoader::bootAll() 会在「前台与后台」各自动 include 本脚本一次，
+ * 此时通过统一 Hook 总线 zapcms\Hook 注册“事件 / 过滤器”，即可在系统初始化时介入 CMS。
  */
 
 use zapcms\Hook;
-use zapcms\AdminHook;
 
-// 1) 系统级初始化钩子：所有插件引导完成后触发一次，适合做插件级全局初始化
-Hook::on('boot', function () {
-    // 例如：注册自定义路由、绑定服务容器、挂载领域事件监听器等
+// 1) 后台 <head> 注入：admin_head 由后台布局 Hook::fire('admin_head') 真实触发
+Hook::on('admin_head', function () {
+    return '<meta name="generator" content="plugin_template">';
 });
 
-// 2) 领域事件：内容保存时触发（业务点会调用 Hook::fire('content.save', $node)）
-Hook::on('content.save', function (array $node) {
-    // 示例：对保存的内容做处理（加前缀、记录日志、触发同步等）
-    // error_log('content saved: ' . ($node['title'] ?? ''));
-});
-
-// 3) 过滤器：修改某个值后再返回（业务点调用 Hook::applyFilters('menu.build', $items)）
-Hook::filter('menu.build', function (array $items) {
-    $items[] = [
-        'title' => '示例插件',
-        'url'   => 'mod/example-plugin/admin/settings',
-        'icon'  => 'fa fa-puzzle-piece',
+// 2) 工作台挂件：dashboard.widgets 由 Dashboard 真实 fire/applyFilters，刷新后台首页即可看到
+Hook::filter('dashboard.widgets', function (array $widgets, int $adminId) {
+    $widgets['plugin_template_demo'] = [
+        'title'      => '示例插件',
+        'icon'       => 'fa fa-puzzle-piece',
+        'col'        => 'col-md-6',
+        'default_on' => true,
+        'render'     => function () {
+            return '<div class="small text-muted">这是示例插件通过 Hook 注册的工作台挂件——证明 hook 已生效。</div>';
+        },
     ];
-    return $items;
+    return $widgets;
 });
 
-// 4) 后台视图层注入（兼容原 AdminHook 写法，现已桥接同一总线）
-//    后台布局通过 AdminHook::echo('admin_head') 触发，返回字符串会被输出
-AdminHook::on('admin_head', function () {
-    return '<meta name="generator" content="example-plugin">';
+// 3) 系统级初始化事件：所有插件引导完成后触发一次（仅演示，可在此注册路由 / 绑定服务）
+Hook::on('boot', function () {
+    // 例如：Route::get('/demo', ...);
 });
 
-// 5) 静态资源引用示例（演示模块自带图片 / JS / CSS 如何被引用与输出）
-//    约定：资源放在 mods/<name>/assets/ 下，用 mod_url('<name>', 'assets/...') 生成 URL。
-//    两种部署模式都通：根目录模式直接访问 /mods/...；public 模式 MakePublic 软链 mods → public/mods。
-//    仅当访问首页并附加 ?pt_demo=1 时才接管渲染，正常访问首页不受影响。
+// 4) 前台首页接管：home_render 由 IndexController 真实触发，访问首页加 ?pt_demo=1 时生效
 Hook::filter('home_render', function ($_, $ctrl) {
     if (empty($_GET['pt_demo'])) {
-        return $_; // 非示例模式：保持原首页
+        return $_;
     }
-    // 把本 mod 的视图目录加入模板搜索路径
-    View::paths(APP_ROOT . '/mods/example-plugin/views');
-    // 返回 View（自动套用主题 layout，register_styles/scripts 会在其中输出）
+    View::paths(APP_ROOT . '/mods/plugin_template/views');
     return view('plugin_template.asset_demo', []);
 });
+
+/*
+ * 说明（避免踩坑）：
+ *  - content.save / menu.build 在核心里【没有】对应的 fire 点（仅为约定示例），
+ *    用它们注册的回调永远不会执行。
+ *  - 左侧菜单不靠 hook，而是写在 plugin.json 的 admin_menu，由 PluginLoader::ModMenu::sync()
+ *    写入 admin_menu 表（见本模块 plugin.json 的 admin_menu 字段）。
+ */

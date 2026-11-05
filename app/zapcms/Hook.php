@@ -6,7 +6,7 @@
  * 两种语义：
  *  - 事件（action）：Hook::on('tag', $cb);  Hook::fire('tag', ...$args);
  *                   回调可 echo 或直接做副作用；fire 拼接并返回各回调的字符串返回值
- *                   （兼容视图注入场景，如 AdminHook::echo）。
+ *                   （兼容视图注入场景，如布局中 echo Hook::fire(...)）。
  *  - 过滤器（filter）：Hook::filter('tag', $value, ...$args);
  *                    依次将 $value 交给回调处理并返回最终值。
  *
@@ -20,8 +20,7 @@
  * 业务领域事件（由对应模块在业务点 fire）：
  *   content.save / user.login / menu.build 等
  *
- * AdminHook 已桥接本服务：AdminHook::on('admin_head', ...) 等价于 Hook::on('admin_head', ...)，
- * 主题与插件可用同一总线扩展，且可在系统初始化阶段注册钩子。
+ * 后台布局通过 Hook::fire('admin_head') 等标签触发，主题与插件可用同一总线扩展，且可在系统初始化阶段注册钩子。
  */
 
 namespace zapcms;

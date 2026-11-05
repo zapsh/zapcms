@@ -35,7 +35,9 @@ class ThemeController extends AdminController
             Option::update('website.theme',$theme);
             Theme::instance()->saveThemeOptions($theme);
             Cache::delete('options_website');
+            Cache::delete('_opts_website');
             Cache::delete('options_'.$theme);
+            Cache::delete('_opts_'.$theme);
 
             AdminLog::info(AdminLog::CATEGORY_SYSTEM, '切换主题', '主题：' . $theme);
 
@@ -58,6 +60,12 @@ class ThemeController extends AdminController
             Response::redirect(url_action('theme'))->with('info', '当前主题不支持自定义');
         }
 
+        if (req()->isPost()) {
+            // 自包含式主题（如 basic / zap2026）的保存由主题视图文件处理，
+            // 此处统一记录审计日志（不写在主题视图里）
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '保存主题设置', '主题：' . $theme);
+        }
+
         $customSettings = IOUtils::readJsonFile($themeFile,true) ?:[];
         $options = Theme::instance()->getOptions($theme);
         view('theme.settings',[
@@ -73,14 +81,16 @@ class ThemeController extends AdminController
             $theme = Option::get('website.theme','basic');
             Theme::instance()->saveOptions($theme, $settings);
             Cache::delete('options_website');
+            Cache::delete('_opts_website');
             Cache::delete('options_'.$theme);
+            Cache::delete('_opts_'.$theme);
             AdminLog::info(AdminLog::CATEGORY_SYSTEM, '保存主题设置', '主题：' . $theme);
         }
         \response(['code'=>0,'msg'=>'保存成功'])->withJson();
     }
 
 
-    private function callCustomPage($method){
+    public function callCustomPage($method){
         $theme = Option::get('website.theme','basic');
         $themeFile = themes_path("{$theme}/theme.json");
         if(!is_file($themeFile)){

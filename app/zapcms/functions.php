@@ -190,6 +190,127 @@ function option_get_json(string $name, $default = null, ?bool $associative = nul
 }
 
 /**
+ * 读取「扁平化数组选项」：以 base.* 为前缀检索 options 表，
+ * 再把点分式后缀（如 0.img_path）还原成嵌套数组返回（相当于 array_undot）。
+ *
+ * 在 options 表中扁平定义：
+ *   basic_home.slide.0.img_path = "/themes/basic/img/banner1.png"
+ *   basic_home.slide.0.link     = "https://zap.cn"
+ *   basic_home.slide.1.img_path = "/themes/basic/img/banner2.png"
+ *
+ * 调用 option_get_array('basic_home.slide') 返回：
+ *   [ 0 => ['img_path' => '...', 'link' => '...'], 1 => ['img_path' => '...'] ]
+ *
+ * 用字面前缀过滤，避免与 basic_home.slideshow 等相近键混淆；
+ * 结果按 _opts_arr_<md5(base)> 缓存（写入请用 option_set_array 自动失效）。
+ *
+ * @param string $base    数组基名，如 'basic_home.slide'
+ * @param mixed  $default 无匹配数据时返回
+ * @return array
+ */
+function option_get_array(string $base, $default = [])
+{
+    $cacheKey = '_opts_arr_' . md5($base);
+
+    return \zap\facades\Cache::get($cacheKey, function () use ($base, $default) {
+        $rows   = \zapcms\services\Option::getArray($base, 'REGEXP');
+        $prefix = $base . '.';
+        $len    = strlen($prefix);
+        $result = [];
+
+        foreach ($rows as $optionName => $value) {
+            if (strncmp((string)$optionName, $prefix, $len) !== 0) {
+                continue;
+            }
+            $suffix = substr((string)$optionName, $len);
+            if ($suffix === '' || $suffix === false) {
+                continue;
+            }
+            $keys = explode('.', $suffix);
+            $ref  = &$result;
+            foreach ($keys as $k) {
+                if (!is_array($ref)) {
+                    $ref = [];
+                }
+                $ref = &$ref[$k];
+            }
+            $ref = $value;
+            unset($ref);
+        }
+
+        return $result === [] ? $default : $result;
+    });
+}
+
+/**
+ * 写入「扁平化数组选项」：将嵌套数组按点分键展开写入 options 表，
+ * 并清理相关缓存（数组缓存 + 所在分组的 options_<group> 缓存）。
+ *
+ * 调用 option_set_array('basic_home.slide', $slides) 会把：
+ *   [ 0 => ['img_path' => 'a', 'link' => 'b'] ]
+ * 展平成 basic_home.slide.0.img_path / basic_home.slide.0.link 写入。
+ *
+ * 注意：本函数只“增量写入”，不会删除旧子键。若数组结构收缩
+ * （如从 3 项变 2 项），请先调用 option_del_array($base) 清理残留子键再写入。
+ *
+ * @param string $base     数组基名
+ * @param array  $data     嵌套数组
+ * @param int    $autoload 是否随系统自动加载
+ */
+function option_set_array(string $base, array $data, ?int $autoload = 1): void
+{
+    $flat  = [];
+    $stack = [[$base, $data]];
+
+    while ($stack) {
+        [$path, $node] = array_pop($stack);
+        foreach ($node as $k => $v) {
+            $key = $path . '.' . $k;
+            if (is_array($v)) {
+                $stack[] = [$key, $v];
+            } else {
+                $flat[$key] = (string)$v;
+            }
+        }
+    }
+
+    foreach ($flat as $name => $value) {
+        \zapcms\services\Option::add($name, $value, 0, $autoload);
+    }
+
+    \zap\facades\Cache::delete('_opts_arr_' . md5($base));
+    $group = strstr($base, '.', true) ?: $base;
+    \zap\facades\Cache::delete('_opts_' . $group);
+    \zap\facades\Cache::delete('options_' . $group);
+}
+
+/**
+ * 删除「扁平化数组选项」：删除以 base.* 为前缀的所有子键，并清理相关缓存。
+ * 数组结构收缩前应先调用本函数清理残留（如从 3 项变 2 项时删掉 2.*）。
+ *
+ * 仅删除展开后的子键，不会动可能单独存在的 base 标量键。
+ *
+ * @param string $base 数组基名，如 'basic_home.slide'
+ */
+function option_del_array(string $base): void
+{
+    $names  = \zapcms\services\Option::getKeys($base, 'REGEXP');
+    $prefix = $base . '.';
+    $len    = strlen($prefix);
+
+    foreach ($names as $name) {
+        if (strncmp((string)$name, $prefix, $len) === 0) {
+            \zapcms\services\Option::remove($name);
+        }
+    }
+
+    \zap\facades\Cache::delete('_opts_arr_' . md5($base));
+    $group = strstr($base, '.', true) ?: $base;
+    \zap\facades\Cache::delete('_opts_' . $group);
+    \zap\facades\Cache::delete('options_' . $group);
+}
+
+/**
  * 获取序列化格式的配置值
  *
  * @param string $name
@@ -777,7 +898,7 @@ function theme_url(?string $path = null): string
  */
 function mod_url(string $mod, string $path = ''): string
 {
-    return base_url("mods/{$mod}/" . ltrim($path, '/'));
+    return base_url("/mods/{$mod}/" . ltrim($path, '/'));
 }
 
 /**

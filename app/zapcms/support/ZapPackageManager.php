@@ -1424,6 +1424,7 @@ class ZapPackageManager
                 'description'  => $info['description'] ?? '',
                 'autoload'     => $info['autoload'] ?? '',
                 'dependencies' => $info['dependencies'] ?? [],
+                'admin'        => $info['admin'] ?? null,
                 'dir'          => $modDir,
                 'enabled'      => $this->isPluginEnabled($item),
             ];

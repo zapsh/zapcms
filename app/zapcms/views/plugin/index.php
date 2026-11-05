@@ -122,10 +122,10 @@ $unregistered = count(array_filter($extensions, fn($e) => empty($e['registered']
                 <!-- 视图切换 + 类型过滤 -->
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                     <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-secondary active" id="viewGrid" onclick="switchView('grid')">
+                        <button class="btn btn-outline-secondary" id="viewGrid" onclick="switchView('grid')">
                             <i class="fa fa-th-large"></i>
                         </button>
-                        <button class="btn btn-outline-secondary" id="viewList" onclick="switchView('list')">
+                        <button class="btn btn-outline-secondary active" id="viewList" onclick="switchView('list')">
                             <i class="fa fa-list"></i>
                         </button>
                     </div>
@@ -136,15 +136,15 @@ $unregistered = count(array_filter($extensions, fn($e) => empty($e['registered']
                     </div>
                 </div>
 
-                <!-- 卡片网格视图 -->
-                <div class="row g-3" id="extGrid">
+                <!-- 卡片网格视图（默认隐藏） -->
+                <div class="row g-3 d-none" id="extGrid">
                     <?php foreach ($extensions as $ext): ?>
                         <?= renderExtCard($ext) ?>
                     <?php endforeach; ?>
                 </div>
 
-                <!-- 表格列表视图（默认隐藏） -->
-                <div class="table-responsive d-none" id="extTable">
+                <!-- 表格列表视图（默认显示） -->
+                <div class="table-responsive" id="extTable">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
@@ -535,7 +535,7 @@ function renderExtCard(array $ext): string
         $statusBadge = $status
             ? '<span class="badge bg-success bg-opacity-10 text-success"><i class="fa fa-check-circle me-1"></i>已启用</span>'
             : '<span class="badge bg-warning bg-opacity-10 text-warning"><i class="fa fa-pause-circle me-1"></i>已禁用</span>';
-        $actions = renderExtActions($name, $status);
+        $actions = renderExtActions($name, $status, !empty($ext['has_settings']));
     }
 
     return <<<CARD
@@ -593,7 +593,7 @@ function renderExtRow(array $ext): string
         $statusBadge = $status
             ? '<span class="badge bg-success bg-opacity-10 text-success"><i class="fa fa-check-circle me-1"></i>已启用</span>'
             : '<span class="badge bg-warning bg-opacity-10 text-warning"><i class="fa fa-pause-circle me-1"></i>已禁用</span>';
-        $actions = renderExtActions($name, $status);
+        $actions = renderExtActions($name, $status, !empty($ext['has_settings']));
     }
 
     return <<<ROW
@@ -615,10 +615,14 @@ function renderExtRow(array $ext): string
 ROW;
 }
 
-function renderExtActions(string $name, bool $isActive): string
+function renderExtActions(string $name, bool $isActive, bool $hasSettings = false): string
 {
     $n = htmlspecialchars($name);
     $html = '';
+
+    if ($hasSettings) {
+        $html .= '<a class="btn btn-outline-info btn-sm" href="' . url_action('Plugin@settings', ['plugin' => $name]) . '" title="设置"><i class="fa fa-gear me-1"></i>设置</a> ';
+    }
 
     if ($isActive) {
         $html .= '<button class="btn btn-outline-warning btn-sm" onclick="toggleStatus(\'' . $n . '\', 1)" title="禁用"><i class="fa fa-pause me-1"></i>禁用</button>';

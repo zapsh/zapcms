@@ -9,6 +9,7 @@ use zapcms\support\ZapPackageManager;
 use zapcms\support\ZapUpdate;
 use zap\http\Request;
 use zap\http\Response;
+use zap\view\View;
 
 /**
  * 插件管理控制器
@@ -64,6 +65,11 @@ class PluginController extends AdminController
             $ext['registered'] = false;
             $ext['missing']    = false;
 
+            // 透出后台页面声明，供列表“设置”按钮判断
+            $adminPages           = $this->normalizeAdminPages($mod['admin'] ?? null);
+            $ext['admin_pages']   = $adminPages;
+            $ext['has_settings']  = !empty($adminPages);
+
             if ($opt = $this->pm->getInstalledModOption($name)) {
                 $ext['status']     = (int)($opt['status'] ?? 0);
                 $ext['registered'] = true;
@@ -95,6 +101,8 @@ class PluginController extends AdminController
                 'registered'   => true,
                 'missing'      => true,
                 'package_name' => $p['package_name'] ?? '',
+                'admin_pages'  => [],
+                'has_settings' => false,
             ];
         }
 
@@ -195,7 +203,10 @@ class PluginController extends AdminController
             if (empty($name)) {
                 Response::json(['code' => 1, 'msg' => '请上传有效的ZIP文件']);
             }
-            if ($this->pm->isPluginInstalled($name)) {
+            // 以 mod.installed 选项为准判断「已注册」（与列表的 registered 判定一致；
+            // PluginLoader 也只按它加载）。若仅有 plugin 表残留登记、缺 mod 选项，
+            // 视为未注册完成，允许补全注册而不是直接拒绝。
+            if ($this->pm->getInstalledModOption($name)) {
                 Response::json(['code' => 1, 'msg' => '模块已注册']);
             }
             $pluginInfo = $this->pm->readModInfoFromDir($name);
@@ -207,8 +218,7 @@ class PluginController extends AdminController
                 Response::json(['code' => 1, 'msg' => $depError]);
             }
             $now = time();
-            DB::table('plugin')->insert([
-                'name'         => $name,
+            $pluginRow = [
                 'title'        => $pluginInfo['title'] ?? $name,
                 'version'      => $pluginInfo['version'] ?? '1.0.0',
                 'author'       => $pluginInfo['author'] ?? '',
@@ -217,9 +227,16 @@ class PluginController extends AdminController
                 'package_name' => $pluginInfo['package_name'] ?? $name,
                 'status'       => 1,
                 'sort_order'   => 0,
-                'installed_at' => $now,
                 'updated_at'   => $now,
-            ]);
+            ];
+            if ($this->pm->getPlugin($name)) {
+                // 已有残留登记：更新补齐，避免重复插入主键
+                DB::table('plugin')->where('name', $name)->update($pluginRow);
+            } else {
+                $pluginRow['name']         = $name;
+                $pluginRow['installed_at'] = $now;
+                DB::table('plugin')->insert($pluginRow);
+            }
             $this->pm->saveInstalledModOption($name, [
                 'name'         => $name,
                 'type'         => $pluginInfo['type'] ?? 'module',
@@ -480,5 +497,188 @@ class PluginController extends AdminController
 
         $zip->close();
         return $info;
+    }
+
+    /**
+     * 插件后台宿主页（无左侧菜单的插件配置 / 管理入口）
+     *
+     * URL: /{后台前缀}/plugin/settings?plugin={name}&page={key}
+     * 依据插件 manifest 的 admin.pages 渲染左侧子导航，并把选中页内容嵌入内容区。
+     * 支持三类页面声明：
+     *   - view  : 直接渲染模块视图片段（mods/{name}/views/{view}.php），无需控制器，最常用
+     *   - action: 分发到模块控制器 \mods\{name}\controllers\{Controller}Controller::{action}()
+     *             （模块目录名须为合法 PHP 命名空间，连字符需改为下划线）
+     *   - url   : 外链 / 独立路由，点击在新窗口打开，不嵌入内容区
+     */
+    public function settings()
+    {
+        $name = trim((string)req()->get('plugin', ''));
+        if ($name === '') {
+            $this->showAdminError('未指定插件');
+            return;
+        }
+
+        $modDir = base_path("mods/{$name}");
+        if (!is_dir($modDir)) {
+            $this->showAdminError('插件目录不存在：' . htmlspecialchars($name));
+            return;
+        }
+
+        $info  = $this->pm->readModInfoFromDir($name);
+        $pages = $this->normalizeAdminPages($info['admin'] ?? null);
+
+        if (empty($pages)) {
+            view('plugin.admin', [
+                'plugin'           => ['name' => $name, 'title' => $info['title'] ?? $name, 'type' => $info['type'] ?? 'plugin'],
+                'pages'            => [],
+                'activeKey'        => '',
+                'content'          => '<div class="alert alert-info mb-0"><i class="fa fa-info-circle me-1"></i>该插件暂无可配置项。</div>',
+                'page_title'       => '插件设置',
+                'page_subtitle'    => '',
+                'breadcrumbs'      => $this->adminBreadcrumbs($name, $info['title'] ?? $name),
+            ]);
+            return;
+        }
+
+        $pageKey = trim((string)req()->get('page', ''));
+        $active  = null;
+        foreach ($pages as $p) {
+            if ($p['key'] === $pageKey) {
+                $active = $p;
+                break;
+            }
+        }
+        if ($active === null) {
+            $active = $pages[0];
+        }
+
+        if (!empty($active['url'])) {
+            $content = '<div class="text-center py-5">'
+                . '<a class="btn btn-primary" href="' . htmlspecialchars($active['url']) . '" target="_blank" rel="noopener">'
+                . '<i class="fa fa-external-link me-1"></i>打开：' . htmlspecialchars($active['title']) . '</a></div>';
+        } else {
+            // POST 请求（如表单保存）直接转发给 action 页处理；view 页原样渲染
+            $content = $this->dispatchPluginPage($name, $active, Request::isPost());
+        }
+
+        view('plugin.admin', [
+            'plugin'           => ['name' => $name, 'title' => $info['title'] ?? $name, 'type' => $info['type'] ?? 'plugin'],
+            'pages'            => $pages,
+            'activeKey'        => $active['key'],
+            'content'          => $content,
+            'page_title'       => ($info['title'] ?? $name) . ' · 设置',
+            'page_subtitle'    => '在此配置与管理该插件（无需在左侧导航建菜单）',
+            'breadcrumbs'      => $this->adminBreadcrumbs($name, $info['title'] ?? $name),
+        ]);
+    }
+
+    protected function adminBreadcrumbs(string $name, string $title): array
+    {
+        return [
+            ['title' => '控制台', 'url' => \zap\facades\Url::action('Index')],
+            ['title' => '插件管理', 'url' => \zap\facades\Url::action('Plugin@index')],
+            ['title' => $title],
+        ];
+    }
+
+    protected function showAdminError(string $msg): void
+    {
+        view('plugin.admin', [
+            'plugin'           => ['name' => '', 'title' => '出错了', 'type' => ''],
+            'pages'            => [],
+            'activeKey'        => '',
+            'content'          => '<div class="alert alert-warning mb-0"><i class="fa fa-exclamation-triangle me-1"></i>' . $msg . '</div>',
+            'page_title'       => '插件设置',
+            'page_subtitle'    => '',
+            'breadcrumbs'      => $this->adminBreadcrumbs('', '插件设置'),
+        ]);
+    }
+
+    /**
+     * 把插件 manifest 的 admin 配置归一化为统一的页面数组
+     */
+    protected function normalizeAdminPages($admin): array
+    {
+        if (is_array($admin)) {
+            if (isset($admin['pages']) && is_array($admin['pages'])) {
+                $raw = $admin['pages'];
+            } elseif (isset($admin['view']) || isset($admin['action']) || isset($admin['url'])) {
+                $raw = [$admin]; // 单页快捷写法
+            } else {
+                $raw = [];
+            }
+        } elseif (is_string($admin) && $admin !== '') {
+            $raw = [['title' => '设置', 'url' => $admin]]; // 顶层 "admin": "mod/x/..." 快捷
+        } else {
+            $raw = [];
+        }
+
+        $out = [];
+        $idx = 0;
+        foreach ($raw as $p) {
+            if (!is_array($p)) {
+                continue;
+            }
+            $out[] = [
+                'key'    => $p['key'] ?? ('p' . $idx),
+                'title'  => $p['title'] ?? '页面',
+                'icon'   => $p['icon'] ?? 'fa-solid fa-gear',
+                'view'   => $p['view'] ?? null,
+                'action' => $p['action'] ?? null,
+                'url'    => $p['url'] ?? null,
+            ];
+            $idx++;
+        }
+        return $out;
+    }
+
+    /**
+     * 渲染插件某个页面的内容片段（嵌入宿主页内容区）
+     */
+    protected function dispatchPluginPage(string $name, array $page, bool $isPost): string
+    {
+        $viewRoot = base_path("mods/{$name}/views");
+        View::addPath($viewRoot, true); // 低优先级追加，避免覆盖系统视图
+
+        if (!empty($page['view'])) {
+            return View::render($page['view'], ['plugin' => $name, 'is_post' => $isPost], true) ?? '';
+        }
+
+        if (!empty($page['action'])) {
+            [$controller, $action] = $this->parseAction($page['action']);
+            $class = "\\mods\\{$name}\\controllers\\{$controller}Controller";
+            if (!class_exists($class) || !method_exists($class, $action)) {
+                return '<div class="alert alert-warning mb-0">插件页面控制器不存在：<code>'
+                    . htmlspecialchars($class . '::' . $action) . '</code></div>';
+            }
+            try {
+                $inst   = new $class();
+                ob_start();
+                $result = $inst->$action();
+                $echoed = ob_get_clean();
+                if ($result instanceof View) {
+                    return $result->fetch();
+                }
+                return $echoed;
+            } catch (\Throwable $e) {
+                return '<div class="alert alert-danger mb-0">插件页面执行出错：<code>'
+                    . htmlspecialchars($e->getMessage()) . '</code></div>';
+            }
+        }
+
+        return '<div class="text-muted mb-0">该页面未配置内容（view / action / url）。</div>';
+    }
+
+    /**
+     * 解析 "controller/action"（与 ModController 分发规则一致：连字符转驼峰、action 首字母大写）
+     */
+    protected function parseAction(string $action): array
+    {
+        $parts      = explode('/', trim($action, '/'));
+        $controller = $parts[0] ?? 'Admin';
+        $action     = $parts[1] ?? 'index';
+        $controller = str_replace('-', '', ucwords($controller, '-'));
+        $action     = str_replace('-', '', ucwords($action, '-'));
+        return [$controller, $action];
     }
 }

@@ -18,7 +18,7 @@
  *     未配置 boot 的扩展在启动时不做 include，也不触发 plugin.boot 事件。
  *  3. 所有引导脚本跑完后触发系统级 boot 事件（一次性）。
  *
- * 这样插件不再依赖 AdminHook 这类仅后台视图层机制，可在初始化阶段通过 Hook 总线
+ * 这样插件不再依赖仅后台视图层机制，可在初始化阶段通过 Hook 总线
  * 注册事件 / 过滤器，介入前台、后台乃至 CLI 的行为。
  */
 
@@ -138,11 +138,15 @@ class PluginLoader
                 continue;
             }
 
-            // 引导脚本以模块目录内的 mod.json 为准：options 里的安装快照可能早于
+            // 引导脚本以模块目录内的 mod.json / plugin.json 为准：options 里的安装快照可能早于
             // boot / boot_frontend / boot_admin 字段的加入，导致引导脚本永远不加载。
-            $modJsonFile = APP_ROOT . '/mods/' . $name . '/mod.json';
-            if (is_file($modJsonFile)) {
-                $fileInfo = json_decode((string) file_get_contents($modJsonFile), true) ?: [];
+            // 兼容两种清单文件名（mod.json 与 plugin.json 二选一即可）。
+            foreach (['mod.json', 'plugin.json'] as $manifestFile) {
+                $manifestPath = APP_ROOT . '/mods/' . $name . '/' . $manifestFile;
+                if (!is_file($manifestPath)) {
+                    continue;
+                }
+                $fileInfo = json_decode((string) file_get_contents($manifestPath), true) ?: [];
                 foreach (['boot', 'boot_frontend', 'boot_admin', 'autoload'] as $bootKey) {
                     if (empty($info[$bootKey]) && !empty($fileInfo[$bootKey])) {
                         $info[$bootKey] = $fileInfo[$bootKey];

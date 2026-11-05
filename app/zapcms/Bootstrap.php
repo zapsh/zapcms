@@ -55,6 +55,7 @@ class Bootstrap
      */
     protected function initAdminEnv(): void
     {
+        defined('IN_ZAPCMS') or define('IN_ZAPCMS', true);
         define('IN_ZAPCMS_ADMIN', true);
         config_set('config.theme', false);
         define('IS_AJAX', Request::isAjax());

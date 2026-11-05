@@ -1,0 +1,25 @@
+{
+    "name": "plugin_template",
+    "title": "示例插件",
+    "version": "1.0.0",
+    "author": "ZAP CMS",
+    "description": "示例插件：展示插件基本结构，以及如何通过统一 Hook 总线在系统初始化时注册钩子。",
+    "homepage": "https://zap.cn",
+    "package_name": "zapcms/plugin_template",
+    "requires": {
+        "zapcms": ">=1.0.0"
+    },
+    "boot": "boot.php",
+    "route": {
+        "prefix": "plugin-template",
+        "aliases": ["plugin-template-alias"]
+    },
+    "admin": {
+        "pages": [
+            { "key": "settings", "title": "基础设置", "icon": "fa-solid fa-gear", "view": "plugin_template/settings" },
+            { "key": "logs", "title": "运行日志", "icon": "fa-solid fa-receipt", "action": "admin/logs" },
+            { "key": "about", "title": "使用说明", "icon": "fa-solid fa-book", "view": "plugin_template/about" }
+        ]
+    }
+    
+}

@@ -11,35 +11,33 @@ defined('IN_ZAPCMS_ADMIN') or die('No permission');
 if (req()->isPost()) {
     $settings = themeSettings();
 
-    $settings->set('productThumbWidth', intval(req()->post('productThumbWidth', 400)));
-    $settings->set('productThumbHeight', intval(req()->post('productThumbHeight', 300)));
-    $settings->set('newsThumbWidth', intval(req()->post('newsThumbWidth', 400)));
-    $settings->set('newsThumbHeight', intval(req()->post('newsThumbHeight', 300)));
-    $settings->set('articleThumbWidth', intval(req()->post('articleThumbWidth', 400)));
-    $settings->set('articleThumbHeight', intval(req()->post('articleThumbHeight', 300)));
-    $settings->set('faqThumbWidth', intval(req()->post('faqThumbWidth', 120)));
-    $settings->set('faqThumbHeight', intval(req()->post('faqThumbHeight', 120)));
-    $settings->set('catalogThumbWidth', intval(req()->post('catalogThumbWidth', 400)));
-    $settings->set('catalogThumbHeight', intval(req()->post('catalogThumbHeight', 300)));
+    $settings->set('basic.productThumbWidth', intval(req()->post('productThumbWidth', 400)));
+    $settings->set('basic.productThumbHeight', intval(req()->post('productThumbHeight', 300)));
+    $settings->set('basic.newsThumbWidth', intval(req()->post('newsThumbWidth', 400)));
+    $settings->set('basic.newsThumbHeight', intval(req()->post('newsThumbHeight', 300)));
+    $settings->set('basic.articleThumbWidth', intval(req()->post('articleThumbWidth', 400)));
+    $settings->set('basic.articleThumbHeight', intval(req()->post('articleThumbHeight', 300)));
+    $settings->set('basic.faqThumbWidth', intval(req()->post('faqThumbWidth', 120)));
+    $settings->set('basic.faqThumbHeight', intval(req()->post('faqThumbHeight', 120)));
+    $settings->set('basic.catalogThumbWidth', intval(req()->post('catalogThumbWidth', 400)));
+    $settings->set('basic.catalogThumbHeight', intval(req()->post('catalogThumbHeight', 300)));
 
     $settings->save();
-    echo '<div class="alert alert-success alert-dismissible fade show m-3" role="alert">
-            <i class="fa-solid fa-circle-check me-1"></i> 图片尺寸设置已保存
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>';
+    \zap\http\Response::redirect(url_action('theme@settings', ['page' => 'image']))->with('success', '图片尺寸设置已保存');
+
 }
 
 // ---- 读取当前值 ----
-$productThumbW  = themeSettings()->get('productThumbWidth', 400);
-$productThumbH  = themeSettings()->get('productThumbHeight', 300);
-$newsThumbW     = themeSettings()->get('newsThumbWidth', 400);
-$newsThumbH     = themeSettings()->get('newsThumbHeight', 300);
-$articleThumbW  = themeSettings()->get('articleThumbWidth', 400);
-$articleThumbH  = themeSettings()->get('articleThumbHeight', 300);
-$faqThumbW      = themeSettings()->get('faqThumbWidth', 120);
-$faqThumbH      = themeSettings()->get('faqThumbHeight', 120);
-$catalogThumbW  = themeSettings()->get('catalogThumbWidth', 400);
-$catalogThumbH  = themeSettings()->get('catalogThumbHeight', 300);
+$productThumbW  = themeSettings()->get('basic.productThumbWidth', 400);
+$productThumbH  = themeSettings()->get('basic.productThumbHeight', 300);
+$newsThumbW     = themeSettings()->get('basic.newsThumbWidth', 400);
+$newsThumbH     = themeSettings()->get('basic.newsThumbHeight', 300);
+$articleThumbW  = themeSettings()->get('basic.articleThumbWidth', 400);
+$articleThumbH  = themeSettings()->get('basic.articleThumbHeight', 300);
+$faqThumbW      = themeSettings()->get('basic.faqThumbWidth', 120);
+$faqThumbH      = themeSettings()->get('basic.faqThumbHeight', 120);
+$catalogThumbW  = themeSettings()->get('basic.catalogThumbWidth', 400);
+$catalogThumbH  = themeSettings()->get('basic.catalogThumbHeight', 300);
 ?>
 
 <form method="post" action="<?php echo url_action('theme@settings', ['page' => 'image']); ?>">

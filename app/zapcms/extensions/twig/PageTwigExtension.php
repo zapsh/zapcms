@@ -40,6 +40,7 @@ class PageTwigExtension extends AbstractExtension implements GlobalsInterface
             // 配置 / 选项
             new TwigFunction('option', fn(string $name, $default = null) => \option($name, $default)),
             new TwigFunction('option_json', fn(string $name, $default = null, ?bool $associative = null) => \option_get_json($name, $default, $associative)),
+            new TwigFunction('option_array', fn(string $name, $default = []) => \option_get_array($name, $default)),
 
             // 节点链接
             new TwigFunction('node_url', fn(array $node, ?string $locale = null) => \smart_node_url($node, $locale), $html),

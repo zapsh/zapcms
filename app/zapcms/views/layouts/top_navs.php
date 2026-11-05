@@ -25,8 +25,8 @@ body.sidebar-mini.sidebar-open .docs-btn-text {
     <!-- 侧边栏菜单滚动区 -->
     <div class="sidebar-wrapper">
         <nav class="mt-2">
-            <ul class="nav sidebar-menu flex-column <?php \zapcms\AdminHook::echo('admin_menu_class'); ?>" data-zui-toggle="treeview" role="menu" data-accordion="false">
-                <?php \zapcms\AdminHook::echo('admin_menu_before'); ?>
+            <ul class="nav sidebar-menu flex-column <?php echo \zapcms\Hook::fire('admin_menu_class'); ?>" data-zui-toggle="treeview" role="menu" data-accordion="false">
+                <?php echo \zapcms\Hook::fire('admin_menu_before'); ?>
                 <li class="nav-item">
                     <a href="<?php echo \zap\facades\Url::action('Index'); ?>" class="nav-link">
                             <i class="nav-icon fa fa-dashboard"></i>
@@ -166,9 +166,9 @@ body.sidebar-mini.sidebar-open .docs-btn-text {
                         <?php endif; ?>
                     </li>
                 <?php endforeach; ?>
-                <?php \zapcms\AdminHook::echo('admin_menu_after'); ?>
+                <?php echo \zapcms\Hook::fire('admin_menu_after'); ?>
             </ul>
-            <?php \zapcms\AdminHook::echo('admin_menu_footer'); ?>
+            <?php echo \zapcms\Hook::fire('admin_menu_footer'); ?>
             <div class="p-3 mt-3 border-top border-secondary border-opacity-25 docs-block">
               <a href="https://zap.cn/docs/zapcms" target="_blank" class="btn btn-sm btn-outline-light w-100 d-flex align-items-center justify-content-center docs-btn" title="View documentation">
                 <i class="fa fa-book ms-2 me-2" aria-hidden="true"></i>

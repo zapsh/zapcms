@@ -61,16 +61,41 @@ class Theme
         return $themes_info;
     }
 
+    /**
+     * 合并主题默认选项：theme.json['options'] 与可选的 themes/<theme>/defaults.php（PHP 数组）。
+     * defaults.php 优先（用于承载大段 HTML / 结构化默认值，避免 theme.json 膨胀）。
+     */
+    protected static function loadDefaults(string $theme): array
+    {
+        static $cache = [];
+        if (array_key_exists($theme, $cache)) {
+            return $cache[$theme];
+        }
+
+        $themeFile = themes_path("{$theme}/theme.json");
+        $info = IOUtils::readJsonFile($themeFile, true) ?: [];
+        $jsonDefaults = $info['options'] ?? [];
+
+        $phpFile = themes_path("{$theme}/defaults.php");
+        $phpDefaults = is_file($phpFile) ? (require $phpFile) : [];
+        if (!is_array($phpDefaults)) {
+            $phpDefaults = [];
+        }
+
+        $cache[$theme] = array_merge($jsonDefaults, $phpDefaults);
+        return $cache[$theme];
+    }
+
     function saveThemeOptions($theme){
         $themeFile = themes_path("{$theme}/theme.json");
         if(!is_file($themeFile)){
             return;
         }
-        $themeInfo = IOUtils::readJsonFile($themeFile,true) ?:[];
+        // 合并 theme.json['options'] 与可选的 themes/<theme>/defaults.php（PHP 默认值优先）
+        $defaults = self::loadDefaults($theme);
 
-        // 归属列表：统一以「主题名」为前缀，从 theme.json 顶层 options 数组的键解析得到。
-        // 不再依赖 settings.option_keys 声明；非前缀键（如全局缩略图尺寸）不计入本主题。
-        $option_keys = array_keys($themeInfo['options'] ?? []);
+        // 归属列表：统一以「主题名」为前缀；非前缀键（如全局缩略图尺寸）不计入本主题。
+        $option_keys = array_keys($defaults);
         $option_keys = array_filter($option_keys, fn($k) => str_starts_with((string)$k, $theme));
         if(empty($option_keys)){
             // 老主题无顶层 options：回退到主题名前缀
@@ -78,7 +103,7 @@ class Theme
         }
         // 注意：getKeys 的 REGEXP 入参必须是「一维字符串数组」，多包一层会导致 Array to string conversion
         $themeSettingsKeys = Option::getKeys($option_keys,'REGEXP');
-        foreach ($themeInfo['options'] ?? [] as $key=>$value){
+        foreach ($defaults as $key=>$value){
             if(is_object($value) || is_array($value)){
                 $value = json_encode($value);
             }
@@ -110,9 +135,8 @@ class Theme
                 return array_values(array_unique($keys));
             }
         }
-        // 回退：解析 theme.json 的 options 数组，取所有以主题名为前缀的键
-        $info = IOUtils::readJsonFile(themes_path("{$theme}/theme.json"), true) ?: [];
-        $options = $info['options'] ?? [];
+        // 回退：解析默认选项（theme.json + 可选的 defaults.php），取所有以主题名为前缀的键
+        $options = self::loadDefaults($theme);
         if (is_array($options) && !empty($options)) {
             $keys = array_keys($options);
             $keys = array_filter($keys, fn($k) => str_starts_with((string) $k, $theme));
@@ -128,15 +152,32 @@ class Theme
      */
     public function getOptions(string $theme): array
     {
-        $themeFile = themes_path("{$theme}/theme.json");
-        $info = IOUtils::readJsonFile($themeFile, true) ?: [];
-        $defaults = $info['options'] ?? [];
-        $values = [];
+        $defaults = self::loadDefaults($theme);
+
+        // 归属键（排除归属标记键）
+        $owned = [];
         foreach ($this->ownedOptionKeys($theme) as $key) {
-            if (substr($key, -12) === '.option_keys') {
+            if (substr((string)$key, -12) === '.option_keys') {
                 continue;
             }
-            $values[$key] = Option::get($key);
+            $owned[] = (string)$key;
+        }
+
+        // 一次性按前缀批量读取全部归属键，避免逐键 Option::get 产生 N+1 查询。
+        // 归属键通常共享同一前缀（如 basic_home.*），直接按该前缀 REGEXP 取全，
+        // 无需把每个 key 拼成超长的 alternation；前缀不唯一时退回主题名。
+        $prefixes = [];
+        foreach ($owned as $key) {
+            $dot = strpos($key, '.');
+            $prefixes[] = $dot === false ? $key : substr($key, 0, $dot);
+        }
+        $prefixes = array_values(array_unique($prefixes));
+        $prefix = count($prefixes) === 1 ? $prefixes[0] : $theme;
+        $stored = !empty($owned) ? Option::getArray($prefix, 'REGEXP') : [];
+
+        $values = [];
+        foreach ($owned as $key) {
+            $values[$key] = $stored[$key] ?? null;
         }
         foreach ($defaults as $k => $v) {
             if (!array_key_exists($k, $values) || $values[$k] === null) {

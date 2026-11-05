@@ -14,18 +14,65 @@ defined('IN_ZAPCMS_ADMIN') or die('No permission');
  * 当前值来自控制器传入的 $options（已用 theme.json 默认值兜底）。
  */
 
-// 轮播图默认值
-$slideRaw = $options['zap2026_home.slide'] ?? '[]';
-$slides = json_decode($slideRaw, true);
-if (!is_array($slides)) {
+// ============ 保存（自带 POST 处理，绕过通用 saveSettings，与 basic 主题一致的扁平数组方案） ============
+if (req()->isPost()) {
+    // 1. 轮播图：扁平化数组选项
     $slides = [];
+    $imgs    = (array) req()->post('slide_img', []);
+    $links   = (array) req()->post('slide_link', []);
+    $targets = (array) req()->post('slide_target', []);
+    foreach ($imgs as $i => $imgRaw) {
+        $imgPath = trim((string) $imgRaw);
+        if ($imgPath === '') {
+            continue;
+        }
+        $target = (string) ($targets[$i] ?? '_blank');
+        $slides[] = [
+            'img_path' => $imgPath,
+            'link'     => trim((string) ($links[$i] ?? '')),
+            'target'   => ($target === '_self' || $target === '_blank') ? $target : '_blank',
+        ];
+    }
+    option_del_array('zap2026_home.slide');
+    if (!empty($slides)) {
+        option_set_array('zap2026_home.slide', $slides);
+    }
+    \zapcms\services\Option::remove('zap2026_home.slide'); // 清掉旧版 JSON blob
+
+    // 2. 服务项目 + 关于我们（标量）
+    saveOption('zap2026_home.service_title',     trim((string) req()->post('service_title')));
+    saveOption('zap2026_home.service_subtitle',  trim((string) req()->post('service_subtitle')));
+    for ($i = 1; $i <= 6; $i++) {
+        saveOption("zap2026_home.service{$i}_icon",    trim((string) req()->post("service{$i}_icon")));
+        saveOption("zap2026_home.service{$i}_title",   trim((string) req()->post("service{$i}_title")));
+        saveOption("zap2026_home.service{$i}_content", trim((string) req()->post("service{$i}_content")));
+    }
+    saveOption('zap2026_home.about_us', (string) req()->post('about_us'));
+
+    // 3. 清缓存
+    \zap\facades\Cache::delete('options_website');
+    \zap\facades\Cache::delete('_opts_website');
+    \zap\facades\Cache::delete('options_zap2026');
+    \zap\facades\Cache::delete('_opts_zap2026');
+
+    // POST-Redirect-GET：由后台布局的 showFlashMessages() 自动弹出 Toast 通知
+    // 审计日志统一由 ThemeController::settings() 在接收 POST 时记录（不写在主题视图里）
+    \zap\http\Response::redirect(url_action('theme@settings'))->with('success', '设置已保存');
 }
+
+// ============ 读取当前值 ============
+// 轮播图（扁平化数组选项，见 option_get_array）
+$defaultSlides = [
+    ['img_path' => '/themes/zap2026/img/banner1.png', 'link' => 'https://zap.cn', 'target' => '_blank'],
+    ['img_path' => '/themes/zap2026/img/banner2.png', 'link' => 'https://zap.cn', 'target' => '_blank'],
+];
+$slides = option_get_array('zap2026_home.slide', $defaultSlides);
 if (empty($slides)) {
-    $slides = [
-        ['img_path' => '/themes/zap2026/img/banner1.png', 'link' => 'https://zap.cn', 'target' => '_blank'],
-        ['img_path' => '/themes/zap2026/img/banner2.png', 'link' => 'https://zap.cn', 'target' => '_blank'],
-    ];
+    // 兼容旧版：尚未迁移的 JSON blob
+    $legacy = option_get_json('zap2026_home.slide', null);
+    $slides = is_array($legacy) ? $legacy : $defaultSlides;
 }
+unset($defaultSlides);
 
 $svcTitle    = $options['zap2026_home.service_title'] ?? '服务项目';
 $svcSubtitle = $options['zap2026_home.service_subtitle'] ?? 'SERVICES';
@@ -35,7 +82,7 @@ $get = function (string $k, $default = '') use ($options) {
     return $options[$k] ?? $default;
 };
 ?>
-<form id="zapForm" method="post">
+<form id="zapForm" method="post" action="<?php echo url_action('theme@settings'); ?>" onsubmit="syncAboutEditor(); return true;">
     <ul class="nav nav-tabs mb-3" id="zapSettingTabs" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="tab-slide" data-bs-toggle="tab" data-bs-target="#pane-slide" type="button" role="tab">
@@ -58,10 +105,8 @@ $get = function (string $k, $default = '') use ($options) {
         <!-- ============ 轮播图 ============ -->
         <div class="tab-pane fade show active" id="pane-slide" role="tabpanel">
             <div class="callout callout-info">
-                <i class="fa fa-images me-1"></i> 首页轮播图，可自由增删。保存于 <code>zap2026_home.slide</code>
+                <i class="fa fa-images me-1"></i> 首页轮播图，可自由增删（扁平化数组选项，存于 <code>zap2026_home.slide.*</code>）
             </div>
-            <input type="hidden" name="settings[zap2026_home.slide]" id="zap_slide_json"
-                   value="<?php echo htmlspecialchars($slideRaw, ENT_QUOTES); ?>">
             <div id="slideList" class="mb-3">
                 <?php foreach ($slides as $s): ?>
                 <div class="slide-row card card-body py-2 mb-2 shadow-none">
@@ -69,7 +114,7 @@ $get = function (string $k, $default = '') use ($options) {
                         <div class="col-md-5">
                             <label class="form-label small text-muted mb-1">图片路径</label>
                             <div class="input-group">
-                                <input type="text" class="form-control slide-img"
+                                <input type="text" class="form-control slide-img" name="slide_img[]"
                                        value="<?php echo htmlspecialchars((string)($s['img_path'] ?? '')); ?>"
                                        placeholder="/themes/zap2026/img/banner1.png">
                                 <button type="button" class="btn btn-outline-primary btn-pick-image" title="选择图片">
@@ -79,14 +124,14 @@ $get = function (string $k, $default = '') use ($options) {
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small text-muted mb-1">跳转链接</label>
-                            <input type="text" class="form-control slide-link"
+                            <input type="text" class="form-control slide-link" name="slide_link[]"
                                    value="<?php echo htmlspecialchars((string)($s['link'] ?? '')); ?>"
                                    placeholder="https://zap.cn">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small text-muted mb-1">打开方式</label>
                             <div class="input-group">
-                                <select class="form-select slide-target">
+                                <select class="form-select slide-target" name="slide_target[]">
                                     <option value="_blank" <?php echo (($s['target'] ?? '_blank') === '_blank') ? 'selected' : ''; ?>>新窗口</option>
                                     <option value="_self" <?php echo (($s['target'] ?? '_blank') === '_self') ? 'selected' : ''; ?>>当前页面</option>
                                 </select>
@@ -112,12 +157,12 @@ $get = function (string $k, $default = '') use ($options) {
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
                     <label class="form-label">主标题</label>
-                    <input type="text" class="form-control" name="settings[zap2026_home.service_title]"
+                    <input type="text" class="form-control" name="service_title"
                            value="<?php echo htmlspecialchars($svcTitle); ?>" placeholder="服务项目">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">副标题（英文）</label>
-                    <input type="text" class="form-control" name="settings[zap2026_home.service_subtitle]"
+                    <input type="text" class="form-control" name="service_subtitle"
                            value="<?php echo htmlspecialchars($svcSubtitle); ?>" placeholder="SERVICES">
                 </div>
             </div>
@@ -132,7 +177,7 @@ $get = function (string $k, $default = '') use ($options) {
                     <div class="col-md-3">
                         <label class="form-label small text-muted mb-1">图标</label>
                         <div class="input-group">
-                            <input type="text" class="form-control" name="settings[zap2026_home.service<?php echo $i; ?>_icon]"
+                            <input type="text" class="form-control" name="service<?php echo $i; ?>_icon"
                                    id="svc_icon_<?php echo $i; ?>"
                                    value="<?php echo htmlspecialchars($get("zap2026_home.service{$i}_icon")); ?>"
                                    placeholder="fa fa-code"
@@ -144,12 +189,12 @@ $get = function (string $k, $default = '') use ($options) {
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small text-muted mb-1">标题</label>
-                        <input type="text" class="form-control" name="settings[zap2026_home.service<?php echo $i; ?>_title]"
+                        <input type="text" class="form-control" name="service<?php echo $i; ?>_title"
                                value="<?php echo htmlspecialchars($get("zap2026_home.service{$i}_title")); ?>">
                     </div>
                     <div class="col-md-5">
                         <label class="form-label small text-muted mb-1">描述</label>
-                        <textarea class="form-control" name="settings[zap2026_home.service<?php echo $i; ?>_content]" rows="2"><?php echo htmlspecialchars($get("zap2026_home.service{$i}_content")); ?></textarea>
+                        <textarea class="form-control" name="service<?php echo $i; ?>_content" rows="2"><?php echo htmlspecialchars($get("zap2026_home.service{$i}_content")); ?></textarea>
                     </div>
                 </div>
             </div>
@@ -161,13 +206,13 @@ $get = function (string $k, $default = '') use ($options) {
             <div class="callout callout-info">
                 <i class="fa fa-circle-info me-1"></i> 富文本编辑器，保存为 HTML，存于 <code>zap2026_home.about_us</code>
             </div>
-            <textarea name="settings[zap2026_home.about_us]" id="zap_about_editor"
+            <textarea name="about_us" id="zap_about_editor"
                       class="form-control summernote"><?php echo htmlspecialchars($about); ?></textarea>
         </div>
     </div>
 
     <div class="mt-4 d-flex justify-content-end">
-        <button type="button" class="btn btn-primary" onclick="buildSlideJson(); syncAboutEditor(); saveSettings();">
+        <button type="submit" class="btn btn-primary">
             <i class="fa fa-save me-1"></i> 保存设置
         </button>
     </div>
@@ -175,28 +220,7 @@ $get = function (string $k, $default = '') use ($options) {
 
 <script>
 (function () {
-    // 提交前把轮播图多行输入汇总为 JSON，写入隐藏域
-    function buildSlideJson() {
-        var imgs = document.querySelectorAll('#slideList .slide-img');
-        var links = document.querySelectorAll('#slideList .slide-link');
-        var targets = document.querySelectorAll('#slideList .slide-target');
-        var slides = [];
-        imgs.forEach(function (el, i) {
-            var p = (el.value || '').trim();
-            if (!p) return;
-            var t = targets[i] ? targets[i].value : '_blank';
-            slides.push({
-                img_path: p,
-                link: ((links[i] ? links[i].value : '') || '').trim(),
-                target: (t === '_self' ? '_self' : '_blank')
-            });
-        });
-        var hidden = document.getElementById('zap_slide_json');
-        if (hidden) hidden.value = JSON.stringify(slides);
-    }
-    window.buildSlideJson = buildSlideJson;
-
-    // 提交前把 Summernote 富文本内容同步回底层 textarea，确保 serialize 能取到 HTML
+    // 提交前把 Summernote 富文本内容同步回底层 textarea，确保原生表单提交能取到 HTML
     function syncAboutEditor() {
         if (typeof jQuery === 'undefined') return;
         var $t = jQuery('#zap_about_editor');
@@ -212,11 +236,11 @@ $get = function (string $k, $default = '') use ($options) {
         return '<div class="slide-row card card-body py-2 mb-2 shadow-none">' +
             '<div class="row g-2 align-items-end">' +
             '<div class="col-md-5"><label class="form-label small text-muted mb-1">图片路径</label><div class="input-group">' +
-            '<input type="text" class="form-control slide-img" id="' + id + '" placeholder="/themes/zap2026/img/banner1.png">' +
+            '<input type="text" class="form-control slide-img" id="' + id + '" name="slide_img[]" placeholder="/themes/zap2026/img/banner1.png">' +
             '<button type="button" class="btn btn-outline-primary btn-pick-image" title="选择图片"><i class="fa fa-folder-open"></i></button></div></div>' +
-            '<div class="col-md-4"><label class="form-label small text-muted mb-1">跳转链接</label><input type="text" class="form-control slide-link" placeholder="https://zap.cn"></div>' +
+            '<div class="col-md-4"><label class="form-label small text-muted mb-1">跳转链接</label><input type="text" class="form-control slide-link" name="slide_link[]" placeholder="https://zap.cn"></div>' +
             '<div class="col-md-3"><label class="form-label small text-muted mb-1">打开方式</label><div class="input-group">' +
-            '<select class="form-select slide-target"><option value="_blank">新窗口</option><option value="_self">当前页面</option></select>' +
+            '<select class="form-select slide-target" name="slide_target[]"><option value="_blank">新窗口</option><option value="_self">当前页面</option></select>' +
             '<button type="button" class="btn btn-outline-danger btn-remove-slide" title="删除该图"><i class="fa fa-trash"></i></button></div></div>' +
             '</div></div>';
     }

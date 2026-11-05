@@ -10,15 +10,15 @@
 
 defined('IN_ZAPCMS_ADMIN') or exit;
 
-use \zap\AdminHook;
+// use \zapcms\Hook;
 
 // ──── 注入后台额外 CSS ─────────────────────────────────────
-// AdminHook::on('admin_head', function () {
+// Hook::on('admin_head', function () {
 //     return '<link rel="stylesheet" href="' . themes_url_basic('css/admin.css') . '">';
 // });
 
 // ──── 在用户下拉菜单增加入口 ────────────────────────────────
-// AdminHook::on('admin_user_dropdown', function () {
+// Hook::on('admin_user_dropdown', function () {
 //     return '<div class="dropdown-divider"></div>
 //             <a class="dropdown-item" href="' . url_action('Theme@settings') . '">
 //                 <i class="fa fa-palette me-2"></i>主题设置
@@ -26,15 +26,15 @@ use \zap\AdminHook;
 // });
 
 // ──── 注入后台底部 JS ──────────────────────────────────────
-// AdminHook::on('admin_foot', function () {
+// Hook::on('admin_foot', function () {
 //     return '<script src="' . themes_url_basic('js/admin.js') . '"></script>';
 // });
 
 // ──── 在内容区前后插入自定义区块 ─────────────────────────────
-// AdminHook::on('admin_content_before', function () {
+// Hook::on('admin_content_before', function () {
 //     return '<div class="alert alert-info mb-3"><i class="fa fa-info-circle me-1"></i>欢迎使用 Basic 主题</div>';
 // });
 
-// AdminHook::on('admin_content_after', function () {
+// Hook::on('admin_content_after', function () {
 //     return ''; // 可放置自定义 HTML
 // });

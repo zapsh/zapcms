@@ -3,8 +3,8 @@
  * Copyright (c) 2023-2026.  ZAP.CN  - ZAP CMS
  * Theme: Basic - 商务简约模板
  *
- * functions.php — 前台 & 后台共用函数
- * admin/functions.php — 仅后台加载（使用 AdminHook 注入 UI）
+ * functions.php — 前台
+ * admin/functions.php — 后台专用函数
  */
 
 // Frontend
@@ -29,8 +29,3 @@ if(defined('IN_ZAPCMS') && !defined('IN_ZAPCMS_ADMIN')){
         return $text;
     }
 }
-
-// 前后端共用的函数放这里（不加 IN_ZAPCMS_ADMIN 判断即可）
-// if(defined('IN_ZAPCMS')){
-//     function theme_shared_helper() { ... }
-// }

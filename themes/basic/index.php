@@ -1,7 +1,13 @@
 <?php
 defined('IN_ZAPCMS') or die('No permission to access');
 $this->extend('layout/default');
-$banners = option_get_json('basic_home.slide','[]',true);
+
+// 轮播图默认值（与后台设置页 _settings.php 的 $defaultSlides 保持一致）
+$defaultSlides = [
+    ['img_path' => '/themes/basic/img/banner1.png', 'link' => 'https://zapcms.cn', 'target' => '_blank'],
+    ['img_path' => '/themes/basic/img/banner2.png', 'link' => 'https://zapcms.cn', 'target' => '_blank'],
+];
+$banners = option_get_array('basic_home.slide', $defaultSlides);
 $latestNews = pageState()->getLatestNews();
 
 ?>

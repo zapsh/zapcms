@@ -1,7 +1,10 @@
 {% extends 'layout/default.twig' %}
 
 {% block content %}
-{% set banners = option_json('zap2026_home.slide', '[]', true) %}
+{% set banners = option_array('zap2026_home.slide', []) %}
+{% if banners is empty %}
+    {% set banners = option_json('zap2026_home.slide', [], true) %}
+{% endif %}
 {% set latestNews = pageState.getLatestNews() %}
 
 <main class="site-main">

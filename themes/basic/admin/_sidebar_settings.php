@@ -19,23 +19,23 @@ $menuItems = [
         'icon'    => 'fa-solid fa-home',
         'label'   => '首页设置',
     ],
-    [
-        'page'    => 'article',
-        'icon'    => 'fa-solid fa-newspaper',
-        'label'   => '文章设置',
-    ],
-    [
-        'page'    => 'image',
-        'icon'    => 'fa-solid fa-image',
-        'label'   => '图片设置',
-    ],
+    // [
+    //     'page'    => 'article',
+    //     'icon'    => 'fa-solid fa-newspaper',
+    //     'label'   => '文章设置',
+    // ],
+    // [
+    //     'page'    => 'image',
+    //     'icon'    => 'fa-solid fa-image',
+    //     'label'   => '图片设置',
+    // ],
 ];
 ?>
 
 <div class="card card-outline card-success mb-0">
     <div class="card-header">
         <h5 class="card-title mb-0">
-            <i class="fa-solid fa-sliders me-2"></i>设置导航
+            <i class="fa-solid fa-sliders me-2"></i>设置
         </h5>
     </div>
     <div class="card-body p-0">

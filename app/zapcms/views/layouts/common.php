@@ -89,7 +89,7 @@ use \zap\facades\Url;
     <?php print_styles(); ?>
     <?php print_scripts(ASSETS_HEAD); ?>
     <?php print_scripts(ASSETS_HEAD_TEXT); ?>
-    <?php \zapcms\AdminHook::echo('admin_head'); ?>
+    <?php echo \zapcms\Hook::fire('admin_head'); ?>
 </head>
 
 <body class="<?php echo e($body_class ?? 'layout-fixed sidebar-expand-lg bg-body-tertiary'); ?>">
@@ -157,7 +157,7 @@ use \zap\facades\Url;
                             <a class="dropdown-item" href="<?php echo \zap\facades\Url::action('System@settings'); ?>">
                                 <i class="fa fa-cog me-2"></i>系统设置
                             </a>
-                            <?php \zapcms\AdminHook::echo('admin_user_dropdown'); ?>
+                            <?php echo \zapcms\Hook::fire('admin_user_dropdown'); ?>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item text-danger" href="<?php echo \zap\facades\Url::action('Auth@signOut'); ?>">
                                 <i class="fa fa-sign-out-alt me-2"></i>退出登录
@@ -212,9 +212,9 @@ use \zap\facades\Url;
 
             <div class="app-content">
                 <div class="container-fluid py-3" id="zContent">
-                    <?php \zapcms\AdminHook::echo('admin_content_before'); ?>
+                    <?php echo \zapcms\Hook::fire('admin_content_before'); ?>
                     <?php echo $this->block('content');?>
-                    <?php \zapcms\AdminHook::echo('admin_content_after'); ?>
+                    <?php echo \zapcms\Hook::fire('admin_content_after'); ?>
                 </div>
             </div>
         </main>
@@ -328,6 +328,6 @@ use \zap\facades\Url;
     <?php echo $this->block('page_scripts'); ?>
     <?php print_scripts(ASSETS_BODY); ?>
     <?php print_scripts(ASSETS_BODY_TEXT); ?>
-    <?php \zapcms\AdminHook::echo('admin_foot'); ?>
+    <?php echo \zapcms\Hook::fire('admin_foot'); ?>
 </body>
 </html>
