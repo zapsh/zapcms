@@ -15,58 +15,94 @@ use zap\DB;
 
 class Option
 {
-    public static function update($option_name,$option_value,$sort_order = null,$autoload = null){
+    public static function update(string $option_name, string $option_value, $sort_order = null, $autoload = null){
         $data = ['option_value'=>$option_value];
         is_null($sort_order) ?: $data['sort_order'] = $sort_order;
         is_null($autoload) ?: $data['autoload'] = $autoload;
         return DB::update('options',$data,['option_name'=>$option_name]);
     }
 
-    public static function replace($option_name,$option_value,$sort_order = null,$autoload = null){
-        $data = ['option_value'=>$option_value];
+    /**
+     * 插入或更新（upsert）：依赖 options.option_name 唯一索引（uk_option_name），
+     * 命中冲突时按 $duplicate 更新。底层走 ZPDO::upsert：
+     *  - MySQL/MariaDB：INSERT ... ON DUPLICATE KEY UPDATE
+     *  - SQLite 3.24+  ：INSERT ... ON CONFLICT(option_name) DO UPDATE SET col=excluded.col
+     *  - PostgreSQL    ：INSERT ... ON CONFLICT(option_name) DO UPDATE SET
+     *
+     * 相比 REPLACE INTO，不会删除旧行再插入（避免 rowid 变化、外键 ON DELETE 触发、
+     * 触发器误触发等问题），也不会因缺少唯一键而产生重复行（如多条 mod.installed.tools）。
+     *
+     * @return int 受影响行数
+     */
+    public static function upsert(string $option_name, string $option_value, $sort_order = null, $autoload = null)
+    {
+        $data = [
+            'option_name'  => $option_name,
+            'option_value' => $option_value,
+        ];
         is_null($sort_order) ?: $data['sort_order'] = $sort_order;
-        is_null($autoload) ?: $data['autoload'] = $autoload;
+        is_null($autoload) ?: $data['autoload']    = $autoload;
 
-        $exists = DB::select('select id from {options} where option_name=:option_name limit 1',
-            ['option_name'=>$option_name]);
+        // 冲突时更新的值：option_value 必更新，sort_order / autoload 仅在显式传入时更新
+        $duplicate = ['option_value' => $option_value];
+        is_null($sort_order) ?: $duplicate['sort_order'] = $sort_order;
+        is_null($autoload) ?: $duplicate['autoload']    = $autoload;
 
-        if(!empty($exists)){
-            return DB::update('options',$data,['option_name'=>$option_name]);
-        }
-
-        $data['option_name'] = $option_name;
-        return DB::insert('options',$data);
+        return DB::upsert('options', $data, $duplicate, ['option_name']);
     }
 
-    public static function add($option_name,$option_value,$sort_order = null,$autoload = null){
-        $data = ['option_name'=>$option_name,'option_value'=>$option_value];
-        is_null($sort_order) ?: $data['sort_order'] = $sort_order;
-        is_null($autoload) ?: $data['autoload'] = $autoload;
-        try {
-            return DB::insert('options',$data);
-        }catch (\PDOException $e){
-            // 记录已存在时按 option_name 更新，避免无条件 UPDATE 全表
-            return DB::update('options',$data,['option_name'=>$option_name]);
+    public static function replace(string $option_name, string $option_value, $sort_order = null, $autoload = null){
+        return self::upsert($option_name, $option_value, $sort_order, $autoload);
+    }
+
+    public static function add(string $option_name, string $option_value, $sort_order = null, $autoload = null){
+        return self::upsert($option_name, $option_value, $sort_order, $autoload);
+    }
+
+    public static function addArray(array $options, $sort_order = null, $autoload = null){
+        foreach ($options as $option_name => $option_value){
+            self::upsert($option_name,$option_value,$sort_order,$autoload);
         }
     }
 
-    public static function addArray($options,$sort_order = null,$autoload = null){
-        $data = [];
-        is_null($sort_order) ?: $data['sort_order'] = $sort_order;
-        is_null($autoload) ?: $data['autoload'] = $autoload;
-        foreach ($options as $option_name=>$option_value){
-            $data['option_name'] = $option_name;
-            $data['option_value'] = $option_value;
-            DB::insert('options',$data);
-        }
-    }
-
-    public static function remove($option_name){
+    public static function remove(string $option_name){
         return DB::delete('options','option_name=:name',['name'=>$option_name]);
     }
 
+    /**
+     * 批量删除多个 option（按 option_name 列表）
+     *
+     * @param string[] $names
+     * @return int 受影响行数
+     */
+    public static function removeMany(array $names): int
+    {
+        $names = array_values(array_filter($names, fn($n) => is_string($n) && $n !== ''));
+        if (empty($names)) {
+            return 0;
+        }
+        $placeholders = [];
+        $params       = [];
+        foreach ($names as $i => $name) {
+            $key            = 'name' . $i;
+            $placeholders[] = ':' . $key;
+            $params[$key]   = $name;
+        }
+        return DB::delete('options', 'option_name IN (' . implode(',', $placeholders) . ')', $params);
+    }
 
-    public static function get($option_name, $default = null){
+    /**
+     * 按正则删除 option（如删除某前缀下的全部键：^mod.installed）
+     *
+     * @return int 受影响行数
+     */
+    public static function removeByRegex(string $pattern): int
+    {
+        return DB::delete('options', 'option_name REGEXP :pat', ['pat' => $pattern]);
+    }
+
+
+    public static function get(string $option_name, $default = null){
         $rows = DB::select('select option_value from {options} where option_name=:option_name',
             ['option_name'=>$option_name]);
         if(empty($rows)){
@@ -75,7 +111,7 @@ class Option
         return $rows[0]['option_value'];
     }
 
-    public static function getArray($option_name,$type = '='): array
+    public static function getArray(string $option_name, string $type = '='): array
     {
         if(is_array($option_name) && $type == 'REGEXP'){
             $option_name = join('|',array_filter($option_name,'is_scalar'));
@@ -94,7 +130,7 @@ class Option
         return $options;
     }
 
-    public static function getKeys($option_name,$type = '='): array
+    public static function getKeys(string $option_name, string $type = '='): array
     {
         if(is_array($option_name) && $type == 'REGEXP'){
             // 过滤掉非标量元素，避免误传多维数组时触发 Array to string conversion

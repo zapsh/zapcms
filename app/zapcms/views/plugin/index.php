@@ -15,74 +15,6 @@ $unregistered = count(array_filter($extensions, fn($e) => empty($e['registered']
 ?>
 
 <div class="container-fluid p-0">
-    <!-- 统计卡片 -->
-    <div class="row g-3 mb-3">
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-start border-success border-3 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="flex-shrink-0 me-3">
-                        <span class="fa-stack fa-lg text-success">
-                            <i class="fa fa-circle fa-stack-2x opacity-25"></i>
-                            <i class="fa fa-play fa-stack-1x"></i>
-                        </span>
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="text-muted small text-uppercase fw-semibold">已启用</div>
-                        <div class="fs-3 fw-bold text-success"><?= $activeCount ?></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-start border-warning border-3 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="flex-shrink-0 me-3">
-                        <span class="fa-stack fa-lg text-warning">
-                            <i class="fa fa-circle fa-stack-2x opacity-25"></i>
-                            <i class="fa fa-pause fa-stack-1x"></i>
-                        </span>
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="text-muted small text-uppercase fw-semibold">已禁用</div>
-                        <div class="fs-3 fw-bold text-warning"><?= $disabledCnt ?></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-start border-secondary border-3 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="flex-shrink-0 me-3">
-                        <span class="fa-stack fa-lg text-secondary">
-                            <i class="fa fa-circle fa-stack-2x opacity-25"></i>
-                            <i class="fa fa-folder-open fa-stack-1x"></i>
-                        </span>
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="text-muted small text-uppercase fw-semibold">未注册</div>
-                        <div class="fs-3 fw-bold text-secondary"><?= $unregistered ?></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-start border-info border-3 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center">
-                    <div class="flex-shrink-0 me-3">
-                        <span class="fa-stack fa-lg text-info">
-                            <i class="fa fa-circle fa-stack-2x opacity-25"></i>
-                            <i class="fa fa-puzzle-piece fa-stack-1x"></i>
-                        </span>
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="text-muted small text-uppercase fw-semibold">扩展总数</div>
-                        <div class="fs-3 fw-bold text-info"><?= $total ?></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- 扩展管理卡片 -->
     <div class="card shadow-sm">
         <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -119,15 +51,24 @@ $unregistered = count(array_filter($extensions, fn($e) => empty($e['registered']
                     </div>
                 </div>
             <?php else: ?>
-                <!-- 视图切换 + 类型过滤 -->
+                <!-- 视图切换 + 统计标签 + 类型过滤 -->
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-                    <div class="btn-group btn-group-sm" role="group">
-                        <button class="btn btn-outline-secondary" id="viewGrid" onclick="switchView('grid')">
-                            <i class="fa fa-th-large"></i>
-                        </button>
-                        <button class="btn btn-outline-secondary active" id="viewList" onclick="switchView('list')">
-                            <i class="fa fa-list"></i>
-                        </button>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button class="btn btn-outline-secondary" id="viewGrid" onclick="switchView('grid')">
+                                <i class="fa fa-th-large"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary active" id="viewList" onclick="switchView('list')">
+                                <i class="fa fa-list"></i>
+                            </button>
+                        </div>
+                        <!-- 统计标签（小标签，跟随视图切换按钮） -->
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <span class="badge fw-normal bg-light text-dark border">全部 <strong class="ms-1"><?= $total ?></strong></span>
+                            <span class="badge fw-normal bg-success bg-opacity-10 text-success">已启用 <strong class="ms-1"><?= $activeCount ?></strong></span>
+                            <span class="badge fw-normal bg-warning bg-opacity-10 text-warning">已禁用 <strong class="ms-1"><?= $disabledCnt ?></strong></span>
+                            <span class="badge fw-normal bg-secondary bg-opacity-10 text-secondary">未注册 <strong class="ms-1"><?= $unregistered ?></strong></span>
+                        </div>
                     </div>
                     <div class="btn-group btn-group-sm" id="typeFilter" role="group">
                         <button class="btn btn-outline-secondary active" data-type="all">全部</button>
