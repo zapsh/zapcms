@@ -179,17 +179,32 @@ class LogViewer
         $entries = [];
 
         foreach ($data['entries'] as $row) {
-            $title   = (string)($row['title'] ?? '');
-            $content = (string)($row['content'] ?? '');
-            $message = $title . ($content !== '' ? '：' . $content : '');
+            $title    = (string)($row['title'] ?? '');
+            $content  = (string)($row['content'] ?? '');
+            $username = (string)($row['username'] ?? 'system');
+            $ip       = (string)($row['ipaddress'] ?? '');
+            $category = (string)($row['category'] ?? '');
+            $level    = strtoupper((string)($row['level'] ?? 'INFO'));
 
             $entries[] = [
+                // 兼容日志文件格式的通用字段（旧渲染逻辑仍可用）
                 'time'    => date('Y-m-d H:i:s', (int)($row['request_time'] ?? 0)),
-                'level'   => strtoupper((string)($row['level'] ?? 'INFO')),
-                'message' => $message,
-                'file'    => ($row['username'] ?? 'system')
-                    . (($row['ipaddress'] ?? '') !== '' ? '@' . $row['ipaddress'] : ''),
-                'raw'     => ($row['category'] ?? '') . ' ' . $title,
+                'level'   => $level,
+                'message' => $title . ($content !== '' ? '：' . $content : ''),
+                'file'    => $username . ($ip !== '' ? '@' . $ip : ''),
+                'raw'     => $category . ' ' . $title . ' ' . $content,
+
+                // 审计日志完整字段：供表格展示全部信息
+                'id'           => (int)($row['id'] ?? 0),
+                'uid'          => (int)($row['uid'] ?? 0),
+                'username'     => $username,
+                'category'     => $category,
+                'title'        => $title,
+                'content'      => $content,
+                'ipaddress'    => $ip,
+                'request_url'  => (string)($row['request_url'] ?? ''),
+                'user_agent'   => (string)($row['user_agent'] ?? ''),
+                'request_time' => (int)($row['request_time'] ?? 0),
             ];
         }
 

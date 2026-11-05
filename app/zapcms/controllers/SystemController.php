@@ -150,18 +150,32 @@ class SystemController extends AdminController
     }
 
     /**
-     * 日志查看（系统日志文件 + 数据库操作日志，合并在一个页面切换）
+     * 日志查看：系统日志 / 审计日志两个 tab。
+     * 点击 tab 会切换 URL（?tab=file|audit）并整页渲染对应内容。
      */
     public function logs()
     {
+        $tab = strtolower((string)req()->get('tab', 'audit'));
+        if (!in_array($tab, ['file', 'audit'], true)) {
+            $tab = 'audit';
+        }
+        $isAudit = $tab === 'audit';
+
         $viewer = new \zapcms\services\LogViewer();
 
         \view('system.logs', [
-            'page_title'    => '日志查看',
-            'page_subtitle' => '系统运行日志与数据库操作审计日志，可按级别 / 分类 / 关键字筛选',
+            'page_title'    => $isAudit ? '审计日志' : '日志查看',
+            'page_subtitle' => $isAudit
+                ? '后台操作审计记录，可按级别 / 分类 / 关键字筛选'
+                : '系统运行日志文件，可按级别 / 关键字筛选',
             'breadcrumbs'   => [
                 ['title' => '控制台', 'url' => \zap\facades\Url::action('Index')],
-                ['title' => '日志查看'],
+                ['title' => $isAudit ? '审计日志' : '日志查看'],
+            ],
+            'active_tab' => $tab,
+            'tab_urls'   => [
+                'file'  => \zap\facades\Url::action('System@logs', ['tab' => 'file']),
+                'audit' => \zap\facades\Url::action('System@logs', ['tab' => 'audit']),
             ],
             'log_files'  => $viewer->files(),
             'log_dir'    => $viewer->directory(),
@@ -172,7 +186,7 @@ class SystemController extends AdminController
     /**
      * 日志数据（AJAX：筛选 + 分页）
      *
-     * source=file（默认）读系统日志文件；source=db 读数据库审计日志。
+     * source=file（默认）读系统日志文件；source=db 读审计日志。
      */
     public function logsData()
     {
@@ -217,7 +231,7 @@ class SystemController extends AdminController
     }
 
     /**
-     * 下载日志（文件或数据库审计日志）
+     * 下载日志（系统日志文件或审计日志）
      */
     public function logsDownload()
     {
@@ -239,7 +253,7 @@ class SystemController extends AdminController
                 );
             }
             header('Content-Type: text/plain; charset=utf-8');
-            header('Content-Disposition: attachment; filename="admin_logs_' . date('Ymd_His') . '.txt"');
+            header('Content-Disposition: attachment; filename="audit_logs_' . date('Ymd_His') . '.txt"');
             echo $out;
             exit;
         }
@@ -261,7 +275,7 @@ class SystemController extends AdminController
     }
 
     /**
-     * 清空日志（指定文件或全部；source=db 时清空数据库审计日志）
+     * 清空日志（指定系统日志文件或全部；source=db 时清空审计日志）
      */
     public function logsClear()
     {
@@ -279,7 +293,7 @@ class SystemController extends AdminController
                 $count = (int)$pdo->query("SELECT COUNT(*) FROM {$table}")->fetchColumn();
                 $pdo->rawExec("DELETE FROM {$table}");
 
-                Response::json(['code' => 0, 'msg' => "已清空 {$count} 条数据库日志"]);
+                Response::json(['code' => 0, 'msg' => "已清空 {$count} 条审计日志"]);
                 return;
             }
 

@@ -98,26 +98,32 @@ class AdminLog
      */
     public static function search(array $filter = [], int $limit = 50, int $offset = 0): array
     {
-        $query = DB::table('admin_logs');
+        $applyFilter = static function ($query) use ($filter) {
+            if (!empty($filter['category'])) {
+                $query->where('category', $filter['category']);
+            }
+            if (!empty($filter['level'])) {
+                $query->where('level', strtoupper($filter['level']));
+            }
+            if (!empty($filter['keyword'])) {
+                $kw = $filter['keyword'];
+                $query->where(function ($q) use ($kw) {
+                    $q->where('title', 'LIKE', "%{$kw}%")
+                      ->orWhere('content', 'LIKE', "%{$kw}%")
+                      ->orWhere('username', 'LIKE', "%{$kw}%");
+                });
+            }
+            return $query;
+        };
 
-        if (!empty($filter['category'])) {
-            $query->where('category', $filter['category']);
-        }
-        if (!empty($filter['level'])) {
-            $query->where('level', strtoupper($filter['level']));
-        }
-        if (!empty($filter['keyword'])) {
-            $kw = $filter['keyword'];
-            $query->where(function ($q) use ($kw) {
-                $q->where('title', 'LIKE', "%{$kw}%")
-                  ->orWhere('content', 'LIKE', "%{$kw}%")
-                  ->orWhere('username', 'LIKE', "%{$kw}%");
-            });
-        }
+        // COUNT 与列表必须用两个独立的 Query 对象：
+        // Query::select() 会覆盖列清单，复用同一对象会让列表查询仍执行
+        // SELECT COUNT(*) AS total，只返回一行 total 字段（日志显示不全的根因）。
+        $countQuery = $applyFilter(DB::table('admin_logs'));
+        $total = (int)($countQuery->select('COUNT(*) AS total')->fetch(FETCH_ASSOC)['total'] ?? 0);
 
-        $total = (int)($query->select('COUNT(*) AS total')->fetch(FETCH_ASSOC)['total'] ?? 0);
-
-        $rows = $query->orderBy('request_time', 'DESC')
+        $listQuery = $applyFilter(DB::table('admin_logs'));
+        $rows = $listQuery->orderBy('request_time', 'DESC')
             ->limit($limit)
             ->offset($offset)
             ->fetchAll(FETCH_ASSOC);
