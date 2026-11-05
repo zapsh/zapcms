@@ -55,4 +55,37 @@ $this->view->page_title = '主题管理';
             }
         }).always(function(){ load.dispose(); });
     }
+
+    function deleteTheme(themeName){
+        if(!confirm('确定要删除主题「'+themeName+'」吗？该操作不可恢复。')) return;
+        const load = Zap.loading('正在删除主题...');
+        $.ajax({
+            url:'<?php echo url_action('Theme@deleteTheme'); ?>',
+            method:'POST',
+            dataType:'json',
+            data:{theme:themeName},
+            success:function(data){
+                if(data.code === 0){
+                    ZapToast.alert('主题已删除',{bgColor:bgSuccess});
+                    if (data.html) {
+                        document.getElementById('themeGrid').innerHTML = data.html;
+                    } else {
+                        Zap.reload();
+                    }
+                }else{
+                    ZapToast.alert('删除失败: '+(data.msg||data.message||''),{bgColor:bgDanger});
+                }
+            },
+            error:function(xhr){
+                let msg = 'HTTP ' + xhr.status;
+                try {
+                    const err = JSON.parse(xhr.responseText);
+                    msg = err.message || err.msg || msg;
+                } catch (e) {
+                    if (xhr.responseText) { msg = xhr.responseText.substring(0, 200); }
+                }
+                ZapToast.alert('删除失败: ' + msg, {bgColor:bgDanger});
+            }
+        }).always(function(){ load.dispose(); });
+    }
 </script>

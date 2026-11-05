@@ -9,6 +9,7 @@ use zapcms\services\Option;
 use zapcms\services\Theme;
 use zap\facades\Cache;
 use zap\http\Request;
+use zap\util\FileUtils;
 use zap\http\Response;
 use zap\view\View;
 
@@ -54,6 +55,62 @@ class ThemeController extends AdminController
             ])->fetch();
 
             Response::json(['code'=>0,'msg'=>'主题设置成功','html'=>$html]);
+        }
+    }
+
+
+    /**
+     * 删除主题（连同其目录与数据库选项）
+     *
+     * 安全约束：
+     *  - 当前启用中的主题禁止删除；
+     *  - basic 是系统回退主题（其它主题均复用其模板），禁止删除，避免站点整体不可用。
+     */
+    public function deleteTheme()
+    {
+        if (Request::isPost()) {
+            $theme = trim(req()->post('theme'));
+            if (preg_match('/^[a-z0-9_-]{1,255}$/i', $theme) === false) {
+                Response::json(['code' => 1, 'msg' => '主题名字不合法']);
+            }
+
+            $currentTheme = Option::get('website.theme', 'basic');
+            if ($theme === $currentTheme) {
+                Response::json(['code' => 1, 'msg' => '当前启用中的主题不能删除']);
+            }
+            if ($theme === 'basic') {
+                Response::json(['code' => 1, 'msg' => '基础主题（basic）为系统回退主题，不能删除']);
+            }
+
+            $themePath = themes_path($theme);
+            if (!is_dir($themePath)) {
+                Response::json(['code' => 1, 'msg' => '主题不存在']);
+            }
+
+            // 删除该主题在数据库中的全部选项（含归属标记键）
+            $ownedKeys = Theme::instance()->ownedOptionKeys($theme);
+            if (!empty($ownedKeys)) {
+                Option::removeMany($ownedKeys);
+            }
+
+            // 递归删除主题目录
+            FileUtils::deleteDir($themePath);
+
+            // 清缓存
+            Cache::delete('options_' . $theme);
+            Cache::delete('_opts_' . $theme);
+            Cache::delete('options_website');
+            Cache::delete('_opts_website');
+
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '删除主题', '主题：' . $theme);
+
+            // 返回重新渲染的卡片片段，前端直接替换 #themeGrid
+            $html = View::make('theme._grid', [
+                'themes'          => Theme::instance()->getAllThemesInfo(),
+                'website_options' => Option::getArray('website', 'REGEXP'),
+            ])->fetch();
+
+            Response::json(['code' => 0, 'msg' => '主题已删除', 'html' => $html]);
         }
     }
 

@@ -18,6 +18,11 @@ $currentTheme = $website_options['website.theme'] ?? '';
                      class="w-100 rounded-top" alt="<?php echo e($theme['title'] ?? ''); ?>" style="aspect-ratio:16/10;object-fit:cover;">
                 <?php if ($currentTheme === $theme['dirname']): ?>
                 <span class="badge bg-success position-absolute top-0 end-0 m-1">当前</span>
+                <?php else: ?>
+                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1" title="删除主题"
+                        onclick="deleteTheme('<?php echo e($theme['dirname']); ?>')">
+                    <i class="fa fa-trash"></i>
+                </button>
                 <?php endif; ?>
             </div>
             <div class="px-2 pt-2 d-flex flex-column flex-fill">
@@ -29,17 +34,17 @@ $currentTheme = $website_options['website.theme'] ?? '';
             </div>
             <div class="px-2 pb-2 mt-auto">
                 <div class="d-flex gap-2">
-                    <a class="btn btn-outline-secondary btn-sm flex-fill"
-                       target="_blank" rel="noopener"
-                       href="<?php echo base_url('/') . '?preview_theme=' . rawurlencode($theme['dirname']); ?>">
-                        <i class="fa fa-eye me-1"></i>预览
-                    </a>
                     <?php if ($currentTheme === $theme['dirname']): ?>
                     <a href="<?php echo url_action('Theme@settings'); ?>"
                        class="btn btn-outline-info btn-sm flex-fill">
                         <i class="fa fa-cog me-1"></i>设置
                     </a>
                     <?php else: ?>
+                    <a class="btn btn-outline-secondary btn-sm flex-fill"
+                       target="_blank" rel="noopener"
+                       href="<?php echo base_url('/') . '?preview_theme=' . rawurlencode($theme['dirname']); ?>">
+                        <i class="fa fa-eye me-1"></i>预览
+                    </a>
                     <button class="btn btn-outline-success btn-sm flex-fill"
                             onclick="activationTheme('<?php echo e($theme['dirname']); ?>')" type="button">
                         <i class="fa fa-check me-1"></i>启用
