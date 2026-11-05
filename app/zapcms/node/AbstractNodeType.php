@@ -10,6 +10,7 @@ use zapcms\services\NodeType;
 use zapcms\services\SlugHelper;
 use zapcms\services\Translator;
 use zapcms\support\HtmlXss;
+use zapcms\models\AdminLog;
 use zapcms\models\Node;
 use zapcms\models\NodeRelation;
 use zap\DB;
@@ -139,6 +140,12 @@ class AbstractNodeType
             Node::findById($id)->saveMeta(Request::post('meta', []));
             // 保存多语言译文（translations）
             $this->saveTranslations($id);
+            // 审计日志：编辑内容
+            AdminLog::info(
+                AdminLog::CATEGORY_CONTENT,
+                '编辑' . $this->title,
+                '标题：' . ($node['title'] ?? '') . '（' . $this->nodeType . ' #' . $id . '）'
+            );
             // slug 可能被唯一性校验改写（重名补 -id 后缀），一并返回给前端回写，
             // 前端据此就地更新页面，不再整体刷新（见 Zap.saveNodeForm）
             Response::json([
@@ -193,6 +200,12 @@ class AbstractNodeType
             foreach ($catalogArray as $catalog_id=>$level){
                 NodeRelation::create(['node_id'=>$nodeModel->id,'catalog_id'=>$catalog_id,'level'=>$level]);
             }
+            // 审计日志：新增内容（覆盖文章/单页/产品/FAQ 等所有节点类型）
+            AdminLog::info(
+                AdminLog::CATEGORY_CONTENT,
+                '新增' . $this->title,
+                '标题：' . ($node['title'] ?? '') . '（' . $this->nodeType . ' #' . $nodeModel->id . '）'
+            );
             // redirect_to：新建成功后前端用 history.replaceState 把地址切到 edit/{id}，
             // 不再整体跳转，表单原地变成“修改”状态，连续保存不会产生重复内容
             Response::json([
@@ -290,6 +303,11 @@ class AbstractNodeType
             $affId = Node::delete($id);
             if($affId){
                 session()->flash('success', $this->title . '删除成功');
+                AdminLog::info(
+                    AdminLog::CATEGORY_CONTENT,
+                    '删除' . $this->title,
+                    $this->title . ' #' . $id
+                );
                 Response::json(['code'=>0,'msg'=>$this->title . '删除成功']);
             }else{
                 Response::json(['code'=>1,'msg'=>$this->title . '删除失败，ID不存在']);

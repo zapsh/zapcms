@@ -4,6 +4,7 @@ namespace zapcms\controllers;
 
 
 use zapcms\controllers\AdminController;
+use zapcms\models\AdminLog;
 use zap\http\Request;
 use zap\http\Response;
 
@@ -126,6 +127,7 @@ class UploadController extends AdminController
         }
 
         $urlPath = $relPath === '' ? $filename : $relPath . '/' . $filename;
+        AdminLog::info(AdminLog::CATEGORY_CONTENT, '上传文件', '文件名：' . $filename . '（.' . $ext . '），路径：' . ($relPath === '' ? '/' : $relPath));
         Response::json(['code' => 0, 'url' => storage_url($urlPath)]);
     }
 

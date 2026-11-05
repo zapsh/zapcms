@@ -3,6 +3,7 @@
 namespace zapcms\controllers;
 
 use zapcms\controllers\AdminController;
+use zapcms\models\AdminLog;
 use zapcms\support\IOUtils;
 use zapcms\services\Option;
 use zapcms\services\Theme;
@@ -35,6 +36,8 @@ class ThemeController extends AdminController
             Theme::instance()->saveThemeOptions($theme);
             Cache::delete('options_website');
             Cache::delete('options_'.$theme);
+
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '切换主题', '主题：' . $theme);
 
             // 返回重新渲染的卡片片段，前端拿到后直接替换 #themeGrid，无需整页刷新
             $html = View::make('theme._grid', [
@@ -71,6 +74,7 @@ class ThemeController extends AdminController
             Theme::instance()->saveOptions($theme, $settings);
             Cache::delete('options_website');
             Cache::delete('options_'.$theme);
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '保存主题设置', '主题：' . $theme);
         }
         \response(['code'=>0,'msg'=>'保存成功'])->withJson();
     }

@@ -4,6 +4,7 @@ namespace zapcms\controllers;
 
 use FilesystemIterator;
 use zapcms\controllers\AdminController;
+use zapcms\models\AdminLog;
 use zap\view\View;
 
 class DevelopmentController extends AdminController
@@ -114,6 +115,7 @@ class DevelopmentController extends AdminController
             return;
         }
 
+        AdminLog::warning(AdminLog::CATEGORY_SECURITY, '编辑代码文件', '路径：' . $path . '（' . $result . ' 字节）');
         response(['code' => 0, 'msg' => '文件保存成功', 'path' => $path, 'size' => $result])->withJson();
     }
 

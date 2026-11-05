@@ -3,6 +3,7 @@
 namespace zapcms\controllers;
 
 use zapcms\controllers\AdminController;
+use zapcms\models\AdminLog;
 use zapcms\services\AdminMenu;
 use zap\DB;
 use zap\http\Request;
@@ -42,6 +43,12 @@ class AdminMenuController extends AdminController
                 AdminMenu::instance()->add($data);
             }
 
+            AdminLog::info(
+                AdminLog::CATEGORY_SYSTEM,
+                $menu_id ? '编辑后台菜单' : '新增后台菜单',
+                '菜单：' . ($data['title'] ?? '') . ($menu_id ? ' #' . $menu_id : '')
+            );
+
             Response::json(['code'=>0,'msg'=>'保存成功']);
         }
     }
@@ -53,6 +60,7 @@ class AdminMenuController extends AdminController
         foreach ($catalog as $id=>$row){
             $menu->remove($id);
         }
+        AdminLog::info(AdminLog::CATEGORY_SYSTEM, '删除后台菜单', '共 ' . count($catalog) . ' 个菜单');
         Response::json(['code'=>0,'msg'=>'系统菜单删除成功']);
     }
 

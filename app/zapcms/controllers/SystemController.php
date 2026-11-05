@@ -4,6 +4,7 @@ namespace zapcms\controllers;
 
 use zapcms\helpers\Database;
 use zapcms\controllers\AdminController;
+use zapcms\models\AdminLog;
 use zapcms\services\Locale;
 use zapcms\services\Mailer;
 use zapcms\services\Option;
@@ -45,6 +46,7 @@ class SystemController extends AdminController
             \zap\facades\Cache::delete('_opts_cache');
             \zap\facades\Cache::delete('_opts_website');
             \zap\facades\Cache::delete('_opts_upload');
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '保存系统设置', '站点信息 / 服务器 / 缓存设置已更新');
             Response::json(['code'=>0,'msg'=>'保存成功']);
         }
         $data = [
@@ -293,6 +295,7 @@ class SystemController extends AdminController
                 $count = (int)$pdo->query("SELECT COUNT(*) FROM {$table}")->fetchColumn();
                 $pdo->rawExec("DELETE FROM {$table}");
 
+                AdminLog::warning(AdminLog::CATEGORY_SECURITY, '清空审计日志', "管理员清空了 {$count} 条审计记录");
                 Response::json(['code' => 0, 'msg' => "已清空 {$count} 条审计日志"]);
                 return;
             }
@@ -300,6 +303,7 @@ class SystemController extends AdminController
             $viewer = new \zapcms\services\LogViewer();
             $count  = $viewer->clear((string)Request::post('file', ''));
 
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '清空系统日志', "已清空 {$count} 个日志文件");
             Response::json(['code' => 0, 'msg' => "已清空 {$count} 个日志文件"]);
         } catch (\Throwable $e) {
             Response::json(['code' => 1, 'msg' => $e->getMessage()]);
@@ -344,6 +348,8 @@ class SystemController extends AdminController
 
         try {
             $result = \zapcms\services\CacheManager::clear($type);
+
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '清理缓存', '类型：' . $type);
 
             if (!empty($result['redis'])) {
                 $msg = 'Redis 缓存已清空（仅限本应用前缀）';
@@ -424,6 +430,7 @@ class SystemController extends AdminController
     public function backup(){
         $result = Database::backup();
         if($result !== false){
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '数据库备份', '类型：结构 + 数据，文件：' . basename($result));
             Response::json(['code'=>0,'msg'=>'备份成功', 'file' => basename($result)]);
         }else{
             Response::json(['code'=>1,'msg'=>'备份失败']);
@@ -436,6 +443,7 @@ class SystemController extends AdminController
     public function backupData(){
         $result = Database::backupData();
         if($result !== false){
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '数据库备份', '类型：仅数据，文件：' . basename($result));
             Response::json(['code'=>0,'msg'=>'数据备份成功', 'file' => basename($result)]);
         }else{
             Response::json(['code'=>1,'msg'=>'备份失败']);

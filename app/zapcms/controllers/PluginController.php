@@ -3,6 +3,7 @@
 namespace zapcms\controllers;
 
 use zapcms\controllers\AdminController;
+use zapcms\models\AdminLog;
 use zap\DB;
 use zapcms\support\ZapPackageManager;
 use zapcms\support\ZapUpdate;
@@ -167,6 +168,10 @@ class PluginController extends AdminController
 
         $result = $this->updater->installMarketPlugin($packageName);
 
+        if (!empty($result['success'])) {
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '安装插件', '包名：' . $packageName);
+        }
+
         Response::json([
             'code' => $result['success'] ? 0 : 1,
             'msg'  => $result['message'],
@@ -232,6 +237,7 @@ class PluginController extends AdminController
             $this->pm->runPluginInstallScript($name);
             // 重新生成模块路由配置（config/module.php）
             $this->pm->syncModuleRoutes();
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '注册模块', '模块：' . $name);
             Response::json(['code' => 0, 'msg' => '模块注册成功']);
         }
 
@@ -309,6 +315,7 @@ class PluginController extends AdminController
 
         // 重新生成模块路由配置（config/module.php）
         $this->pm->syncModuleRoutes();
+        AdminLog::info(AdminLog::CATEGORY_SYSTEM, '安装插件', '插件：' . $name);
 
         Response::json(['code' => 0, 'msg' => '插件安装成功']);
     }
@@ -332,6 +339,14 @@ class PluginController extends AdminController
         $keepFiles = (bool)req()->post('keep_files', 0);
 
         $result = $this->pm->uninstallPlugin($name, $keepData, $keepFiles);
+
+        if (!empty($result['success'])) {
+            AdminLog::info(
+                AdminLog::CATEGORY_SYSTEM,
+                '卸载插件',
+                '插件：' . $name . ($keepData ? '（保留数据）' : '') . ($keepFiles ? '（保留文件）' : '')
+            );
+        }
 
         Response::json([
             'code' => $result['success'] ? 0 : 1,
@@ -359,6 +374,10 @@ class PluginController extends AdminController
 
         $result = $this->pm->updatePlugin($name, $downloadUrl, $version);
 
+        if (!empty($result['success'])) {
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '更新插件', '插件：' . $name . ' → ' . $version);
+        }
+
         Response::json([
             'code' => $result['success'] ? 0 : 1,
             'msg'  => $result['message'],
@@ -385,6 +404,11 @@ class PluginController extends AdminController
 
         // 启用时注册模块后台菜单，禁用时移除
         if (!empty($result['success'])) {
+            AdminLog::info(
+                AdminLog::CATEGORY_SYSTEM,
+                $status === 1 ? '启用插件' : '禁用插件',
+                '插件：' . $name
+            );
             try {
                 $status === 1
                     ? \zapcms\support\ModMenu::sync($name, [], true)

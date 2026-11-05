@@ -3,6 +3,7 @@
 namespace zapcms\controllers;
 
 use zapcms\controllers\AdminController;
+use zapcms\models\AdminLog;
 use zapcms\services\NodeType;
 use zap\DB;
 use zap\http\Response;
@@ -166,6 +167,12 @@ class NodeController extends AdminController
         $groups = req()->post('field_group', []);
         NodeType::saveFieldGroups($data['type_name'], is_array($groups) ? $groups : []);
 
+        AdminLog::info(
+            AdminLog::CATEGORY_CONTENT,
+            $id > 0 ? '编辑内容模型' : '新增内容模型',
+            '模型：' . $data['title'] . '（' . $data['type_name'] . '）'
+        );
+
         Response::json(['code' => 0, 'msg' => '保存成功']);
     }
 
@@ -277,6 +284,7 @@ class NodeController extends AdminController
                 NodeType::saveConfig($typeName, $clean);
             }
         }
+        AdminLog::info(AdminLog::CATEGORY_CONTENT, '保存内容模型显示配置', '共 ' . count($configs) . ' 个模型');
         Response::json(['code' => 0, 'msg' => '保存成功']);
     }
 
@@ -294,6 +302,11 @@ class NodeController extends AdminController
             'status'     => $status ? 1 : 0,
             'updated_at' => time(),
         ]);
+        AdminLog::info(
+            AdminLog::CATEGORY_CONTENT,
+            $status ? '启用内容模型' : '禁用内容模型',
+            '模型 #' . $id
+        );
         Response::json(['code' => 0, 'msg' => $status ? '已启用' : '已禁用']);
     }
 
@@ -311,6 +324,7 @@ class NodeController extends AdminController
             NodeType::removeConfig((string)$row['type_name']);
         }
         DB::table('node_types')->where('type_id', (int)$id)->delete();
+        AdminLog::info(AdminLog::CATEGORY_CONTENT, '删除内容模型', '模型 #' . $id);
         Response::json(['code' => 0, 'msg' => '删除成功']);
     }
 

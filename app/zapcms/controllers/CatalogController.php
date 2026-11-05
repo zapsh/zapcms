@@ -3,6 +3,7 @@
 namespace zapcms\controllers;
 
 use zapcms\controllers\AdminController;
+use zapcms\models\AdminLog;
 use zapcms\services\Catalog;
 use zapcms\services\Locale;
 use zapcms\services\SlugHelper;
@@ -62,6 +63,12 @@ class CatalogController extends AdminController
             }
         }
 
+        AdminLog::info(
+            AdminLog::CATEGORY_CONTENT,
+            $catalogId ? '编辑栏目' : '新增栏目',
+            '栏目：' . ($catalog['title'] ?? '') . ($catalogId ? ' #' . $catalogId : '')
+        );
+
         Response::json(['code'=>0,'msg'=>'保存成功']);
     }
 
@@ -104,6 +111,7 @@ class CatalogController extends AdminController
             // 清理该栏目的多语言译文
             Translator::deleteAll(Translator::TYPE_NODE, intval($id));
         }
+        AdminLog::info(AdminLog::CATEGORY_CONTENT, '删除栏目', '共 ' . count($catalog) . ' 个栏目');
         Response::json(['code'=>0,'msg'=>'分类删除成功']);
     }
 

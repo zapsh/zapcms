@@ -4,6 +4,7 @@ namespace zapcms\controllers;
 
 use zapcms\controllers\UploadController;
 use zapcms\helpers\ThumbHelper;
+use zapcms\models\AdminLog;
 use zap\http\Request;
 use zap\http\Response;
 
@@ -176,6 +177,7 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '创建失败，请检查目录权限']);
             return;
         }
+        AdminLog::info(AdminLog::CATEGORY_CONTENT, '新建文件夹', '路径：' . $relTarget);
         Response::json(['code' => 0, 'msg' => '创建成功', 'path' => $relTarget]);
     }
 
@@ -218,6 +220,7 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '重命名失败，请检查目录权限']);
             return;
         }
+        AdminLog::info(AdminLog::CATEGORY_CONTENT, '重命名文件', $path === '' ? $oldName . ' → ' . $newName : $path . '/' . $oldName . ' → ' . $newName);
         Response::json(['code' => 0, 'msg' => '重命名成功']);
     }
 
@@ -248,6 +251,7 @@ class MediaController extends UploadController
             }
             $this->removePath($base . '/' . $name);
         }
+        AdminLog::info(AdminLog::CATEGORY_CONTENT, '删除文件', '路径：' . ($path === '' ? '/' : $path) . '，共 ' . count($names) . ' 项');
         Response::json(['code' => 0, 'msg' => '删除成功']);
     }
 
@@ -293,6 +297,7 @@ class MediaController extends UploadController
                 @rename($src, $dst);
             }
         }
+        AdminLog::info(AdminLog::CATEGORY_CONTENT, '移动文件', ($path === '' ? '/' : $path) . ' → ' . ($target === '' ? '/' : $target) . '，共 ' . count($names) . ' 项');
         Response::json(['code' => 0, 'msg' => '移动成功']);
     }
 
