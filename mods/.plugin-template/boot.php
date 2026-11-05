@@ -38,3 +38,17 @@ Hook::filter('menu.build', function (array $items) {
 AdminHook::on('admin_head', function () {
     return '<meta name="generator" content="example-plugin">';
 });
+
+// 5) 静态资源引用示例（演示模块自带图片 / JS / CSS 如何被引用与输出）
+//    约定：资源放在 mods/<name>/assets/ 下，用 mod_url('<name>', 'assets/...') 生成 URL。
+//    两种部署模式都通：根目录模式直接访问 /mods/...；public 模式 MakePublic 软链 mods → public/mods。
+//    仅当访问首页并附加 ?pt_demo=1 时才接管渲染，正常访问首页不受影响。
+Hook::filter('home_render', function ($_, $ctrl) {
+    if (empty($_GET['pt_demo'])) {
+        return $_; // 非示例模式：保持原首页
+    }
+    // 把本 mod 的视图目录加入模板搜索路径
+    View::paths(APP_ROOT . '/mods/example-plugin/views');
+    // 返回 View（自动套用主题 layout，register_styles/scripts 会在其中输出）
+    return view('plugin_template.asset_demo', []);
+});
