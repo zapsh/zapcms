@@ -95,9 +95,10 @@ use zap\facades\Url;
         $('#mlmRes_catalog .mlm-chk').prop('checked', $(el).prop('checked'));
     }
 
-    // 构建器加载完成后初始化目录树
+    // 构建器加载完成后初始化目录树与单页列表
     $(function () {
         if ($('#mlmRes_catalog').length) { mlmLoadCatalogTree(); }
+        if ($('#mlmRes_page').length) { mlmSearch('page'); }
     });
 
     // ───────────────────── 位置 CRUD（抽屉 / 管理位置 tab 共用） ─────────────────────
@@ -437,7 +438,7 @@ use zap\facades\Url;
         });
     }
 
-    // WordPress 式：左栏搜索并添加菜单项（kind: catalog/node；sub: 内容模型类型）
+    // WordPress 式：左栏搜索并添加菜单项（kind: catalog/node/page；sub: 内容模型类型）
     function mlmSearch(kind, sub){
         sub = sub || '';
         var suffix = sub ? '_' + sub : '';
@@ -445,15 +446,27 @@ use zap\facades\Url;
         var box = $('#mlmRes_' + kind + suffix);
         box.html('<div class="text-muted p-2">搜索中…</div>');
         var params = {keyword:kw, limit:30};
-        if (kind === 'catalog' && sub) { params.node_type = sub; }
+        // sub：catalog 面板按内容模型过滤栏目；内容/单页面板按 node_type 过滤节点（如 page）
+        if (sub) { params.node_type = sub; }
+        // 单页面板固定只看 node_type=page（栏目 + 节点），初始加载也生效
+        else if (kind === 'page') { params.node_type = 'page'; }
         $.getJSON('<?php echo Url::action("Catalog@searchLinkTarget"); ?>', params, function (resp){
             if(resp.code !== 0){ box.html('<div class="text-danger p-2">搜索失败</div>'); return; }
-            var lists = kind === 'node' ? (resp.nodes||[]) : (resp.catalogs||[]);
+            var lists;
+            if (kind === 'page') {
+                // 单页 = node_type=page 的栏目（常见）+ node_type=page 的节点（若有）
+                lists = (resp.catalogs||[]).concat(resp.nodes||[]);
+            } else {
+                lists = kind === 'node' ? (resp.nodes||[]) : (resp.catalogs||[]);
+            }
             if(lists.length === 0){ box.html('<div class="text-muted p-2">没有匹配</div>'); return; }
             var h = '<div class="list-group list-group-flush">';
             lists.forEach(function (item){
+                var t    = item.kind || kind;                       // catalog → 菜单项 item_type=catalog
+                var icon = t === 'catalog' ? 'fa-folder' : 'fa-file-lines';
                 h += '<label class="list-group-item small py-1 d-flex align-items-center">' +
-                     '<input class="form-check-input me-2 mlm-chk" type="checkbox" data-type="' + kind + '" data-id="' + item.id + '">' +
+                     '<input class="form-check-input me-2 mlm-chk" type="checkbox" data-type="' + t + '" data-id="' + item.id + '">' +
+                     '<i class="fa ' + icon + ' text-muted me-2"></i>' +
                      '<span class="text-truncate">' + escapeHtml(item.path_label || item.title) +
                      ' <span class="text-muted">#' + item.id + '</span></span></label>';
             });
@@ -503,6 +516,8 @@ use zap\facades\Url;
         $('#mlTabList').toggleClass('active', tab === 'list');
         $('#mlTabEdit').toggleClass('active', tab === 'edit');
         $('#mlTabLoc').toggleClass('active', tab === 'locations');
+        // 编辑菜单平铺在卡片外，其余 tab 显示卡片，避免嵌套边框
+        $('#mlCardWrap').toggleClass('d-none', tab === 'edit');
     }
 
     // 从「管理菜单」列表进入编辑

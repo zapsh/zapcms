@@ -26,6 +26,9 @@ foreach ($items as $it) {
     <button type="button" class="btn btn-success btn-sm" onclick="mlSaveMenuTitle(<?php echo (int) ($menu['id'] ?? 0); ?>)">
         <i class="fa fa-save me-1"></i>保存菜单
     </button>
+    <button type="button" class="btn btn-outline-danger btn-sm" onclick="mlDeleteMenu(window.__mlMenuId)">
+        <i class="fa fa-trash me-1"></i>删除菜单
+    </button>
     <code class="small text-muted ms-1">#<?php echo (int) ($menu['id'] ?? 0); ?></code>
     <script>window.__mlMenuId = <?php echo (int) ($menu['id'] ?? 0); ?>;</script>
 </div>
@@ -34,45 +37,48 @@ foreach ($items as $it) {
     <div class="row g-2">
         <!-- 左栏：添加菜单项 -->
         <div class="col-12 col-lg-4 border-lg-end">
-            <div class="accordion" id="mlmAccordion">
-                <!-- 栏目目录（WordPress「分类目录」式树形勾选） -->
+            <div class="d-flex align-items-center mb-2">
+                <h6 class="mb-0 small text-muted">添加菜单项</h6>
+            </div>
+            <div class="accordion accordion-flush mlm-panel" id="mlmAccordion">
+                <!-- 栏目（WordPress「分类目录」式树形勾选） -->
                 <div class="accordion-item">
                     <h2 class="accordion-header">
                         <button class="accordion-button py-2" type="button" data-bs-toggle="collapse" data-bs-target="#mlmBoxCatalog">
-                            栏目目录
+                            <i class="fa fa-folder-tree me-2 text-primary"></i>栏目
                         </button>
                     </h2>
                     <div id="mlmBoxCatalog" class="accordion-collapse collapse show" data-bs-parent="#mlmAccordion">
                         <div class="accordion-body small py-2">
                             <a href="javascript:;" class="small text-decoration-none d-none mb-1 d-inline-block"
                                id="mlmTreeBack" onclick="mlmLoadCatalogTree()">
-                                <i class="fa fa-angle-left me-1"></i>返回目录树
+                                <i class="fa fa-angle-left me-1"></i>返回栏目树
                             </a>
                             <div class="input-group input-group-sm mb-2">
-                                <input type="text" id="mlmKw_catalog" class="form-control" placeholder="搜索栏目标题 / ID…"
+                                <input type="text" id="mlmKw_catalog" class="form-control" placeholder="搜索栏目 / ID…"
                                        onkeydown="if(event.key==='Enter'){mlmSearch('catalog');}">
                                 <button class="btn btn-outline-secondary" type="button" onclick="mlmSearch('catalog')"><i class="fa fa-search"></i></button>
                             </div>
-                            <div id="mlmRes_catalog" class="border rounded mb-2" style="max-height:300px;overflow:auto;">
-                                <div class="text-muted p-2">正在加载栏目目录…</div>
+                            <div id="mlmRes_catalog" class="mlm-list mb-2" style="max-height:300px;overflow:auto;">
+                                <div class="text-muted p-2">正在加载栏目…</div>
                             </div>
                             <div class="d-flex align-items-center gap-2">
                                 <div class="form-check mb-0">
                                     <input class="form-check-input" type="checkbox" id="mlmTreeAll" onchange="mlmToggleAll(this)">
                                     <label class="form-check-label small text-muted" for="mlmTreeAll">全选</label>
                                 </div>
-                                <button class="btn btn-success btn-sm ms-auto" type="button" onclick="mlmAddSelected()">
+                                <button class="btn btn-primary btn-sm ms-auto" type="button" onclick="mlmAddSelected()">
                                     <i class="fa fa-plus me-1"></i>添加至菜单
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <!-- 具体内容(node) -->
+                <!-- 内容(node) -->
                 <div class="accordion-item">
                     <h2 class="accordion-header">
                         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#mlmBoxNode">
-                            具体内容
+                            <i class="fa fa-cube me-2 text-success"></i>内容
                         </button>
                     </h2>
                     <div id="mlmBoxNode" class="accordion-collapse collapse" data-bs-parent="#mlmAccordion">
@@ -82,10 +88,33 @@ foreach ($items as $it) {
                                        onkeydown="if(event.key==='Enter'){mlmSearch('node');}">
                                 <button class="btn btn-outline-secondary" type="button" onclick="mlmSearch('node')"><i class="fa fa-search"></i></button>
                             </div>
-                            <div id="mlmRes_node" class="border rounded mb-2" style="max-height:260px;overflow:auto;">
+                            <div id="mlmRes_node" class="mlm-list mb-2" style="max-height:260px;overflow:auto;">
                                 <div class="text-muted p-2">输入关键字搜索后勾选，再点「添加选中」。</div>
                             </div>
-                            <button class="btn btn-success btn-sm w-100" type="button" onclick="mlmAddSelected()">
+                            <button class="btn btn-primary btn-sm w-100" type="button" onclick="mlmAddSelected()">
+                                <i class="fa fa-plus me-1"></i>添加选中
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- 单页（node_type=page） -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#mlmBoxPage">
+                            <i class="fa fa-file-lines me-2 text-warning"></i>单页
+                        </button>
+                    </h2>
+                    <div id="mlmBoxPage" class="accordion-collapse collapse" data-bs-parent="#mlmAccordion">
+                        <div class="accordion-body small py-2">
+                            <div class="input-group input-group-sm mb-2">
+                                <input type="text" id="mlmKw_page" class="form-control" placeholder="搜索单页标题 / ID…"
+                                       onkeydown="if(event.key==='Enter'){mlmSearch('page');}">
+                                <button class="btn btn-outline-secondary" type="button" onclick="mlmSearch('page')"><i class="fa fa-search"></i></button>
+                            </div>
+                            <div id="mlmRes_page" class="mlm-list mb-2" style="max-height:260px;overflow:auto;">
+                                <div class="text-muted p-2">正在加载单页…</div>
+                            </div>
+                            <button class="btn btn-primary btn-sm w-100" type="button" onclick="mlmAddSelected()">
                                 <i class="fa fa-plus me-1"></i>添加选中
                             </button>
                         </div>
@@ -95,7 +124,7 @@ foreach ($items as $it) {
                 <div class="accordion-item">
                     <h2 class="accordion-header">
                         <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#mlmBoxLink">
-                            自定义链接
+                            <i class="fa fa-link me-2 text-secondary"></i>自定义链接
                         </button>
                     </h2>
                     <div id="mlmBoxLink" class="accordion-collapse collapse" data-bs-parent="#mlmAccordion">
@@ -122,12 +151,14 @@ foreach ($items as $it) {
                 </span>
             </div>
             <?php if (empty($items)): ?>
-                <div class="text-center text-muted py-4 small border rounded">
-                    该菜单还没有项目，从左侧添加栏目 / 内容 / 自定义链接。
+                <div class="text-center text-muted py-5 border rounded">
+                    <i class="fa fa-list-ul fa-2x d-block mb-2 opacity-50"></i>
+                    <div>该菜单还没有项目，从左侧添加栏目 / 内容 / 单页 / 自定义链接。</div>
                 </div>
             <?php else: ?>
                 <?php
                 $typeLabels = ['catalog' => '栏目', 'node' => '内容', 'custom_link' => '自定义链接'];
+                $typeClass  = ['catalog' => 'mi-type-catalog', 'node' => 'mi-type-node', 'custom_link' => 'mi-type-custom'];
                 ?>
                 <ul class="list-group mi-list" id="miList">
                     <?php foreach ($items as $it):
@@ -155,10 +186,13 @@ foreach ($items as $it) {
                                 <div class="flex-grow-1 text-truncate" style="min-width:0">
                                     <strong><?php echo e($barTitle); ?></strong>
                                     <?php if ($depth > 0): ?>
-                                        <span class="text-muted small ms-1">子项目</span>
+                                        <span class="text-muted small ms-1 fst-italic">子项目</span>
+                                    <?php endif; ?>
+                                    <?php if ($dUrl !== ''): ?>
+                                        <div class="small text-muted text-truncate"><?php echo e($dUrl); ?></div>
                                     <?php endif; ?>
                                 </div>
-                                <span class="badge text-bg-light flex-shrink-0"><?php echo e($typeLabel); ?></span>
+                                <span class="badge mi-type flex-shrink-0 <?php echo e($typeClass[$it['item_type']] ?? ''); ?>"><?php echo e($typeLabel); ?></span>
                                 <button type="button" class="btn btn-sm btn-link text-muted py-0 px-1 mi-toggle flex-shrink-0"
                                         title="展开编辑">
                                     <i class="fa fa-chevron-down"></i>
@@ -227,5 +261,9 @@ foreach ($items as $it) {
     // jQuery 对 html() 注入的 <script> 会求值，因此这里直接触发即可。
     if (window.jQuery && typeof mlmLoadCatalogTree === 'function' && $('#mlmRes_catalog').length) {
         mlmLoadCatalogTree();
+    }
+    // 单页面板默认加载 node_type=page 的内容列表
+    if (window.jQuery && typeof mlmSearch === 'function' && $('#mlmRes_node_page').length) {
+        mlmSearch('node', 'page');
     }
 </script>

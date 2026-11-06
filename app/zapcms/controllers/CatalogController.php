@@ -254,6 +254,10 @@ class CatalogController extends AdminController
         if ($keyword !== '') {
             $nodeQuery->where('title', 'LIKE', "%{$keyword}%");
         }
+        // 按节点类型过滤（如菜单「单页」面板传 node_type=page）
+        if ($nodeType !== '') {
+            $nodeQuery->where('node_type', '=', $nodeType);
+        }
         $nodes = $nodeQuery->orderBy('id DESC')->limit($limit)->get(FETCH_ASSOC);
         $nodes = $nodes ?: [];
         foreach ($nodes as &$node) {

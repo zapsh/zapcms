@@ -46,10 +46,10 @@ class MenuLocationController extends AdminController
             }
         }
 
-        // 默认激活的 tab（list=管理菜单 / edit=编辑菜单 / locations=管理位置）
-        $tab = strtolower((string) Request::get('tab', 'list'));
+        // 默认激活的 tab（edit=编辑菜单 / locations=管理位置；list 仅兼容旧链接）
+        $tab = strtolower((string) Request::get('tab', 'edit'));
         if (!in_array($tab, ['list', 'edit', 'locations'], true)) {
-            $tab = 'list';
+            $tab = 'edit';
         }
         $data['active_tab'] = $tab;
 

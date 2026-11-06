@@ -30,17 +30,27 @@ $menusCount = count($menus);
 .mi-item.mi-drop-before { box-shadow: inset 0 3px 0 #0d6efd; }
 .mi-item.mi-drop-after  { box-shadow: inset 0 -3px 0 #0d6efd; }
 .mi-item.mi-drop-child  { box-shadow: inset 0 0 0 2px #198754; }
-</style>
 
-<div class="card card-outline card-primary">
-    <div class="card-header p-2 d-flex align-items-center flex-wrap gap-2">
-        <ul class="nav nav-pills" style="gap:.25rem">
-            <li class="nav-item">
-                <button id="mlTabList" class="nav-link py-1 <?php echo $active_tab === 'list' ? 'active' : ''; ?>" type="button" onclick="mlSwitchTab('list')">
-                    <i class="fa fa-list me-1"></i>管理菜单
-                </button>
-            </li>
-            <li class="nav-item">
+/* ── 左栏「添加菜单项」面板（WordPress 式） ── */
+.mlm-panel .accordion-item { border-color: #e9ecef; }
+.mlm-panel .accordion-button { font-weight: 600; font-size: .875rem; padding: .55rem .75rem; color: #212529; }
+.mlm-panel .accordion-button:not(.collapsed) { background: #fff; box-shadow: inset 0 -1px 0 #dee2e6; }
+.mlm-panel .accordion-body { padding: .6rem .75rem .75rem; }
+.mlm-list { border: 1px solid #dee2e6; border-radius: .375rem; }
+.mlm-list .list-group-item { padding: .35rem .6rem; border-color: #f1f3f5; }
+.mlm-list .list-group-item:hover { background: #f8f9fa; }
+
+/* ── 右栏菜单项 ── */
+.mi-item { border-color: #e9ecef; margin-bottom: .35rem; }
+.mi-bar { border-radius: .25rem; transition: background .15s; }
+.mi-bar:hover { background: #f8f9fa; }
+.mi-type { font-weight: 500; }
+.mi-type-catalog { background: #e7f1ff; color: #0d6efd; }
+.mi-type-node    { background: #e6f4ea; color: #198754; }
+.mi-type-custom  { background: #fff3cd; color: #997404; }
+</style>
+ <ul class="nav nav-tabs" style="gap:.25rem">
+     <li class="nav-item">
                 <button id="mlTabEdit" class="nav-link py-1 <?php echo $active_tab === 'edit' ? 'active' : ''; ?>" type="button" onclick="mlSwitchTab('edit')">
                     <i class="fa fa-pen-nib me-1"></i>编辑菜单
                 </button>
@@ -51,7 +61,48 @@ $menusCount = count($menus);
                 </button>
             </li>
         </ul>
+
+<!-- Tab 2：编辑菜单（平铺在卡片外，左添加项 / 右菜单结构，避免卡片内多层嵌套边框） -->
+<div id="tabEditMenu" class="<?php echo $active_tab === 'edit' ? '' : 'd-none'; ?>">
+    <!-- WordPress 式：选择要编辑的菜单 -->
+    <div class="d-flex align-items-center gap-2 flex-wrap bg-white border p-2 mb-2">
+        <label class="small text-muted mb-0">选择要编辑的菜单：</label>
+        <select id="mlMenuSelect" class="form-select form-select-sm" style="width:auto;min-width:220px">
+            <?php foreach ($menus as $m): ?>
+                <option value="<?php echo (int) $m['id']; ?>" <?php echo (int) ($current_menu['id'] ?? 0) === (int) $m['id'] ? 'selected' : ''; ?>>
+                    <?php echo e($m['title']); ?>（#<?php echo (int) $m['id']; ?>）
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <button type="button" class="btn btn-outline-primary btn-sm" onclick="mlEditMenu($('#mlMenuSelect').val())">
+            选择
+        </button>
+        <span class="small text-muted">
+            或 <a href="javascript:;" onclick="mlCreateMenu()">创建一个新菜单</a>。不要忘记保存您的更改！
+        </span>
     </div>
+    <div id="menuEditor">
+        <?php if (!empty($current_menu)): ?>
+            <?php echo $this->partial('menu_location._builder', [
+                'menu'     => $current_menu,
+                'items'    => $items,
+                'resolved' => $resolved,
+            ]); ?>
+        <?php else: ?>
+            <div class="text-center text-muted py-5 border rounded bg-white">
+                <i class="fa fa-list-ul fa-2x d-block mb-2 opacity-50"></i>
+                <div>请先在「管理菜单」中创建或选择一个菜单。</div>
+                <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="mlCreateMenu()">
+                    <i class="fa fa-plus me-1"></i>创建第一个菜单
+                </button>
+            </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<div id="mlCardWrap" class="<?php echo $active_tab === 'edit' ? 'd-none' : ''; ?>">
+<div class="card ">
+
     <div class="card-body p-2">
 
         <!-- Tab 1：管理菜单 -->
@@ -116,27 +167,6 @@ $menusCount = count($menus);
                     </table>
                 </div>
             <?php endif; ?>
-        </div>
-
-        <!-- Tab 2：编辑菜单 -->
-        <div id="tabEditMenu" class="<?php echo $active_tab === 'edit' ? '' : 'd-none'; ?>">
-            <div id="menuEditor">
-                <?php if (!empty($current_menu)): ?>
-                    <?php echo $this->partial('menu_location._builder', [
-                        'menu'     => $current_menu,
-                        'items'    => $items,
-                        'resolved' => $resolved,
-                    ]); ?>
-                <?php else: ?>
-                    <div class="text-center text-muted py-5 border rounded">
-                        <i class="fa fa-list-ul fa-2x d-block mb-2"></i>
-                        <div>请先在「管理菜单」中创建或选择一个菜单。</div>
-                        <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="mlSwitchTab('list')">
-                            <i class="fa fa-arrow-left me-1"></i>去管理菜单
-                        </button>
-                    </div>
-                <?php endif; ?>
-            </div>
         </div>
 
         <!-- Tab 3：管理位置 -->
@@ -204,5 +234,6 @@ $menusCount = count($menus);
         主题也可以用 <code>catalog_menu('key')</code> 在任意区域输出对应位置菜单。
     </div>
 </div>
+</div><!-- /#mlCardWrap -->
 
 <?php echo $this->partial('menu_location._scripts'); ?>
