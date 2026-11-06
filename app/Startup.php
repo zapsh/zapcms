@@ -345,6 +345,147 @@ class Startup
     }
 
     /**
+     * 按 ID 解析节点（已发布，支持多语言译文）
+     *
+     * @param int $id
+     * @return array|null
+     */
+    protected function resolveNodeById(int $id): ?array
+    {
+        if ($id <= 0) {
+            return null;
+        }
+        $node = Node::where('id', $id)
+            ->where('status', Node::STATUS_PUBLISH)
+            ->fetch(FETCH_ASSOC);
+        return $node ? Translator::apply($node, Locale::current()) : null;
+    }
+
+    /**
+     * 将固定链接结构编译为路径正则
+     *
+     * 支持 %year% / %monthnum% / %day% / %postname% / %node_id% / %node_type%，
+     * 未识别的 %tag% 宽松匹配为任意非 / 段。
+     *
+     * @param string $structure
+     * @return string|null
+     */
+    private function permalinkToRegex(string $structure): ?string
+    {
+        $tags = [
+            '%year%'      => '(?P<year>\d{4})',
+            '%monthnum%'  => '(?P<monthnum>\d{1,2})',
+            '%day%'       => '(?P<day>\d{1,2})',
+            '%postname%'  => '(?P<postname>[^/]+)',
+            '%node_id%'   => '(?P<node_id>\d+)',
+            '%node_type%' => '(?P<node_type>[^/]+)',
+        ];
+        $regex = preg_quote(rtrim($structure, '/'), '#');
+        foreach ($tags as $tag => $pattern) {
+            $regex = str_replace($tag, $pattern, $regex);
+        }
+        $regex = preg_replace('/%[a-z_0-9]+%/', '[^/]+', $regex);
+        return '#^' . $regex . '/?$#';
+    }
+
+    /**
+     * 按固定链接结构解析路径（日期和名称型 / 月份和名称型 / 数字型 / 自定义）
+     *
+     * - 结构含 %node_id%：按节点 ID 解析
+     * - 结构含 %postname%：按 slug（末段）解析
+     * - 纯 slug 结构与基础型（查询串）返回 null，走默认解析
+     *
+     * @param array $params URL 路径段
+     * @return array|null
+     */
+    protected function resolveNodeByPermalink(array $params): ?array
+    {
+        if (!$params) {
+            return null;
+        }
+        $structure = get_permalink_structure();
+        if (str_contains($structure, '?') || rtrim($structure, '/') === '/%postname%') {
+            return null;
+        }
+
+        $path  = '/' . implode('/', $params);
+        $regex = $this->permalinkToRegex($structure);
+        if ($regex === null || !preg_match($regex, $path, $m)) {
+            return null;
+        }
+
+        if (!empty($m['node_id'])) {
+            return $this->resolveNodeById((int) $m['node_id']);
+        }
+        if (!empty($m['postname'])) {
+            return $this->resolveNodeBySlug($m['postname']);
+        }
+        return null;
+    }
+
+    /**
+     * 基础型固定链接：/?n={node_id}
+     *
+     * 仅在路径为空时生效；若当前结构并非基础型，301 跳转到该节点的规范固定链接。
+     *
+     * @return array|null
+     */
+    protected function resolveNodeFromQuery(): ?array
+    {
+        if ($this->router->params) {
+            return null;
+        }
+        $id = (int) req()->get('n', 0);
+        if ($id <= 0) {
+            return null;
+        }
+        $node = $this->resolveNodeById($id);
+        if (!$node) {
+            return null;
+        }
+        if (!str_contains(get_permalink_structure(), '?')) {
+            // 非基础型结构：旧 ID 链接 301 到规范固定链接，利于 SEO
+            header('Location: ' . build_permalink($node), true, 301);
+            exit;
+        }
+        return $node;
+    }
+
+    /**
+     * 命中节点后的统一处理（栏目附加数据 / SEO / pageState / 控制器分发）
+     *
+     * @param \app\PageState $pageState
+     * @param array          $node
+     */
+    private function serveNode($pageState, array $node): void
+    {
+        if ($node['node_type'] === 'catalog' && empty($node['content'])) {
+
+            $catalog = DB::table('catalog')->where('id', $node['id'])->fetch(FETCH_ASSOC);
+            // 栏目同时存在 node / catalog 两份记录且 id 相同，译文统一按 node 维度存放
+            $catalog and $catalog = Translator::apply((array) $catalog, Locale::current());
+            $pageState->catalog = $catalog;
+        }
+
+        // 多语言 SEO：canonical + hreflang
+        $this->setSeoUrls($pageState, $node);
+
+        $pageState->node = $node;
+        $pageState->nodeId = $node['id'];
+        $pageState->nodeType = $node['node_type'];
+        $pageState->nodeMimeType = $node['mime_type'];
+
+        if($node['node_type'] === 'catalog' && $this->resetRoute($node['mime_type'] ?: 'catalog', 'index')) {
+
+        } else if (!$this->resetRoute($node['node_type'], empty($node['mime_type']) ? 'index' : $node['mime_type'])) {
+            DB::update('node', ['hits' => DB::raw('hits+1')], ['id' => $node['id']]);
+            $this->resetRoute('node', $node['node_type']);
+        }
+        $pageState->isNode = $node['node_type'] !== 'catalog';
+        $pageState->isCatalog = $node['node_type'] === 'catalog';
+    }
+
+    /**
      * 初始化 CMS 路由（根据参数确定控制器）
      */
     private function initRoute(): void
@@ -375,38 +516,25 @@ class Startup
         }
 
         $slug = end($this->router->params);
-        if ($slug) {
-            $node = $this->resolveNodeBySlug($slug);
-            $node or $this->router->trigger404();
 
-            if ($node['node_type'] === 'catalog' && empty($node['content'])) {
-                
-                $catalog = DB::table('catalog')->where('id', $node['id'])->fetch(FETCH_ASSOC);
-                // if ($catalog && !empty($catalog['content'])) {
-                //     $node['content'] = $catalog['content'];
-                // }
-                // 栏目同时存在 node / catalog 两份记录且 id 相同，译文统一按 node 维度存放
-                $catalog and $catalog = Translator::apply((array) $catalog, Locale::current());
-                $pageState->catalog = $catalog;
-            }
-
-            // 多语言 SEO：canonical + hreflang
-            $this->setSeoUrls($pageState, $node);
-
-            $pageState->node = $node;
-            $pageState->nodeId = $node['id'];
-            $pageState->nodeType = $node['node_type'];
-            $pageState->nodeMimeType = $node['mime_type'];
-            
-            if($node['node_type'] === 'catalog' && $this->resetRoute($node['mime_type'] ?: 'catalog', 'index')) {
-                
-            } else if (!$this->resetRoute($node['node_type'], empty($node['mime_type']) ? 'index' : $node['mime_type'])) {
-                DB::update('node', ['hits' => DB::raw('hits+1')], ['id' => $node['id']]);
-                $this->resetRoute('node', $node['node_type']);
-            }
-            $pageState->isNode = $node['node_type'] !== 'catalog';
-            $pageState->isCatalog = $node['node_type'] === 'catalog';
+        // ──── 基础型固定链接：/?n={node_id} ────
+        $queryNode = $this->resolveNodeFromQuery();
+        if ($queryNode !== null) {
+            $this->serveNode($pageState, $queryNode);
             return;
+        }
+
+        // ──── 固定链接结构感知解析（日期型 / 数字型 / 自定义），失败回退末段 slug ────
+        $node = $this->resolveNodeByPermalink((array) $this->router->params)
+            ?? ($slug ? $this->resolveNodeBySlug((string) $slug) : null);
+
+        if ($node) {
+            $this->serveNode($pageState, $node);
+            return;
+        }
+
+        if ($slug) {
+            $this->router->trigger404();
         }
 
         // 首页

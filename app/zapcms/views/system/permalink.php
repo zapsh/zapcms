@@ -1,13 +1,19 @@
 <?php
 $currentStructure = $current_structure ?? '/%postname%/';
+// 归一化，保证与预设匹配（兼容历史保存的 /?n=%node_id%/ 形式）
+if (strpos($currentStructure, '?') !== false) {
+    $currentStructure = '/' . ltrim(rtrim(trim($currentStructure), '/'), '/');
+} else {
+    $currentStructure = '/' . trim(trim($currentStructure), '/') . '/';
+}
 $currentCatalogPrefix = (string) ($current_catalog_prefix ?? '');
 
 // 预设的链接结构
 $presets = [
     'plain' => [
-        'label'    => '朴素型',
-        'structure' => '/?p=%post_id%',
-        'example'   => rtrim(home_url(), '/') . '/?p=123',
+        'label'    => '基础型',
+        'structure' => '/?n=%node_id%',
+        'example'   => rtrim(home_url(), '/') . '/?n=123',
     ],
     'day_name' => [
         'label'    => '日期和名称型',
@@ -21,7 +27,7 @@ $presets = [
     ],
     'numeric' => [
         'label'    => '数字型',
-        'structure' => '/archives/%post_id%',
+        'structure' => '/archives/%node_id%',
         'example'   => rtrim(home_url(), '/') . '/archives/123',
     ],
     'post_name' => [
@@ -46,7 +52,7 @@ $structureTags = [
     '%monthnum%'  => '发布月份（如 01）',
     '%day%'       => '发布日期（如 31）',
     '%postname%'  => '文章别名（slug）',
-    '%post_id%'   => '文章 ID',
+    '%node_id%'   => '节点 ID',
     '%node_type%' => '内容类型（article, product 等）',
 ];
 
@@ -262,8 +268,11 @@ document.addEventListener('DOMContentLoaded', function() {
             ? customInput.value
             : presetMap[selectedPreset];
 
-        // 确保以 / 开头和结尾
-        structure = '/' + structure.replace(/^\/+|\/+$/g, '') + '/';
+        // 确保以 / 开头；基础型（含查询串）不带尾斜杠，路径型以 / 结尾
+        structure = structure.replace(/^\/+|\/+$/g, '');
+        structure = structure.indexOf('?') !== -1
+            ? '/' + structure
+            : '/' + structure + '/';
 
         var catalogPrefix = catalogInput.value.replace(/[^a-zA-Z0-9_-]/g, '');
 
