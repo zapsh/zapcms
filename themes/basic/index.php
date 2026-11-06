@@ -13,24 +13,24 @@ $latestNews = pageState()->getLatestNews();
 ?>
 <main class="site-main">
     <!-- Slider main container -->
-    <div class="swiper">
-        <!-- Additional required wrapper -->
-        <div class="swiper-wrapper">
-            <?php foreach($banners as $banner){ ?>
-            <div class="swiper-slide " >
-                <?php $slideTarget = (($banner['target'] ?? '_self') === '_blank') ? '_blank' : '_self'; ?>
-                <a href="<?php echo $banner['link'] ?? '#';?>" target="<?php echo $slideTarget; ?>" <?php echo $slideTarget === '_blank' ? 'rel="noopener"' : ''; ?> style="background: url('<?php echo $banner['img_path'];?>') no-repeat center center; background-size: cover; ">
-                </a>
+    <div class="blaze-slider home-slider">
+        <div class="blaze-container">
+            <div class="blaze-track-container">
+                <div class="blaze-track">
+                    <?php foreach($banners as $banner){ ?>
+                    <div class="blaze-slide">
+                        <?php $slideTarget = (($banner['target'] ?? '_self') === '_blank') ? '_blank' : '_self'; ?>
+                        <a href="<?php echo $banner['link'] ?? '#';?>" target="<?php echo $slideTarget; ?>" <?php echo $slideTarget === '_blank' ? 'rel="noopener"' : ''; ?> style="background: url('<?php echo $banner['img_path'];?>') no-repeat center center; background-size: cover; ">
+                        </a>
+                    </div>
+                    <?php } ?>
+                </div>
             </div>
-            <?php } ?>
 
-
+            <div class="blaze-pagination"></div>
+            <button class="blaze-prev" type="button" aria-label="上一张"><i class="fa fa-chevron-left"></i></button>
+            <button class="blaze-next" type="button" aria-label="下一张"><i class="fa fa-chevron-right"></i></button>
         </div>
-        <div class="swiper-pagination"></div>
-
-        <div class="swiper-button-prev"></div>
-        <div class="swiper-button-next"></div>
-
     </div>
 
     <?php if(option("basic_home.about_us")): ?>
@@ -120,24 +120,22 @@ $latestNews = pageState()->getLatestNews();
 </main>
 
 <script>
-    const swiper = new Swiper('.swiper', {
-        loop: true,
-        speed: 1000,
-        autoplay: {
-            delay: 5000,
-            disableOnInteraction: false,
-        },
-        effect: 'fade',
-        fadeEffect: {
-            crossFade: true
-        },
-        pagination: {
-            el: '.swiper-pagination',
-            clickable: true,
-        },
-        navigation: {
-            nextEl: '.swiper-button-next',
-            prevEl: '.swiper-button-prev',
-        },
-    });
+    (function () {
+        var sliderEl = document.querySelector('.home-slider');
+        if (!sliderEl || typeof BlazeSlider === 'undefined') return;
+        new BlazeSlider(sliderEl, {
+            all: {
+                slidesToShow: 1,
+                slidesToScroll: 1,
+                loop: true,
+                enableAutoplay: true,
+                autoplayInterval: 5000,
+                autoplayDirection: 'to left',
+                transitionDuration: 1000,
+                transitionTimingFunction: 'ease',
+                enablePagination: true,
+                draggable: true,
+            },
+        });
+    })();
 </script>

@@ -1960,23 +1960,29 @@ p.text {
 
 /* Landscape Mobile */
 @media (max-width: 767px) and (orientation: landscape) {
-    .swiper {
-        height: 250px;
-    }
-    
-    .swiper-wrapper .swiper-slide a {
+    .home-slider,
+    .home-slider .blaze-track-container,
+    .home-slider .blaze-slide a {
         height: 250px;
     }
 }
 
-/* SlideShow */
-.swiper {
+/* SlideShow - BlazeSlider */
+.home-slider {
     width: 100%;
     height: 500px;
     overflow: hidden;
 }
 
-.swiper-wrapper .swiper-slide a {
+.home-slider .blaze-track-container {
+    height: 500px;
+}
+
+.home-slider .blaze-track {
+    height: 100%;
+}
+
+.home-slider .blaze-slide a {
     display: block;
     background-color: #f8f9fa;
     height: 500px;
@@ -1986,49 +1992,69 @@ p.text {
     text-decoration-line: none;
 }
 
-.swiper-wrapper .swiper-pagination-bullet {
+.home-slider .blaze-pagination {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    z-index: 5;
+}
+
+.home-slider .blaze-pagination button {
     width: 10px;
     height: 10px;
+    padding: 0;
+    border: none;
+    font-size: 0;
+    line-height: 0;
+    overflow: hidden;
     background: rgba(255,255,255,0.5);
     border-radius: 50%;
     transition: all 0.3s;
+    cursor: pointer;
 }
 
-.swiper-wrapper .swiper-pagination-bullet-active {
+.home-slider .blaze-pagination button.active {
     background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     width: 30px;
     border-radius: 5px;
 }
 
-.swiper-wrapper .swiper-button-prev,
-.swiper-wrapper .swiper-button-next {
+.home-slider .blaze-prev,
+.home-slider .blaze-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
     width: 50px;
     height: 50px;
+    padding: 0;
+    border: none;
+    font-size: 22px;
+    color: #333;
     background: rgba(255,255,255,0.9);
     border-radius: 50%;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     box-shadow: 0 3px 15px rgba(0,0,0,0.1);
     transition: all 0.3s;
+    cursor: pointer;
+    z-index: 5;
 }
 
-.swiper-wrapper .swiper-button-prev {
+.home-slider .blaze-prev {
     left: 30px;
 }
 
-.swiper-wrapper .swiper-button-next {
+.home-slider .blaze-next {
     right: 30px;
 }
 
-.swiper-wrapper .swiper-button-prev, 
-.swiper-wrapper .swiper-button-next {
-    display: none;
-    color: #333 !important;
-}
-
-.swiper-wrapper:hover .swiper-button-prev, 
-.swiper-wrapper:hover .swiper-button-next {
+.home-slider:hover .blaze-prev,
+.home-slider:hover .blaze-next {
     display: flex;
 }
 
@@ -2272,56 +2298,46 @@ p.text {
     }
 }
 
-.swiper-wrapper .swiper-button-prev:hover,
-.swiper-wrapper .swiper-button-next:hover {
+.home-slider .blaze-prev:hover,
+.home-slider .blaze-next:hover {
     background: #fff;
-    transform: scale(1.1);
+    transform: translateY(-50%) scale(1.1);
 }
 
 @media (max-width: 768px) {
-    .swiper {
+    .home-slider,
+    .home-slider .blaze-track-container,
+    .home-slider .blaze-slide a {
         height: 280px;
     }
     
-    .swiper-wrapper .swiper-slide a {
-        height: 280px;
+    .home-slider .blaze-pagination {
+        bottom: 10px;
     }
     
-    .swiper-pagination {
-        bottom: 10px !important;
-    }
-    
-    .swiper-wrapper .swiper-pagination-bullet {
+    .home-slider .blaze-pagination button {
         width: 8px;
         height: 8px;
     }
     
-    .swiper-wrapper .swiper-pagination-bullet-active {
+    .home-slider .blaze-pagination button.active {
         width: 20px;
     }
     
-    .swiper-wrapper .swiper-button-prev,
-    .swiper-wrapper .swiper-button-next {
+    .home-slider .blaze-prev,
+    .home-slider .blaze-next {
         width: 36px;
         height: 36px;
+        font-size: 16px;
     }
     
-    .swiper-wrapper .swiper-button-prev {
+    .home-slider .blaze-prev {
         left: 10px;
     }
     
-    .swiper-wrapper .swiper-button-next {
+    .home-slider .blaze-next {
         right: 10px;
     }
-    
-    .swiper-wrapper .swiper-button-prev::after,
-    .swiper-wrapper .swiper-button-next::after {
-        font-size: 14px;
-    }
-}
-
-.swiper-button-next, .swiper-button-prev {
-    color: #ccc !important;
 }
 
 /* About Us Section */

@@ -8,8 +8,8 @@
  *
  */
 
-const ZAP_CMS_VERSION = '1.0.28';
-const ZAP_CMS_RELEASE_DATE = '2026-11-02';
+const ZAP_CMS_VERSION = '1.0.29';
+const ZAP_CMS_RELEASE_DATE = '2026-11-05';
 
 define('APP_ROOT', dirname(__DIR__));
 
@@ -17,17 +17,6 @@ if (PHP_VERSION_ID < 80200) {
     exit('ZAP CMS requires PHP 8.2.0+.');
 }
 
-/**
- * 是否已完成安装。
- *
- * 判定依据（两者缺一不可）：
- *   - var/install.lock   安装向导最后一步写入，是「安装完成」的唯一凭据；
- *   - config/database.php 数据库连接配置。
- *
- * 只判断 lock 会把「lock 残留但配置被删」误判为已安装；
- * 只判断 database.php 会把「配置已写入但建表没跑完」误判为已安装。
- * 一律使用 APP_ROOT 绝对路径，避免依赖进程工作目录（CLI / 子目录部署）。
- */
 function app_is_installed(): bool
 {
     static $installed = null;
@@ -174,14 +163,6 @@ require __DIR__ . '/../vendor/autoload.php';
 $app = new \zap\App(dirname(__DIR__));
 
 // ──────────────────── 运行参数（server.* / cache.*）从 options 表读取 ────────────────────
-// 维护模式、调试、日志、后台前缀等不再写入 config/config.php，统一保存在数据库 options 表，
-// 后台“基础设置 > 服务器 / 缓存”中修改后立即生效。
-//
-// 缓存配置必须最先就绪：Cache 驱动在第一次 get_options() 时就会实例化，并把
-// status / default / redis 连接参数固化在实例里（见 Cache::make / getInstance）。
-// 过去先 get_options('cache') 再 config_set，后台设置始终作用于一个按旧默认值建好的
-// 驱动，因此怎么改都不生效。现在由 app_cache_config() 读快照（首次查库并写入）后
-// 立即种入 config，之后的第一次 Cache:: 调用读到的就是数据库里的真实设置。
 $cacheConfig = app_cache_config();
 foreach ($cacheConfig as $key => $value) {
     config_set('cache.' . $key, $value);
@@ -232,8 +213,7 @@ if (config('config.debug', false)) {
     error_reporting(0);
 }
 
-// Maintenance Mode 开关（server.maintenance，保存在 options 表）：
-// 开启时仅放行后台请求，前台访问返回 503 维护页面
+// Maintenance Mode 开关
 if ($maintenance) {
     $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
     $isAdminUri = $adminPrefix !== '/' && stripos($requestUri, $adminPrefix) !== false;
@@ -255,6 +235,5 @@ try {
     $app->run();
 } catch (\PDOException $e) {
     check_database_error($e);
-    // 非表缺失错误，继续抛出给 ErrorHandler 渲染错误页
     throw $e;
 }

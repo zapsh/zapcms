@@ -147,7 +147,7 @@ $aboutUs = option('basic_home.about_us') ?: '';
                 <!-- ============ Tab 1：轮播图 ============ -->
                 <div class="tab-pane fade show active" id="pane-slide" role="tabpanel">
                     <div class="callout callout-info">
-                        <h5><i class="fa-solid fa-images me-1"></i> 首页轮播图（Swiper）</h5>
+                        <h5><i class="fa-solid fa-images me-1"></i> 首页轮播图（BlazeSlider）</h5>
                         <p class="mb-0">每张卡片对应一张轮播图，可自由增删。配置保存于 options 表：<code>basic_home.slide</code></p>
                     </div>
 
