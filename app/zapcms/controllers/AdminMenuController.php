@@ -75,6 +75,8 @@ class AdminMenuController extends AdminController
         if($data['id']){
             $data['menu'] = AdminMenu::instance()->get($data['id']);
         }
+        // 新增时无菜单记录，模板闭包引用 $menu，兜底为空数组避免 Undefined variable
+        $data['menu'] = $data['menu'] ?? [];
 //        $data['catalog'] = Catalog::instance()->getTreeArray();
 //        print_r($data['parent']);
 //        echo ltrim($data['parent']['path'],'0,');
