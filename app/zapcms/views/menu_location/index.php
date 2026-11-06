@@ -22,6 +22,8 @@ IS_AJAX !== true && $this->layout('layouts/common');
 $menusCount = count($menus);
 ?>
 <style>
+.mi-bar { cursor: grab; }
+.mi-bar:active { cursor: grabbing; }
 .mi-handle { cursor: grab; }
 .mi-handle:active { cursor: grabbing; }
 .mi-dragging-src { display: none !important; }
@@ -37,8 +39,9 @@ $menusCount = count($menus);
 .mlm-panel .accordion-button:not(.collapsed) { background: #fff; box-shadow: inset 0 -1px 0 #dee2e6; }
 .mlm-panel .accordion-body { padding: .6rem .75rem .75rem; }
 .mlm-list { border: 1px solid #dee2e6; border-radius: .375rem; }
-.mlm-list .list-group-item { padding: .35rem .6rem; border-color: #f1f3f5; }
+.mlm-list .list-group-item { padding: .5rem .65rem; border-color: #f1f3f5; font-size: .9rem; }
 .mlm-list .list-group-item:hover { background: #f8f9fa; }
+.mlm-list .form-check-input { width: 1.05em; height: 1.05em; flex-shrink: 0; }
 
 /* ── 右栏菜单项 ── */
 .mi-item { border-color: #e9ecef; margin-bottom: .35rem; }

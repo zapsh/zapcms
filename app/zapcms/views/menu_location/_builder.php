@@ -37,9 +37,7 @@ foreach ($items as $it) {
     <div class="row g-2">
         <!-- 左栏：添加菜单项 -->
         <div class="col-12 col-lg-4 border-lg-end">
-            <div class="d-flex align-items-center mb-2">
-                <h6 class="mb-0 small text-muted">添加菜单项</h6>
-            </div>
+        
             <div class="accordion accordion-flush mlm-panel" id="mlmAccordion">
                 <!-- 栏目（WordPress「分类目录」式树形勾选） -->
                 <div class="accordion-item">
@@ -133,7 +131,12 @@ foreach ($items as $it) {
                             <input type="text" id="mlmCustomUrl" class="form-control form-control-sm mb-2" placeholder="https://example.com 或 /path">
                             <label class="form-label mb-1">显示文案（可选）</label>
                             <input type="text" id="mlmCustomLabel" class="form-control form-control-sm mb-2" placeholder="留空用链接地址">
-                            <button class="btn btn-success btn-sm w-100" type="button" onclick="mlmAddCustom()">
+                            <label class="form-label mb-1">打开方式</label>
+                            <select id="mlmLinkTarget" class="form-select form-select-sm mb-2">
+                                <option value="_self">当前页面</option>
+                                <option value="_blank">新页面</option>
+                            </select>
+                            <button class="btn btn-primary btn-sm w-100" type="button" onclick="mlmAddCustom()">
                                 <i class="fa fa-plus me-1"></i>添加链接
                             </button>
                         </div>
@@ -144,12 +147,14 @@ foreach ($items as $it) {
 
         <!-- 右栏：菜单结构（WordPress 式：单行条目 + ▼ 展开编辑） -->
         <div class="col-12 col-lg-8">
-            <div class="d-flex align-items-center mb-2">
-                <h6 class="mb-0 small text-muted">菜单结构</h6>
-                <span class="ms-2 small text-muted">
-                    拖动 <i class="fa fa-grip-vertical"></i> 排序；拖到某项中部、或拖到它下方并靠右，可设为它的子菜单；点 <i class="fa fa-chevron-down"></i> 编辑。
-                </span>
-            </div>
+            <div class="card">
+                <div class="card-header bg-white py-2 d-flex align-items-center flex-wrap">
+                    <h6 class="mb-0">菜单结构</h6>
+                    <span class="ms-2 small text-muted">
+                        按住条目直接拖动排序；拖到某项中部、或拖到它下方并靠右，可设为它的子菜单；点 <i class="fa fa-chevron-down"></i> 编辑。
+                    </span>
+                </div>
+                <div class="card-body p-2">
             <?php if (empty($items)): ?>
                 <div class="text-center text-muted py-5 border rounded">
                     <i class="fa fa-list-ul fa-2x d-block mb-2 opacity-50"></i>
@@ -252,6 +257,8 @@ foreach ($items as $it) {
                     <?php endforeach; ?>
                 </ul>
             <?php endif; ?>
+                </div><!-- /.card-body -->
+            </div><!-- /.card -->
         </div>
     </div>
 </div>

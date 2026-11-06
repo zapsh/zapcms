@@ -28,17 +28,15 @@ use zap\facades\Url;
             ? '<a href="javascript:;" class="text-muted me-1 mlm-tree-toggle flex-shrink-0" data-id="' + n.id + '" style="text-decoration:none;width:14px;text-align:center;">' +
               '<i class="fa fa-chevron-right"></i></a>'
             : '<span class="d-inline-block me-1 flex-shrink-0" style="width:14px"></span>';
-        var icon = isLink
-            ? '<i class="fa fa-link text-muted me-1 flex-shrink-0"></i>'
-            : '<i class="far fa-folder text-warning me-1 flex-shrink-0"></i>';
-        return '<div class="list-group-item small py-1 mlm-cat-node d-flex align-items-center" ' +
+        return '<div class="list-group-item mlm-cat-node d-flex align-items-center" ' +
                'data-cat-id="' + n.id + '" data-depth="' + depth + '" ' +
                'style="padding-left:' + (8 + depth * 16) + 'px">' +
-               toggle + icon +
+               toggle +
                '<label class="d-flex align-items-center flex-grow-1 mb-0 text-truncate" style="cursor:pointer;min-width:0">' +
                '<input class="form-check-input me-2 mlm-chk flex-shrink-0" type="checkbox" data-type="catalog" data-id="' + n.id + '">' +
                '<span class="text-truncate">' + escapeHtml(n.title) + '</span>' +
                (isLink ? ' <span class="badge text-bg-light ms-1 flex-shrink-0">链接</span>' : '') +
+               (isLink ? '<i class="fa fa-link text-muted ms-1 flex-shrink-0"></i>' : '') +
                '</label></div>';
     }
 
@@ -306,24 +304,38 @@ use zap\facades\Url;
         return false;
     }
 
-    var miSrc = null, miGhost = null, miPlaceholder = null, miDropTarget = null, miDropMode = 'after', miOrigNext = null, miMoved = false;
+    var miSrc = null, miGhost = null, miPlaceholder = null, miDropTarget = null, miDropMode = 'after',
+        miOrigNext = null, miMoved = false, miStarted = false, miStartX = 0, miStartY = 0;
 
-    // 仅从左侧 grip 起拽；禁用文本选择与原生拖拽，从根本上解决"拖一点就卡死"
-    $(document).on('mousedown', '#miList .mi-handle', function (e){
+    // 整行（mi-bar）可起拽；点按钮/链接/输入框不触发；禁用文本选择与原生拖拽
+    $(document).on('mousedown', '#miList .mi-bar', function (e){
         if (e.which !== 1) { return; } // 仅左键
+        if ($(e.target).closest('.mi-toggle, button, a, input, select, textarea, label').length) { return; }
         e.preventDefault();
         var $item = $(this).closest('.mi-item');
         if (!$item.length) { return; }
         miSrc = $item;
         miOrigNext = $item.next();
-        var rect = $item[0].getBoundingClientRect();
+        miStartX = e.clientX;
+        miStartY = e.clientY;
+        miMoved = false;
+        miStarted = false; // 按下不等于拖拽，移动超阈值才起拽
+        $(document).on('mousemove.mi', onMiMove);
+        $(document).on('mouseup.mi', onMiUp);
+    });
+
+    // 真正开始拖拽：隐藏原件、插入占位、创建跟随幽灵元素
+    function miBeginDrag(e){
+        if (miStarted || !miSrc || !miSrc.length) { return; }
+        miStarted = true;
+        var rect = miSrc[0].getBoundingClientRect();
 
         miPlaceholder = $('<li class="list-group-item mi-placeholder py-2" ' +
             'style="height:' + Math.round(rect.height) + 'px;border:2px dashed #0d6efd;background:#f1f6ff;"></li>');
-        $item.after(miPlaceholder);
-        $item.addClass('mi-dragging-src'); // 隐藏原件（display:none）
+        miSrc.after(miPlaceholder);
+        miSrc.addClass('mi-dragging-src'); // 隐藏原件（display:none）
 
-        miGhost = $item.clone().removeClass('mi-dragging-src').addClass('mi-ghost')
+        miGhost = miSrc.clone().removeClass('mi-dragging-src').addClass('mi-ghost')
             .css({
                 position: 'fixed', zIndex: 9999, width: rect.width + 'px',
                 left: (e.clientX + 8) + 'px', top: (e.clientY + 8) + 'px',
@@ -331,12 +343,14 @@ use zap\facades\Url;
                 boxShadow: '0 6px 18px rgba(0,0,0,.25)', listStyle: 'none'
             });
         $('body').append(miGhost);
-
-        $(document).on('mousemove.mi', onMiMove);
-        $(document).on('mouseup.mi', onMiUp);
-    });
+    }
 
     function onMiMove(e){
+        // 移动超过 4px 才算开始拖拽：避免"点一下"原条目就跳动
+        if (!miStarted) {
+            if (Math.abs(e.clientX - miStartX) < 4 && Math.abs(e.clientY - miStartY) < 4) { return; }
+            miBeginDrag(e);
+        }
         miMoved = true;
         if (miGhost) { miGhost.css({left: (e.clientX + 8) + 'px', top: (e.clientY + 8) + 'px'}); }
         miClearDropMarks();
@@ -377,9 +391,8 @@ use zap\facades\Url;
         if (miGhost) { miGhost.remove(); miGhost = null; }
         miClearDropMarks();
         if (!miSrc) { cleanupMi(); return; }
-        // 仅点击手柄、未发生拖动 → 还原原位，不改变层级、不保存
-        if (!miMoved) {
-            if (miOrigNext && miOrigNext.length) { miOrigNext.before(miSrc); } else { $('#miList').append(miSrc); }
+        // 仅点击手柄、从未起拽 → 原条目没动过，直接复位状态即可
+        if (!miStarted) {
             miSrc.removeClass('mi-dragging-src');
             if (miPlaceholder) { miPlaceholder.remove(); }
             cleanupMi();
@@ -417,7 +430,8 @@ use zap\facades\Url;
     }
 
     function cleanupMi(){
-        miSrc = null; miPlaceholder = null; miDropTarget = null; miDropMode = 'after'; miOrigNext = null; miMoved = false;
+        miSrc = null; miPlaceholder = null; miDropTarget = null; miDropMode = 'after';
+        miOrigNext = null; miMoved = false; miStarted = false;
         $('.mi-item').removeClass('mi-dragging-src');
     }
 
@@ -462,11 +476,9 @@ use zap\facades\Url;
             if(lists.length === 0){ box.html('<div class="text-muted p-2">没有匹配</div>'); return; }
             var h = '<div class="list-group list-group-flush">';
             lists.forEach(function (item){
-                var t    = item.kind || kind;                       // catalog → 菜单项 item_type=catalog
-                var icon = t === 'catalog' ? 'fa-folder' : 'fa-file-lines';
-                h += '<label class="list-group-item small py-1 d-flex align-items-center">' +
+                var t = item.kind || kind;                          // catalog → 菜单项 item_type=catalog
+                h += '<label class="list-group-item d-flex align-items-center" style="cursor:pointer">' +
                      '<input class="form-check-input me-2 mlm-chk" type="checkbox" data-type="' + t + '" data-id="' + item.id + '">' +
-                     '<i class="fa ' + icon + ' text-muted me-2"></i>' +
                      '<span class="text-truncate">' + escapeHtml(item.path_label || item.title) +
                      ' <span class="text-muted">#' + item.id + '</span></span></label>';
             });
@@ -488,15 +500,22 @@ use zap\facades\Url;
     function mlmAddCustom(){
         var url = $('#mlmCustomUrl').val().trim();
         if(!url){ Swal.fire({icon:'warning',title:'请填写链接地址'}); return; }
-        mlmAddMany([{ item_type:'custom_link', url:url, title:$('#mlmCustomLabel').val().trim() }]);
+        mlmAddMany([{
+            item_type:   'custom_link',
+            url:         url,
+            title:       $('#mlmCustomLabel').val().trim() || null,
+            link_target: $('#mlmLinkTarget').val() || '_self'
+        }]);
     }
 
     function mlmAddMany(arr){
         var pending = arr.length, done = 0, failed = false;
         arr.forEach(function (a){
             var data = { menu_id:window.__mlMenuId, item_type:a.item_type, sort_order: $('#miList .mi-item').length + 1 };
-            if(a.item_type === 'custom_link'){ data.url = a.url; data.title = a.title || null; }
+            if(a.item_type === 'custom_link'){ data.url = a.url; }
             else { data.ref_id = a.ref_id; }
+            if(a.title !== undefined){ data.title = a.title || null; }
+            if(a.link_target){ data.link_target = a.link_target; }
             $.post(mlSaveItemUrl, data, function (res){
                 if(res.code !== 0){ failed = true; return; }
                 done++;
