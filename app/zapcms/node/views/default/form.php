@@ -178,30 +178,27 @@ unset($metaGroups['']);
             </div>
 
             <div class="card card-outline card-secondary mb-3">
-                <div class="card-header">
-                    <h3 class="card-title"><i class="fa fa-folder-open me-2"></i>分类</h3>
+                <div class="card-header d-flex justify-content-between align-items-center py-2">
+                    <h3 class="card-title mb-0"><i class="fa fa-folder-open me-2"></i>分类</h3>
+                    <button type="button" class="btn btn-sm btn-outline-success py-0" onclick="openQuickCreateCatalog()">
+                        <i class="fa fa-plus"></i> 新建分区
+                    </button>
                 </div>
                 <div class="card-body p-2 catalog-list">
                     <?php
-                    while($catalog = array_shift($catalogList)){
-                        $indent = $catalog['level'] * 1;
-                        ?>
-                        <div class="form-check mb-1" style="padding-left: <?php echo $indent + 1.5; ?>em;">
-                            <input class="form-check-input" type="checkbox" name="catalog[<?php echo e($catalog['id']); ?>]"
-                                   <?php echo !empty($node_relations[$catalog['id']]) ? 'checked' : '' ?>
-                                   value="<?php echo e($catalog['level']); ?>"
-                                   id="catalog-<?php echo e($catalog['id']); ?>">
-                            <label class="form-check-label small" for="catalog-<?php echo e($catalog['id']); ?>">
-                                <?php echo e($catalog['title']); ?>
-                            </label>
-                        </div>
-                        <?php
-                        if(isset($catalog['children'])){
-                            while ($children = array_pop($catalog['children'])){
-                                array_unshift($catalogList,$children);
+                    // 预生成用于「上级分区」下拉的扁平列表（必须在 while 消耗 $catalogList 之前）
+                    $flatCatalogs = [];
+                    $tmpCatalogStack = $catalogList ?? [];
+                    while ($tmpRow = array_shift($tmpCatalogStack)) {
+                        $flatCatalogs[] = ['id' => (int)$tmpRow['id'], 'title' => $tmpRow['title'], 'level' => (int)$tmpRow['level']];
+                        if (!empty($tmpRow['children'])) {
+                            while ($tmpChild = array_pop($tmpRow['children'])) {
+                                array_unshift($tmpCatalogStack, $tmpChild);
                             }
                         }
                     }
+                    $node_relations = $node_relations ?? [];
+                    include __DIR__ . '/../_catalog_options.php';
                     ?>
                 </div>
             </div>
@@ -302,6 +299,95 @@ $(function(){
     });
     updateSlugPreview();
 });
+</script>
+<script>
+// ============ 快速新建分区 ============
+var quickCatalogNodeType = '<?php echo e($node_type ?? $_controller ?? ''); ?>';
+var quickCatalogFlat = <?php echo json_encode($flatCatalogs ?? [], JSON_UNESCAPED_UNICODE); ?>;
+
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function openQuickCreateCatalog() {
+    var opts = '<option value="0">- 无（顶级分区） -</option>';
+    quickCatalogFlat.forEach(function (c) {
+        opts += '<option value="' + c.id + '">'
+              + '— '.repeat(Math.max(0, c.level - 1))
+              + escapeHtml(c.title) + '</option>';
+    });
+    var modal = ZapModal.create({
+        id: 'quickCatalogModal',
+        title: '快速新建分区',
+        dialog_class: 'modal-dialog-centered modal-sm',
+        body_class: 'p-3',
+        content:
+            '<div class="mb-2">' +
+            '  <label class="form-label small mb-1">名称 <span class="text-danger">*</span></label>' +
+            '  <input type="text" id="quickCatalogTitle" class="form-control form-control-sm" placeholder="输入分区名称">' +
+            '</div>' +
+            '<div class="mb-0">' +
+            '  <label class="form-label small mb-1">上级分区</label>' +
+            '  <select id="quickCatalogPid" class="form-select form-select-sm">' + opts + '</select>' +
+            '</div>',
+        buttons: [
+            {title: '取消', close: true, class: 'btn-outline-secondary'},
+            {title: '创建', class: 'btn-success', close: false}
+        ],
+        btn2: function () { submitQuickCreateCatalog(modal); }
+    }, true);
+    modal.show();
+    setTimeout(function () { $('#quickCatalogTitle').trigger('focus'); }, 300);
+}
+
+function submitQuickCreateCatalog(modal) {
+    var title = $('#quickCatalogTitle').val().trim();
+    if (!title) { ZapToast.error('请填写分区名称'); return; }
+    var pid = parseInt($('#quickCatalogPid').val(), 10) || 0;
+    var l = Zap.loading('正在创建...');
+    $.ajax({
+        url: '<?php echo url_action('Catalog@quickCreate'); ?>',
+        method: 'post',
+        data: { title: title, pid: pid, node_type: quickCatalogNodeType },
+        dataType: 'json',
+        success: function (res) {
+            if (res && res.code === 0) {
+                ZapToast.success(res.msg || '创建成功');
+                modal.hide();
+                reloadCatalogList();
+            } else {
+                ZapToast.error((res && res.msg) || '创建失败');
+            }
+        },
+        error: function (xhr) { ZapToast.error('创建失败：' + xhr.status); }
+    }).always(function () { l.dispose(); });
+}
+
+function reloadCatalogList() {
+    $.ajax({
+        url: '<?php echo url_action('Catalog@catalogOptions'); ?>',
+        method: 'get',
+        data: { node_type: quickCatalogNodeType },
+        dataType: 'json',
+        success: function (res) {
+            if (!res || res.code !== 0) return;
+            var checked = {};
+            $('.catalog-list input[type=checkbox]').each(function () {
+                if (this.checked) {
+                    var m = this.name.match(/^catalog\[(\d+)\]$/);
+                    if (m) checked[m[1]] = true;
+                }
+            });
+            $('.catalog-list').html(res.html);
+            Object.keys(checked).forEach(function (id) {
+                $('.catalog-list input[name="catalog[' + id + ']"]').prop('checked', true);
+            });
+        }
+    });
+}
 </script>
 <?php
 \zapcms\services\Editor::instance()->create('.summernote', [

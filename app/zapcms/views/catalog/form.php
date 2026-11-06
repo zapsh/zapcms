@@ -64,24 +64,6 @@ use zapcms\services\NodeType;
             <input type="number" class="form-control form-control-sm" id="catalog_sort_order" name="catalog[sort_order]"
                    value="<?php echo e($catalog['sort_order'] ?? 0); ?>" placeholder="数值越小越靠前">
         </div>
-
-        <div class="col-12">
-            <label class="form-label small mb-1"><i class="fa fa-bars me-1"></i>菜单位置</label>
-            <div class="d-flex flex-wrap gap-3">
-                <?php $assignedLocs = array_flip($catalog_locations ?? []); ?>
-                <?php foreach (($locations ?? []) as $locKey => $locTitle): ?>
-                    <div class="form-check mb-0">
-                        <input class="form-check-input" type="checkbox" name="menu_locations[]"
-                               id="ml_<?php echo e($locKey); ?>" value="<?php echo e($locKey); ?>"
-                               <?php echo isset($assignedLocs[$locKey]) ? 'checked' : ''; ?>>
-                        <label class="form-check-label small" for="ml_<?php echo e($locKey); ?>"><?php echo e($locTitle); ?></label>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-            <div class="form-text small">
-                勾选保存后立即出现在对应菜单（顶级、末尾）；排序 / 层级 / 文案可在「菜单位置」构建器里调整。取消勾选保存即移除。
-            </div>
-        </div>
     </div>
 
     <div id="extras_panel" class="<?php if_echo('link-url' !== ($catalog['node_type'] ?? ''), 'd-none'); ?>">

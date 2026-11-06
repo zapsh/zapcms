@@ -22,6 +22,17 @@ class NodeType
 {
     protected static ?array $nodeTypes = null;
 
+    /**
+     * 虚拟内容类型：不产生真实内容，仅作为内部机制（如栏目链接）的占位类型。
+     * 不在「内容模型」等面向内容管理的列表中展示。
+     */
+    public const VIRTUAL_TYPES = ['link-url'];
+
+    public static function isVirtual(string $type_name): bool
+    {
+        return in_array($type_name, static::VIRTUAL_TYPES, true);
+    }
+
     public static function getNodeTypes(): array
     {
         if(is_null(static::$nodeTypes)){

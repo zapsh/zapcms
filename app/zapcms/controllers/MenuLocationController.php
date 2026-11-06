@@ -4,14 +4,16 @@ namespace zapcms\controllers;
 
 use zapcms\controllers\AdminController;
 use zapcms\models\AdminLog;
+use zapcms\services\Menu;
 use zapcms\services\MenuLocation;
 use zapcms\services\MenuItem;
+use zap\DB;
 use zap\http\Request;
 use zap\http\Response;
 use zap\view\View;
 
 /*
- * 菜单位置管理（自定义导航槽位）
+ * WordPress 式菜单管理：菜单实体（可自由创建）+ 菜单项构建器 + 位置分配
  */
 class MenuLocationController extends AdminController
 {
@@ -19,13 +21,61 @@ class MenuLocationController extends AdminController
     {
         $data = [];
         $data['locations'] = MenuLocation::instance()->all();
-        $data['page_title'] = '菜单位置';
+        $data['menus']     = Menu::instance()->all();
+
+        $menuId = intval(Request::get('menu_id', 0));
+        if ($menuId <= 0 && !empty($data['menus'])) {
+            $menuId = (int) $data['menus'][0]['id'];
+        }
+        $data['current_menu'] = $menuId > 0 ? Menu::instance()->get($menuId) : null;
+        if ($data['current_menu']) {
+            $data += $this->prepareBuilderData((int) $data['current_menu']['id']);
+        }
+
+        // 「管理菜单」列表所需：每个菜单的菜单项数量 + 已分配的位置标题
+        $data['menu_item_counts'] = [];
+        foreach ($data['menus'] as $m) {
+            $data['menu_item_counts'][(int) $m['id']] =
+                (int) DB::table('menu_items')->where('menu_id', (int) $m['id'])->count();
+        }
+        $data['menu_locations'] = [];
+        foreach ($data['locations'] as $loc) {
+            $mid = (int) ($loc['menu_id'] ?? 0);
+            if ($mid > 0) {
+                $data['menu_locations'][$mid][] = $loc['title'];
+            }
+        }
+
+        // 默认激活的 tab（list=管理菜单 / edit=编辑菜单 / locations=管理位置）
+        $tab = strtolower((string) Request::get('tab', 'list'));
+        if (!in_array($tab, ['list', 'edit', 'locations'], true)) {
+            $tab = 'list';
+        }
+        $data['active_tab'] = $tab;
+
+        $data['page_title'] = '菜单';
         $data['breadcrumbs'] = [
             ['title' => '控制台', 'url' => url_action('Index')],
-            ['title' => '设置', 'url' => url_action('System@settings')],
-            ['title' => '菜单位置'],
+            ['title' => '外观'],
+            ['title' => '菜单'],
         ];
         View::render('menu_location.index', $data);
+    }
+
+    /**
+     * 组装构建器片段所需数据（index 整页与 builder 片段共用）
+     */
+    protected function prepareBuilderData(int $menuId): array
+    {
+        $items = MenuItem::instance()->all($menuId);
+        // all() 按 parent_id 排序会把所有子级排到末尾，导致构建器里子菜单
+        // 不嵌套在父项下方；这里重排为树序（深度优先），子项紧跟父项。
+        $items = $this->sortTreeOrder($items);
+
+        return [
+            'items'    => $items,
+            'resolved' => MenuItem::instance()->resolveBatch($items),
+        ];
     }
 
     public function form()
@@ -107,41 +157,29 @@ class MenuLocationController extends AdminController
     }
 
     /**
-     * 菜单构建器（抽屉二级）：返回某位置的菜单项列表片段
+     * 菜单构建器片段：按菜单 id（或位置 key，自动解析为分配的菜单）返回编辑片段
      */
     public function builder()
     {
-        $key = trim((string) Request::get('key', ''));
-        if ($key === '') {
-            Response::json(['code' => 1, 'msg' => '缺少位置参数']);
+        $menuId = intval(Request::get('menu_id', 0));
+        $key    = trim((string) Request::get('key', ''));
+        if ($menuId <= 0 && $key === '') {
+            // 容错：兼容客户端误用 POST 传参
+            $menuId = intval(Request::post('menu_id', 0));
+            $key    = trim((string) Request::post('key', ''));
+        }
+        if ($menuId <= 0 && $key !== '') {
+            $menuId = MenuItem::instance()->resolveMenuId($key);
+        }
+        $menu = $menuId > 0 ? Menu::instance()->get($menuId) : null;
+        if (empty($menu)) {
+            Response::json(['code' => 1, 'msg' => '菜单不存在']);
             return;
         }
-        $items = MenuItem::instance()->all($key);
-        // all() 按 parent_id 排序会把所有子级排到末尾，导致构建器里子菜单
-        // 不嵌套在父项下方；这里重排为树序（深度优先），子项紧跟父项。
-        $items = $this->sortTreeOrder($items);
 
-        // 为每个菜单项预计算可选父级（排除自身及其子树，防止成环）与解析结果
-        $parentOptions = [];
-        foreach ($items as $it) {
-            $exclude = MenuItem::instance()->subtreeIds($items, (int) $it['id']);
-            $exclude[(int) $it['id']] = true;
-            $opts = [];
-            foreach ($items as $o) {
-                if (isset($exclude[(int) $o['id']])) {
-                    continue;
-                }
-                $opts[] = $o;
-            }
-            $parentOptions[(int) $it['id']] = $opts;
-        }
-        $resolved = MenuItem::instance()->resolveBatch($items);
-
-        $data['location_key']   = $key;
-        $data['items']          = $items;
-        $data['parent_options'] = $parentOptions;
-        $data['resolved']       = $resolved;
-        $data['locations']      = MenuLocation::instance()->all();
+        $data = $this->prepareBuilderData($menuId);
+        $data['menu']       = $menu;
+        $data['locations']  = MenuLocation::instance()->all();
         View::render('menu_location._builder', $data);
     }
 
@@ -191,10 +229,17 @@ class MenuLocationController extends AdminController
      */
     public function saveItem()
     {
-        $id          = intval(Request::post('id', 0));
-        $locationKey = trim((string) Request::post('location_key', ''));
-        if ($locationKey === '') {
-            Response::json(['code' => 1, 'msg' => '缺少位置']);
+        $id     = intval(Request::post('id', 0));
+        $menuId = intval(Request::post('menu_id', 0));
+        if ($menuId <= 0) {
+            // 兼容旧调用：按位置 key 解析（未分配时自动创建同名菜单）
+            $key = trim((string) Request::post('location_key', ''));
+            if ($key !== '') {
+                $menuId = MenuItem::instance()->menuIdForLocation($key);
+            }
+        }
+        if ($menuId <= 0) {
+            Response::json(['code' => 1, 'msg' => '缺少菜单']);
             return;
         }
 
@@ -234,7 +279,10 @@ class MenuLocationController extends AdminController
         }
 
         $data = [
-            'location_key' => $locationKey,
+            'menu_id'      => $menuId,
+            // menu_items.location_key 为 NOT NULL 且无默认值；菜单项现归属菜单，
+            // 该列仅作历史兼容，统一写空串。
+            'location_key' => '',
             'item_type'    => $itemType,
             'ref_id'       => $itemType === 'custom_link' ? null : $refId,
             'url'          => $itemType === 'custom_link' ? $url : null,
@@ -263,7 +311,7 @@ class MenuLocationController extends AdminController
 
         // 父级不可选为自身子树（防环）；仅当 parent_id 被修改时校验
         if ($id > 0 && isset($data['parent_id']) && $data['parent_id'] > 0) {
-            $all = MenuItem::instance()->all($locationKey);
+            $all = MenuItem::instance()->all($menuId);
             if (isset(MenuItem::instance()->subtreeIds($all, $id)[$data['parent_id']])) {
                 Response::json(['code' => 1, 'msg' => '父级不能选择自身或其子项']);
                 return;
@@ -277,9 +325,75 @@ class MenuLocationController extends AdminController
             MenuItem::instance()->add($data);
             $msg = '新增菜单项';
         }
-        AdminLog::info(AdminLog::CATEGORY_SYSTEM, $msg, "位置：{$locationKey}");
+        AdminLog::info(AdminLog::CATEGORY_SYSTEM, $msg, "菜单：{$menuId}");
         MenuItem::instance()->clearMenuCache();
         Response::json(['code' => 0, 'msg' => '保存成功']);
+    }
+
+    /**
+     * 创建 / 重命名菜单
+     */
+    public function saveMenu()
+    {
+        $id    = intval(Request::post('id', 0));
+        $title = trim((string) Request::post('title', ''));
+        if ($title === '') {
+            Response::json(['code' => 1, 'msg' => '请填写菜单名称']);
+            return;
+        }
+
+        if ($id > 0) {
+            if (empty(Menu::instance()->get($id))) {
+                Response::json(['code' => 1, 'msg' => '菜单不存在']);
+                return;
+            }
+            Menu::instance()->rename($id, $title);
+            $msg = '重命名菜单';
+        } else {
+            $id = Menu::instance()->add($title);
+            $msg = '创建菜单';
+        }
+
+        AdminLog::info(AdminLog::CATEGORY_SYSTEM, $msg, "菜单：{$title}");
+        MenuItem::instance()->clearMenuCache();
+        Response::json(['code' => 0, 'msg' => '保存成功', 'menu_id' => $id]);
+    }
+
+    /**
+     * 删除菜单（其下菜单项一并删除，引用它的位置恢复为未分配）
+     */
+    public function deleteMenu()
+    {
+        $id = intval(Request::post('id', 0));
+        $menu = Menu::instance()->get($id);
+        if (empty($menu)) {
+            Response::json(['code' => 1, 'msg' => '菜单不存在']);
+            return;
+        }
+        Menu::instance()->remove($id);
+        AdminLog::info(AdminLog::CATEGORY_SYSTEM, '删除菜单', "菜单：{$menu['title']}");
+        Response::json(['code' => 0, 'msg' => '删除成功']);
+    }
+
+    /**
+     * 把菜单分配到位置
+     */
+    public function assign()
+    {
+        $locationId = intval(Request::post('location_id', 0));
+        $menuId     = intval(Request::post('menu_id', 0));
+        $loc = MenuLocation::instance()->get($locationId);
+        if (empty($loc)) {
+            Response::json(['code' => 1, 'msg' => '位置不存在']);
+            return;
+        }
+        if ($menuId > 0 && empty(Menu::instance()->get($menuId))) {
+            Response::json(['code' => 1, 'msg' => '菜单不存在']);
+            return;
+        }
+        MenuLocation::instance()->assignMenu($locationId, $menuId);
+        AdminLog::info(AdminLog::CATEGORY_SYSTEM, '菜单位置分配', "位置：{$loc['title']}");
+        Response::json(['code' => 0, 'msg' => '分配已保存']);
     }
 
     /**

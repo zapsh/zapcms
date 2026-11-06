@@ -6,7 +6,6 @@ use zapcms\controllers\AdminController;
 use zapcms\models\AdminLog;
 use zapcms\services\Catalog;
 use zapcms\services\Locale;
-use zapcms\services\MenuLocation;
 use zapcms\services\MenuItem;
 use zapcms\services\NodeType;
 use zapcms\services\SlugHelper;
@@ -68,11 +67,7 @@ class CatalogController extends AdminController
             }
         }
 
-        // 同步菜单位置勾选到 menu_items（新增缺失 / 移除未勾选）
-        $menuLocations = Request::post('menu_locations', []);
-        if ($cid > 0 && is_array($menuLocations)) {
-            MenuItem::instance()->syncCatalogLocations($cid, $menuLocations);
-        }
+        // 菜单归属统一在「外观 > 菜单」构建器里维护，栏目保存不再同步菜单位置；
         // 栏目标题/URL 变化可能影响菜单回退显示，清菜单缓存
         MenuItem::instance()->clearMenuCache();
 
@@ -83,6 +78,80 @@ class CatalogController extends AdminController
         );
 
         Response::json(['code'=>0,'msg'=>'保存成功']);
+    }
+
+    /**
+     * 快速新建分区/栏目（内容表单内联新建，无需离开编辑页）
+     *
+     * POST: title（必填）、slug（可选，留空自动生成）、pid（可选，默认 0 顶级）、
+     *       node_type（可选，默认 catalog；内容表单会传入当前内容模型）
+     */
+    public function quickCreate()
+    {
+        $title = trim((string) Request::post('title', ''));
+        if ($title === '') {
+            Response::json(['code' => 1, 'msg' => '请填写分区名称']);
+            return;
+        }
+
+        $slug = trim((string) Request::post('slug', ''));
+        $slug = SlugHelper::generate($slug !== '' ? $slug : $title);
+        // 栏目 slug 影响路由，避免与已有栏目重复
+        if ($slug !== '' && DB::table('catalog')->where('slug', $slug)->exists()) {
+            $slug = $slug . '-' . time();
+        }
+
+        $nodeType = trim((string) Request::post('node_type', ''));
+        if ($nodeType === '') {
+            $nodeType = 'catalog';
+        }
+
+        $catalog = [
+            'title'      => $title,
+            'slug'       => $slug,
+            'node_type'  => $nodeType,
+            'pid'        => intval(Request::post('pid', 0)),
+            'sort_order' => intval(Request::post('sort_order', 0)),
+        ];
+
+        $newId = (int) Catalog::instance()->add($catalog);
+        if ($newId <= 0) {
+            Response::json(['code' => 1, 'msg' => '创建失败，请稍后重试']);
+            return;
+        }
+
+        $row = Catalog::instance()->get($newId) ?: [];
+        AdminLog::info(AdminLog::CATEGORY_CONTENT, '新增栏目', '栏目：' . $title . ' #' . $newId);
+
+        Response::json([
+            'code'    => 0,
+            'msg'     => '创建成功',
+            'catalog' => [
+                'id'    => $newId,
+                'title' => $title,
+                'level' => (int) ($row['level'] ?? 1),
+                'pid'   => (int) ($row['pid'] ?? 0),
+            ],
+        ]);
+    }
+
+    /**
+     * 返回内容表单「分类」卡片的勾选列表 HTML（用于快速新建后原地刷新该卡片）
+     *
+     * GET: node_type（可选，按内容模型过滤栏目）
+     */
+    public function catalogOptions()
+    {
+        $nodeType = trim((string) Request::get('node_type', ''));
+        $conditions = $nodeType !== '' ? ['node_type' => $nodeType] : [];
+        $catalogList = Catalog::instance()->getTreeArray($conditions);
+        $nodeRelations = [];
+
+        ob_start();
+        include base_path('app/zapcms/node/views/_catalog_options.php');
+        $html = ob_get_clean();
+
+        Response::json(['code' => 0, 'html' => $html]);
     }
 
     /**
@@ -139,11 +208,6 @@ class CatalogController extends AdminController
 
         $data['catalog'] = $data['cid'] == 0 ? [] : Catalog::instance()->get($data['cid']);
 
-        // 前台菜单位置选项（含自定义位置）+ 本栏目已归属的位置
-        $data['locations'] = Catalog::getLocationOptions();
-        $locMap = MenuItem::instance()->catalogLocationMap();
-        $data['catalog_locations'] = $data['cid'] > 0 ? ($locMap[$data['cid']] ?? []) : [];
-
         // 已保存的栏目译文（locale => row）
         $data['translations'] = !empty($data['catalog']['id']) && Locale::enabled()
             ? Translator::getAll(Translator::TYPE_NODE, (int) $data['catalog']['id'])
@@ -159,12 +223,16 @@ class CatalogController extends AdminController
      */
     public function searchLinkTarget()
     {
-        $keyword = trim((string) Request::get('keyword', ''));
-        $limit   = min(50, max(1, intval(Request::get('limit', 30))));
+        $keyword  = trim((string) Request::get('keyword', ''));
+        $limit    = min(50, max(1, intval(Request::get('limit', 30))));
+        $nodeType = trim((string) Request::get('node_type', '')); // 按内容模型类型过滤栏目
 
         // 搜索栏目
         $catalogs = [];
-        Catalog::instance()->forEachAll(function ($row) use (&$catalogs, $keyword) {
+        Catalog::instance()->forEachAll(function ($row) use (&$catalogs, $keyword, $nodeType) {
+            if ($nodeType !== '' && ($row['node_type'] ?: 'catalog') !== $nodeType) {
+                return;
+            }
             if ($keyword !== '' && stripos($row['title'], $keyword) === false) {
                 return;
             }
@@ -205,7 +273,7 @@ class CatalogController extends AdminController
     /**
      * 栏目树懒加载：按父级取直接子节点（用于后台"栏目管理"可展开树）。
      *
-     * @return void JSON {nodes:[{id,pid,title,icon,slug,link_to,node_type,node_type_title,sort_order,has_children,locations:[{key,title}]}]}
+     * @return void JSON {nodes:[{id,pid,title,icon,slug,link_to,node_type,node_type_title,sort_order,has_children}]}
      */
     public function children()
     {
@@ -213,19 +281,8 @@ class CatalogController extends AdminController
 
         $rows = Catalog::instance()->getChildren($parentId);
 
-        // 位置标题 + 栏目归属映射（用于行内位置徽标，点击直达菜单构建器）
-        $locTitles = [];
-        foreach (MenuLocation::instance()->all() as $loc) {
-            $locTitles[$loc['key']] = $loc['title'];
-        }
-        $catLocMap = MenuItem::instance()->catalogLocationMap();
-
         $nodes = [];
         foreach ($rows as $row) {
-            $locs = array_values(array_intersect(
-                array_keys($locTitles),
-                $catLocMap[(int) $row['id']] ?? []
-            ));
             $nodes[] = [
                 'id'             => (int) $row['id'],
                 'pid'            => (int) ($row['pid'] ?? 0),
@@ -237,9 +294,6 @@ class CatalogController extends AdminController
                 'node_type_title'=> NodeType::getTitle($row['node_type'] ?: 'catalog'),
                 'sort_order'     => (int) ($row['sort_order'] ?? 0),
                 'has_children'   => !empty($row['has_children']),
-                'locations'      => array_map(function ($k) use ($locTitles) {
-                    return ['key' => $k, 'title' => $locTitles[$k] ?? $k];
-                }, $locs),
             ];
         }
 

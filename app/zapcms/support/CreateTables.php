@@ -64,6 +64,22 @@ class CreateTables
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });
 
+        // 登录失败限流（5 次 / 5 分钟），对应 migration 2026_11_04_100000
+        Schema::dropIfExists('admin_login_attempts');
+        Schema::create('admin_login_attempts',function(TableSchema $table){
+            $table->integer('id')->autoIncrement();
+            $table->varchar('attempt_key', 64);
+            $table->integer('attempts');
+            $table->integer('first_at');
+            $table->integer('last_at');
+
+            $table->addPrimaryKey('id');
+            $table->addIndex('uk_attempt_key',['attempt_key']);
+            $table->addIndex('idx_last_at',['last_at']);
+
+            $table->setTableEngine(TableSchema::ENGINE_INNODB);
+        });
+
         Schema::dropIfExists('admin_menu');
         Schema::create('admin_menu',function(TableSchema $table){
             $table->integer('id')->autoIncrement();
@@ -132,6 +148,8 @@ class CreateTables
             $table->integer('created_at')->nullable();
 
             $table->addPrimaryKey('id');
+            // 栏目树懒加载 WHERE pid ORDER BY sort_order，对应 migration 2026_11_06_180000
+            $table->addIndex('idx_catalog_pid',['pid', 'sort_order']);
 
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });
@@ -389,9 +407,57 @@ class CreateTables
             $table->integer('sort_order')->nullable()->default('0');
             $table->integer('updated_at')->nullable();
             $table->integer('created_at')->nullable();
+            // 分配到本位置的菜单（menus.id），对应 migration 2026_11_06_200000
+            $table->integer('menu_id')->default('0');
 
             $table->addPrimaryKey('id');
             $table->addUniqueIndex('uk_menu_location_key',['key']);
+
+            $table->setTableEngine(TableSchema::ENGINE_INNODB);
+        });
+
+        // 菜单项（WordPress 式，指向栏目/内容/自定义链接的指针）
+        // 对应 migration 2026_11_06_120000 + 170000(mega 字段) + 200000(menu_id)
+        Schema::dropIfExists('menu_items');
+        Schema::create('menu_items',function(TableSchema $table){
+            $table->integer('id')->autoIncrement();
+            $table->integer('menu_id')->default('0');
+            $table->varchar('location_key', 64);
+            $table->integer('parent_id')->default('0');
+            $table->varchar('item_type', 16);          // catalog | node | custom_link
+            $table->integer('ref_id')->nullable();
+            $table->varchar('title', 255)->nullable();  // 显示文案；NULL 回退到被引用对象
+            $table->varchar('url', 1000)->nullable();   // custom_link 目标地址
+            $table->varchar('link_target', 32)->nullable(); // _self | _blank
+            $table->integer('sort_order')->nullable()->default('0');
+            $table->integer('created_at')->nullable();
+            $table->integer('updated_at')->nullable();
+            // mega-menu 富字段（migration 2026_11_06_170000）
+            $table->varchar('icon', 100)->nullable();
+            $table->varchar('image', 255)->nullable();
+            $table->varchar('badge', 50)->nullable();
+            $table->varchar('css_class', 100)->nullable();
+            $table->boolean('column_break')->default(0);
+
+            $table->addPrimaryKey('id');
+            $table->addIndex('idx_menu_location',['location_key']);
+            $table->addIndex('idx_menu_parent',['parent_id']);
+            $table->addIndex('idx_menu_menu_id',['menu_id']);
+            // 前台取树 (location_key, parent_id, sort_order)，对应 migration 2026_11_06_150000
+            $table->addIndex('idx_menu_loc_parent_sort',['location_key', 'parent_id', 'sort_order']);
+
+            $table->setTableEngine(TableSchema::ENGINE_INNODB);
+        });
+
+        // 菜单实体（可自由创建多个：主导航 / 侧边栏 / 页脚…），对应 migration 2026_11_06_200000
+        Schema::dropIfExists('menus');
+        Schema::create('menus',function(TableSchema $table){
+            $table->integer('id')->autoIncrement();
+            $table->varchar('title', 255);
+            $table->integer('created_at')->nullable();
+            $table->integer('updated_at')->nullable();
+
+            $table->addPrimaryKey('id');
 
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });

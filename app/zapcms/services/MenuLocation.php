@@ -94,6 +94,19 @@ class MenuLocation
     }
 
     /**
+     * 把菜单分配到位置（一个位置同一时间展示一个菜单）
+     */
+    public function assignMenu(int $locationId, int $menuId): bool
+    {
+        $ok = DB::update(self::TABLE, [
+            'menu_id'    => $menuId > 0 ? $menuId : 0,
+            'updated_at' => time(),
+        ], ['id' => $locationId]) !== false;
+        MenuItem::instance()->clearMenuCache();
+        return $ok;
+    }
+
+    /**
      * 写入系统默认位置（已存在则跳过）
      */
     public static function seedDefaults(): void

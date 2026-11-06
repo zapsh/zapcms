@@ -60,7 +60,7 @@ class NodeController extends AdminController
         $status  = req()->get('status', '');
         BreadCrumb::instance()->add('内容管理',url_action('Node'));
         BreadCrumb::instance()->add('内容模型');
-        $query = DB::table('node_types');
+        $query = DB::table('node_types')->whereNotIn('type_name', NodeType::VIRTUAL_TYPES);
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('type_name', 'LIKE', "%{$search}%")
@@ -233,7 +233,8 @@ class NodeController extends AdminController
         BreadCrumb::instance()->add('内容模型',url_action('Node@types'));
         BreadCrumb::instance()->add('显示配置');
 
-        $types = DB::table('node_types')->orderBy('sort_order', 'ASC')->orderBy('type_id', 'DESC')->fetchAll();
+        $types = DB::table('node_types')->whereNotIn('type_name', NodeType::VIRTUAL_TYPES)
+            ->orderBy('sort_order', 'ASC')->orderBy('type_id', 'DESC')->fetchAll();
         $configs = [];
         $fields  = [];
         foreach ($types as $type) {

@@ -24,25 +24,55 @@ class MenuItem
     }
 
     /**
-     * 取某位置的全部菜单项（扁平，按 parent / sort 排序）
+     * 解析菜单标识为菜单 id。
+     *
+     * 支持两种入参：菜单 id（int）或位置 key（string，解析为该位置分配的菜单）。
+     * 返回 0 表示「位置尚未分配菜单」。
      */
-    public function all(string $locationKey): array
+    public function resolveMenuId($menu): int
     {
-        $rows = DB::table($this->table)
-            ->where('location_key', $locationKey)
-            ->orderBy('parent_id')
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get();
+        if (is_int($menu) || is_numeric($menu)) {
+            return (int) $menu;
+        }
+        $loc = MenuLocation::instance()->getByKey((string) $menu);
+        return $loc ? (int) ($loc['menu_id'] ?? 0) : 0;
+    }
+
+    /**
+     * 取某菜单的全部菜单项（扁平，按 parent / sort 排序）
+     *
+     * @param int|string $menu 菜单 id 或位置 key（兼容旧调用）
+     */
+    public function all($menu): array
+    {
+        $menuId = $this->resolveMenuId($menu);
+        if ($menuId > 0) {
+            $rows = DB::table($this->table)
+                ->where('menu_id', $menuId)
+                ->orderBy('parent_id')
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get();
+        } else {
+            // 位置尚未分配菜单：回退按 location_key（历史数据 / 未迁移环境）
+            $rows = DB::table($this->table)
+                ->where('location_key', is_string($menu) ? $menu : '')
+                ->orderBy('parent_id')
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get();
+        }
         return $rows ?: [];
     }
 
     /**
-     * 取某位置的嵌套菜单树（已解析 title / url / target）
+     * 取某菜单的嵌套菜单树（已解析 title / url / target）
+     *
+     * @param int|string $menu 菜单 id 或位置 key（兼容旧调用）
      */
-    public function tree(string $locationKey): array
+    public function tree($menu): array
     {
-        $flat = $this->all($locationKey);
+        $flat = $this->all($menu);
         if (empty($flat)) {
             return [];
         }
@@ -280,6 +310,7 @@ class MenuItem
      * 按勾选同步栏目在各菜单位置的归属（栏目表单保存时调用）
      *
      * 勾选的位置若无对应菜单项则新增（顶级、末尾）；未勾选但已存在的则移除（含其子树）。
+     * 位置未分配菜单时自动创建「位置名」同名菜单并分配。
      *
      * @param array $keys 勾选的 location_key 列表
      */
@@ -305,31 +336,73 @@ class MenuItem
             ->get();
         $existing = [];
         foreach (($rows ?: []) as $r) {
-            $existing[$r['location_key']] = (int) $r['id'];
+            $existing[(int) ($r['menu_id'] ?? 0)] = (int) $r['id'];
         }
 
-        // 新增缺失的位置
+        // 新增缺失的位置（位置 → 分配菜单 → 菜单项）
         foreach (array_keys($wanted) as $k) {
-            if (!isset($existing[$k])) {
-                $this->add([
-                    'location_key' => $k,
-                    'item_type'    => 'catalog',
-                    'ref_id'       => $catalogId,
-                    'parent_id'    => 0,
-                    'sort_order'   => count($this->all($k)),
-                    'link_target'  => '',
-                ]);
+            $menuId = $this->menuIdForLocation($k);
+            if ($menuId <= 0 || isset($existing[$menuId])) {
+                continue;
             }
+            $this->add([
+                'menu_id'      => $menuId,
+                'location_key' => '',
+                'item_type'    => 'catalog',
+                'ref_id'       => $catalogId,
+                'parent_id'    => 0,
+                'sort_order'   => count($this->all($menuId)),
+                'link_target'  => '',
+            ]);
         }
 
-        // 移除未勾选的位置（含子树）
-        foreach ($existing as $k => $id) {
-            if (!isset($wanted[$k])) {
+        // 移除未勾选的位置（含子树）：按菜单反查位置 key
+        $menuToKeys = $this->menuToKeysMap();
+        foreach ($existing as $menuId => $id) {
+            $keysOfMenu = $menuToKeys[$menuId] ?? [];
+            $wantedHere = (bool) array_intersect($keysOfMenu, array_keys($wanted));
+            if (!$wantedHere) {
                 $this->remove($id);
             }
         }
 
         $this->clearMenuCache();
+    }
+
+    /**
+     * 取某位置分配的菜单 id；未分配时自动创建同名菜单并分配（写场景兜底）
+     */
+    public function menuIdForLocation(string $key): int
+    {
+        $loc = MenuLocation::instance()->getByKey($key);
+        if (empty($loc)) {
+            return 0;
+        }
+        $menuId = (int) ($loc['menu_id'] ?? 0);
+        if ($menuId <= 0) {
+            $menuId = Menu::instance()->add($loc['title']);
+            if ($menuId > 0) {
+                MenuLocation::instance()->assignMenu((int) $loc['id'], $menuId);
+            }
+        }
+        return $menuId;
+    }
+
+    /**
+     * 菜单 → 位置 key 列表映射
+     *
+     * @return array [menu_id => [location_key, ...]]
+     */
+    public function menuToKeysMap(): array
+    {
+        $map = [];
+        foreach (MenuLocation::instance()->all() as $loc) {
+            $menuId = (int) ($loc['menu_id'] ?? 0);
+            if ($menuId > 0) {
+                $map[$menuId][] = $loc['key'];
+            }
+        }
+        return $map;
     }
 
     /**
@@ -339,10 +412,14 @@ class MenuItem
      */
     public function catalogLocationMap(): array
     {
+        $menuToKeys = $this->menuToKeysMap();
         $rows = DB::table($this->table)->where('item_type', 'catalog')->get();
         $map = [];
         foreach (($rows ?: []) as $r) {
-            $map[(int) $r['ref_id']][] = $r['location_key'];
+            $keys = $menuToKeys[(int) ($r['menu_id'] ?? 0)] ?? [];
+            foreach ($keys as $k) {
+                $map[(int) $r['ref_id']][] = $k;
+            }
         }
         return $map;
     }
@@ -397,7 +474,12 @@ class MenuItem
         $sum = 0;
         foreach ($keys as $k) {
             try {
-                $sum += (int) DB::table($this->table)->where('location_key', $k)->count();
+                $menuId = $this->resolveMenuId($k);
+                if ($menuId > 0) {
+                    $sum += (int) DB::table($this->table)->where('menu_id', $menuId)->count();
+                } else {
+                    $sum += (int) DB::table($this->table)->where('location_key', $k)->count();
+                }
             } catch (\Throwable $e) {
                 // 列/库不可用时忽略，依赖 clearMenuCache 兜底
             }

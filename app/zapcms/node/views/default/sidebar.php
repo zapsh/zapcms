@@ -1,102 +1,171 @@
 <?php
 use zap\facades\Url;
 use zapcms\services\Catalog;
+use zapcms\services\MenuItem;
 use zapcms\models\Node;
 
 /**
+ * 内容管理页左侧导航。
+ *
+ * 优先使用「顶部导航（top）」菜单（menu_items，由 外观 > 菜单 构建）组织内容导航；
+ * 该菜单为空时回退到栏目树（catalog），保证全新安装也能正常使用。
+ *
  * @var \zapcms\services\Catalog $menu
- * @var int $catalogId
+ * @var int $catalogId  当前选中栏目 id
  */
 $menu = $menu ?? Catalog::instance();
-$catalogId = $catalogId ?? 0;
+$catalogId = intval($catalogId ?? 0);
 
-$tree = $menu->getTreeArray();
-
-/**
- * 递归收集选中栏目的所有祖先 id，用于展开路径
- */
-function collectAncestorIds($tree, $activeId) {
-    $path = [];
-    foreach ($tree as $item) {
-        if (isset($item['id']) && $item['id'] == $activeId) {
-            return [$item['id']];
+if (!function_exists('contentNavNodeFromCatalog')) {
+    /**
+     * 把栏目行归一化为导航节点（含 link-url 解析）
+     */
+    function contentNavNodeFromCatalog($menu, array $cat, int $catalogId, array $children = []): array
+    {
+        $nodeType = $cat['node_type'] ?? 'page';
+        if ($nodeType === 'link-url') {
+            $linkObject = intval($cat['link_object'] ?? 0);
+            if ($linkObject > 0) {
+                $target = $menu->get($linkObject);
+                $url = $target ? Url::action("Node@{$target['node_type']}", ['cid' => $linkObject]) : ($cat['link_to'] ?: '#');
+                $activeCatalogId = $linkObject;
+            } else {
+                $url = $cat['link_to'] ?: '#';
+                $activeCatalogId = 0;
+            }
+            $icon = 'fa fa-link';
+        } else {
+            $url = Url::action("Node@{$nodeType}", ['cid' => intval($cat['id'])]);
+            $activeCatalogId = intval($cat['id']);
+            $icon = $nodeType === 'page' ? 'far fa-file' : 'far fa-folder';
         }
-        if (!empty($item['children'])) {
-            $childPath = collectAncestorIds($item['children'], $activeId);
-            if (!empty($childPath)) {
-                $path[] = $item['id'];
-                $path = array_merge($path, $childPath);
-                return $path;
+        return [
+            'title'       => $cat['title'] ?? '',
+            'url'         => $url,
+            'icon'        => $icon,
+            'active'      => $activeCatalogId > 0 && $activeCatalogId === $catalogId,
+            'children'    => $children,
+        ];
+    }
+
+    /**
+     * 从「顶部导航」菜单构建归一化导航树
+     */
+    function contentNavFromMenu($menu, int $catalogId): array
+    {
+        $items = MenuItem::instance()->all('top');
+        if (empty($items)) {
+            return [];
+        }
+        $byParent = [];
+        foreach ($items as $it) {
+            $byParent[(int) $it['parent_id']][] = $it;
+        }
+        $catCache = [];
+
+        $build = function (int $pid) use (&$build, $byParent, $menu, &$catCache, $catalogId): array {
+            $out = [];
+            foreach ($byParent[$pid] ?? [] as $it) {
+                $type = $it['item_type'] ?? '';
+                $ref  = intval($it['ref_id'] ?? 0);
+                $icon = $it['icon'] ?? '';
+                $node = null;
+
+                if ($type === 'catalog' && $ref > 0) {
+                    if (!array_key_exists($ref, $catCache)) {
+                        $catCache[$ref] = $menu->get($ref);
+                    }
+                    $cat = $catCache[$ref];
+                    if (empty($cat)) {
+                        continue; // 栏目已被删除
+                    }
+                    $node = contentNavNodeFromCatalog($menu, $cat, $catalogId);
+                } elseif ($type === 'node' && $ref > 0) {
+                    $targetNode = Node::findById($ref);
+                    if (empty($targetNode)) {
+                        continue;
+                    }
+                    $node = [
+                        'title'    => $it['title'] ?: ($targetNode->title ?? ''),
+                        'url'      => Url::action("Node@{$targetNode->node_type}/edit/{$ref}"),
+                        'icon'     => $icon ?: 'far fa-file-alt',
+                        'active'   => false,
+                        'children' => [],
+                    ];
+                } else {
+                    // 自定义链接
+                    $url = $it['url'] ?? '';
+                    if ($url === '') {
+                        continue;
+                    }
+                    $node = [
+                        'title'    => $it['title'] ?: $url,
+                        'url'      => $url,
+                        'icon'     => $icon ?: 'fa fa-external-link-alt',
+                        'active'   => false,
+                        'children' => [],
+                    ];
+                }
+
+                if ($node === null) {
+                    continue;
+                }
+                if ($icon !== '' && $type === 'catalog') {
+                    $node['icon'] = $icon; // 菜单项自定义图标优先
+                }
+                $node['children'] = $build(intval($it['id']));
+                $out[] = $node;
+            }
+            return $out;
+        };
+
+        return $build(0);
+    }
+
+    /**
+     * 从栏目树构建归一化导航树（回退路径）
+     */
+    function contentNavFromCatalogTree($menu, int $catalogId): array
+    {
+        $build = function (array $items) use (&$build, $menu, $catalogId): array {
+            $out = [];
+            foreach ($items as $item) {
+                $children = !empty($item['children']) ? $build($item['children']) : [];
+                $out[] = contentNavNodeFromCatalog($menu, $item, $catalogId, $children);
+            }
+            return $out;
+        };
+        return $build($menu->getTreeArray());
+    }
+
+    function contentNavHasActive(array $node): bool
+    {
+        if (!empty($node['active'])) {
+            return true;
+        }
+        foreach ($node['children'] ?? [] as $child) {
+            if (contentNavHasActive($child)) {
+                return true;
             }
         }
+        return false;
     }
-    return $path;
-}
 
-// 获取要展开的节点 id 集合
-$expandIds = [];
-if ($catalogId > 0) {
-    $expandIds = collectAncestorIds($tree, $catalogId);
-}
-$expandIdsMap = array_flip($expandIds);
-
-/**
- * 解析 link-url 栏目的目标链接
- * link-url 是导航链接，不存实际内容，需要解析到真正的目标
- */
-function resolveLinkUrlTarget($item, $menu) {
-    $linkType = $item['link_type'] ?? '';
-    $linkObject = intval($item['link_object'] ?? 0);
-    $linkTo = $item['link_to'] ?? '';
-
-    if ($linkType === 'catalog' && $linkObject > 0) {
-        // 链接到另一个栏目 → 打开目标栏目的内容列表
-        $targetCatalog = $menu->get($linkObject);
-        if ($targetCatalog) {
-            $targetNodeType = $targetCatalog['node_type'] ?? 'page';
-            return Url::action("Node@{$targetNodeType}", ['cid' => $linkObject]);
-        }
-    } elseif ($linkType === 'node' && $linkObject > 0) {
-        // 链接到具体内容节点 → 打开该节点的编辑页
-        $targetNode = Node::findById($linkObject);
-        if ($targetNode) {
-            $targetNodeType = $targetNode->node_type ?? 'page';
-            return Url::action("Node@{$targetNodeType}/edit/{$linkObject}");
-        }
-    } elseif ($linkType === 'external') {
-        // 外部链接 → 直接用 link_to 作为 URL，_blank 打开
-        return $linkTo ?: '#';
-    }
-    // fallback: 无法解析时使用 link_to
-    return $linkTo ?: Url::action("Node@page", ['cid' => $item['id']]);
-}
-
-/**
- * 递归渲染树节点
- */
-function renderTree($items, $catalogId, $expandIdsMap, $level = 0) {
-    // 每层级缩进：base + level * step（用 inline style 更精确）
-    $indentMap = [0 => 0.5, 1 => 2.5, 2 => 4.5, 3 => 6.5];
-    foreach ($items as $item):
-        $hasChildren = !empty($item['children']);
-        $isActive = $catalogId == $item['id'];
-        $isExpanded = $isActive || isset($expandIdsMap[$item['id']]);
-        $paddingLeft = $indentMap[$level] ?? (2.5 + ($level - 2) * 2);
-        // catalog 表中 node_type 存的是真实内容类型（page/article/product 等）
-        $nodeType = $item['node_type'] ?? 'default';
-        $isLinkUrl = $nodeType === 'link-url';
-
-        // link-url 类型：解析目标链接，不生成 Node@link-url 这种无效地址
-        if ($isLinkUrl) {
-            $nodeUrl = resolveLinkUrlTarget($item, Catalog::instance());
-        } else {
-            $nodeUrl = Url::action("Node@{$nodeType}", ['cid' => $item['id']]);
-        }
-?>
+    /**
+     * 渲染归一化导航树
+     */
+    function contentNavRender(array $nodes, int $level = 0): void
+    {
+        $indentMap = [0 => 0.5, 1 => 2.5, 2 => 4.5, 3 => 6.5];
+        foreach ($nodes as $node):
+            $hasChildren = !empty($node['children']);
+            $isActive    = !empty($node['active']);
+            $isExpanded  = $isActive || contentNavHasActive($node);
+            $paddingLeft = $indentMap[$level] ?? (2.5 + ($level - 2) * 2);
+    ?>
     <div class="tree-node">
-        <a href="<?php echo e($nodeUrl); ?>"
+        <a href="<?php echo e($node['url']); ?>"
            class="list-group-item list-group-item-action border-0 d-flex align-items-center <?php echo $isActive ? 'active' : ''; ?>"
-           data-catalog-id="<?php echo e($item['id']); ?>"
            style="padding-left: <?php echo e($paddingLeft); ?>rem;">
             <?php if ($hasChildren): ?>
             <span class="tree-toggle me-2" onclick="toggleTreeNode(event, this)" style="cursor:pointer;width:16px;text-align:center;flex-shrink:0;">
@@ -105,29 +174,29 @@ function renderTree($items, $catalogId, $expandIdsMap, $level = 0) {
             <?php else: ?>
             <span style="width:16px" class="me-2 flex-shrink-0"></span>
             <?php endif; ?>
-            <?php if ($isLinkUrl): ?>
-            <i class="fa fa-link me-2 text-primary" style="width:14px;flex-shrink:0;"></i>
-            <?php elseif ($nodeType === 'page'): ?>
-            <i class="far fa-file me-2 text-info" style="width:14px;flex-shrink:0;"></i>
-            <?php else: ?>
-            <i class="far fa-folder me-2 text-warning" style="width:14px;flex-shrink:0;"></i>
-            <?php endif; ?>
-            <span class="flex-grow-1 text-truncate"><?php echo htmlspecialchars($item['title']); ?></span>
+            <i class="<?php echo e($node['icon']); ?> me-2" style="width:14px;flex-shrink:0;"></i>
+            <span class="flex-grow-1 text-truncate"><?php echo htmlspecialchars($node['title']); ?></span>
         </a>
         <?php if ($hasChildren): ?>
         <div class="tree-children<?php echo $isExpanded ? '' : ' d-none'; ?>">
-            <?php renderTree($item['children'], $catalogId, $expandIdsMap, $level + 1); ?>
+            <?php contentNavRender($node['children'], $level + 1); ?>
         </div>
         <?php endif; ?>
     </div>
-<?php
-    endforeach;
+    <?php
+        endforeach;
+    }
+}
+
+$navNodes = contentNavFromMenu($menu, $catalogId);
+if (empty($navNodes)) {
+    $navNodes = contentNavFromCatalogTree($menu, $catalogId); // 菜单为空 → 回退栏目树
 }
 ?>
 
 <div class="list-group list-group-flush">
-    <?php if (!empty($tree)): ?>
-        <?php renderTree($tree, $catalogId, $expandIdsMap); ?>
+    <?php if (!empty($navNodes)): ?>
+        <?php contentNavRender($navNodes); ?>
     <?php else: ?>
     <div class="text-center text-muted py-4">
         <i class="fa fa-inbox fa-2x d-block mb-2"></i>

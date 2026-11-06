@@ -29,11 +29,10 @@ class CreateBaseData
         Schema::alter('admin_menu',function (AlertTable $table){
             $table->batchInsert([
                 ['id' => 1, 'title' => '内容管理', 'pid' => 0, 'path' => '1,', 'level' => 1, 'icon' => 'fa fa-cube', 'link_to' => 'Node', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(node[/.]?.*)', 'show_position' => '1', 'sort_order' => 1, 'updated_at' => 1786095171, 'created_at' => 1694683755],
-                ['id' => 2, 'title' => '栏目', 'pid' => 0, 'path' => '2,', 'level' => 1, 'icon' => 'fa fa-square-poll-horizontal', 'link_to' => 'Catalog', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(catalog[/.]?.*)', 'show_position' => '1', 'sort_order' => 2, 'updated_at' => 1786095163, 'created_at' => 1694684638],
                 ['id' => 3, 'title' => '设置', 'pid' => 0, 'path' => '3,', 'level' => 1, 'icon' => 'fa fa-gear', 'link_to' => '', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(admin-menu/.*|system/.*|user/.*)', 'show_position' => '1', 'sort_order' => 6, 'updated_at' => 1694684685, 'created_at' => 1694684685],
                 ['id' => 4, 'title' => '基础设置', 'pid' => 3, 'path' => '3,4,', 'level' => 2, 'icon' => 'fa-solid fa-angle-right', 'link_to' => 'System@settings', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(system/settings.*)', 'show_position' => '1,2', 'sort_order' => 0, 'updated_at' => 1694684704, 'created_at' => 1694684704],
                 ['id' => 5, 'title' => '系统菜单设置', 'pid' => 3, 'path' => '3,5,', 'level' => 2, 'icon' => 'fa-solid fa-angle-right', 'link_to' => 'AdminMenu', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '', 'show_position' => '1,2', 'sort_order' => 1, 'updated_at' => 1786094743, 'created_at' => 1694684714],
-                ['id' => 7, 'title' => '主题', 'pid' => 0, 'path' => '7,', 'level' => 1, 'icon' => 'fa-solid fa-wand-magic-sparkles', 'link_to' => 'Theme', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(theme[/.]?.*)', 'show_position' => '1', 'sort_order' => 3, 'updated_at' => 1786095150, 'created_at' => 1697700805],
+                ['id' => 7, 'title' => '主题', 'pid' => 23, 'path' => '23,7,', 'level' => 2, 'icon' => 'fa-solid fa-angle-right', 'link_to' => 'Theme', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(theme[/.]?.*)', 'show_position' => '1', 'sort_order' => 0, 'updated_at' => 1786095150, 'created_at' => 1697700805],
                 ['id' => 8, 'title' => '用户管理', 'pid' => 3, 'path' => '3,8,', 'level' => 2, 'icon' => 'fa-solid fa-chevron-right', 'link_to' => 'User', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(user[/.]?.*)', 'show_position' => '1', 'sort_order' => 2, 'updated_at' => 1786095078, 'created_at' => 1697700876],
                 ['id' => 9, 'title' => '插件', 'pid' => 0, 'path' => '9,', 'level' => 1, 'icon' => 'fa-solid fa-puzzle-piece', 'link_to' => 'Plugin', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(plugin[/.]?.*)', 'show_position' => '1', 'sort_order' => 4, 'updated_at' => 1786095132, 'created_at' => 1786074715],
                 ['id' => 10, 'title' => '系统更新', 'pid' => 3, 'path' => '3,10,', 'level' => 2, 'icon' => 'fa-solid fa-arrows-rotate', 'link_to' => 'Update', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(update[/.]?.*)', 'show_position' => '1,2', 'sort_order' => 7, 'updated_at' => 1786095104, 'created_at' => 1786074715],
@@ -47,6 +46,10 @@ class CreateBaseData
                 ['id' => 18, 'title' => '媒体库', 'pid' => 0, 'path' => '18,', 'level' => 1, 'icon' => 'fa-regular fa-image', 'link_to' => 'Media', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(media[/.]?.*)', 'show_position' => '', 'sort_order' => 25, 'updated_at' => 1788056911, 'created_at' => 1788056911],
                 ['id' => 19, 'title' => '缓存管理', 'pid' => 3, 'path' => '3,19,', 'level' => 2, 'icon' => 'fa-solid fa-broom', 'link_to' => 'System@cache', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(system/cache[/.]?.*)', 'show_position' => '1,2', 'sort_order' => 8, 'updated_at' => 1793300000, 'created_at' => 1793300000],
                 ['id' => 20, 'title' => '日志查看', 'pid' => 3, 'path' => '3,20,', 'level' => 2, 'icon' => 'fa fa-file-lines', 'link_to' => 'System@logs', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(system/logs[/.]?.*)', 'show_position' => '1,2', 'sort_order' => 9, 'updated_at' => 1793300000, 'created_at' => 1793300000],
+                ['id' => 21, 'title' => '内容', 'pid' => 1, 'path' => '1,21,', 'level' => 2, 'icon' => 'fa fa-cube', 'link_to' => 'Node', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(node[/.]?.*)', 'show_position' => '1', 'sort_order' => 0, 'updated_at' => 1793395000, 'created_at' => 1793395000],
+                ['id' => 22, 'title' => '栏目', 'pid' => 1, 'path' => '1,22,', 'level' => 2, 'icon' => 'fa fa-square-poll-horizontal', 'link_to' => 'Catalog', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(catalog[/.]?.*)', 'show_position' => '1', 'sort_order' => 1, 'updated_at' => 1793395000, 'created_at' => 1793395000],
+                ['id' => 23, 'title' => '外观', 'pid' => 0, 'path' => '23,', 'level' => 1, 'icon' => 'fa-solid fa-palette', 'link_to' => '', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(theme[/.]?.*|menu-location[/.]?.*|menu_location[/.]?.*)', 'show_position' => '1', 'sort_order' => 3, 'updated_at' => 1793395000, 'created_at' => 1793395000],
+                ['id' => 24, 'title' => '菜单', 'pid' => 23, 'path' => '23,24,', 'level' => 2, 'icon' => 'fa-solid fa-bars', 'link_to' => 'MenuLocation', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(menu-location[/.]?.*|menu_location[/.]?.*)', 'show_position' => '1,2', 'sort_order' => 1, 'updated_at' => 1793395000, 'created_at' => 1793395000],
             ], true);
         });
 
@@ -64,18 +67,18 @@ class CreateBaseData
 
         Schema::alter('catalog',function (AlertTable $table){
             $table->batchInsert([
-                ['id' => 28, 'slug' => 'about-us', 'title' => '公司简介', 'content' => NULL, 'pid' => 0, 'path' => '28,', 'level' => 1, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => '1,2,4', 'node_type' => 'page', 'created_at' => 1698301216],
-                ['id' => 29, 'slug' => 'company-honor', 'title' => '公司荣耀', 'content' => NULL, 'pid' => 28, 'path' => '28,29,', 'level' => 2, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => '1,2,4', 'node_type' => 'page', 'created_at' => 1698301226],
-                ['id' => 30, 'slug' => 'news', 'title' => '新闻中心', 'content' => NULL, 'pid' => 0, 'path' => '30,', 'level' => 1, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => '1,4', 'node_type' => 'article', 'created_at' => 1698308332],
-                ['id' => 31, 'slug' => 'company-news', 'title' => '公司新闻', 'content' => NULL, 'pid' => 30, 'path' => '30,31,', 'level' => 2, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => '1,4', 'node_type' => 'article', 'created_at' => 1698308345],
-                ['id' => 33, 'slug' => 'products', 'title' => '产品中心', 'content' => NULL, 'pid' => 0, 'path' => '33,', 'level' => 1, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => '1,2,3,4', 'node_type' => 'product', 'created_at' => 1698479595],
-                ['id' => 34, 'slug' => 'phone', 'title' => '手机', 'content' => NULL, 'pid' => 33, 'path' => '33,34,', 'level' => 2, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => '1,2,3,4', 'node_type' => 'product', 'created_at' => 1698479610],
-                ['id' => 35, 'slug' => 'computer', 'title' => '电脑', 'content' => NULL, 'pid' => 33, 'path' => '33,35,', 'level' => 2, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => '1,4', 'node_type' => 'product', 'created_at' => 1698479633],
-                ['id' => 38, 'slug' => 'industry-news', 'title' => '行业新闻', 'content' => NULL, 'pid' => 30, 'path' => '30,38,', 'level' => 2, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => '1,2,3,4', 'node_type' => 'article', 'created_at' => 1698568233],
-                ['id' => 39, 'slug' => 'history', 'title' => '发展历程', 'content' => NULL, 'pid' => 28, 'path' => '28,39,', 'level' => 2, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => '1,2,4', 'node_type' => 'page', 'created_at' => 1698572057],
-                ['id' => 40, 'slug' => 'contact', 'title' => '联系我们', 'content' => NULL, 'pid' => 28, 'path' => '28,40,', 'level' => 2, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '0', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => '1,2,3,4', 'node_type' => 'page', 'created_at' => 1698572075],
-                ['id' => 41, 'slug' => '--zap-link-url', 'title' => '联系我们', 'content' => 'page', 'pid' => 0, 'path' => '41,', 'level' => 1, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => 'contact', 'link_type' => 'catalog', 'link_object' => 40, 'link_target' => '_self', 'show_position' => '1,2,3', 'node_type' => 'link-url', 'created_at' => 1698573297],
-                ['id' => 46, 'slug' => 'faq', 'title' => '常见问题', 'content' => NULL, 'pid' => 0, 'path' => '46,', 'level' => 1, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => '1', 'node_type' => 'faq', 'created_at' => 1698723044],
+                ['id' => 28, 'slug' => 'about-us', 'title' => '公司简介', 'content' => NULL, 'pid' => 0, 'path' => '28,', 'level' => 1, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => 'top,left,footer', 'node_type' => 'page', 'created_at' => 1698301216],
+                ['id' => 29, 'slug' => 'company-honor', 'title' => '公司荣耀', 'content' => NULL, 'pid' => 28, 'path' => '28,29,', 'level' => 2, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => 'top,left,footer', 'node_type' => 'page', 'created_at' => 1698301226],
+                ['id' => 30, 'slug' => 'news', 'title' => '新闻中心', 'content' => NULL, 'pid' => 0, 'path' => '30,', 'level' => 1, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => 'top,footer', 'node_type' => 'article', 'created_at' => 1698308332],
+                ['id' => 31, 'slug' => 'company-news', 'title' => '公司新闻', 'content' => NULL, 'pid' => 30, 'path' => '30,31,', 'level' => 2, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => 'top,footer', 'node_type' => 'article', 'created_at' => 1698308345],
+                ['id' => 33, 'slug' => 'products', 'title' => '产品中心', 'content' => NULL, 'pid' => 0, 'path' => '33,', 'level' => 1, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => 'top,left,right,footer', 'node_type' => 'product', 'created_at' => 1698479595],
+                ['id' => 34, 'slug' => 'phone', 'title' => '手机', 'content' => NULL, 'pid' => 33, 'path' => '33,34,', 'level' => 2, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => 'top,left,right,footer', 'node_type' => 'product', 'created_at' => 1698479610],
+                ['id' => 35, 'slug' => 'computer', 'title' => '电脑', 'content' => NULL, 'pid' => 33, 'path' => '33,35,', 'level' => 2, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => 'top,footer', 'node_type' => 'product', 'created_at' => 1698479633],
+                ['id' => 38, 'slug' => 'industry-news', 'title' => '行业新闻', 'content' => NULL, 'pid' => 30, 'path' => '30,38,', 'level' => 2, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => 'top,left,right,footer', 'node_type' => 'article', 'created_at' => 1698568233],
+                ['id' => 39, 'slug' => 'history', 'title' => '发展历程', 'content' => NULL, 'pid' => 28, 'path' => '28,39,', 'level' => 2, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => 'top,left,footer', 'node_type' => 'page', 'created_at' => 1698572057],
+                ['id' => 40, 'slug' => 'contact', 'title' => '联系我们', 'content' => NULL, 'pid' => 28, 'path' => '28,40,', 'level' => 2, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '0', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => 'top,left,right,footer', 'node_type' => 'page', 'created_at' => 1698572075],
+                ['id' => 41, 'slug' => '--zap-link-url', 'title' => '联系我们', 'content' => 'page', 'pid' => 0, 'path' => '41,', 'level' => 1, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => 'contact', 'link_type' => 'catalog', 'link_object' => 40, 'link_target' => '_self', 'show_position' => 'top,left,right', 'node_type' => 'link-url', 'created_at' => 1698573297],
+                ['id' => 46, 'slug' => 'faq', 'title' => '常见问题', 'content' => NULL, 'pid' => 0, 'path' => '46,', 'level' => 1, 'sort_order' => 0, 'icon' => NULL, 'thumb_url' => NULL, 'link_to' => '', 'link_type' => 'catalog', 'link_object' => 0, 'link_target' => '_self', 'show_position' => 'top', 'node_type' => 'faq', 'created_at' => 1698723044],
             ], true);
         });
 
@@ -267,32 +270,44 @@ class CreateBaseData
             $table->batchInsert([
                 ['role_id' => 3, 'perm_key' => 'user', 'extras' => 'delete,edit,add,view', 'assignment_time' => 1786451674],
                 ['role_id' => 3, 'perm_key' => 'admin_menu_1', 'extras' => NULL, 'assignment_time' => 1786451674],
-                ['role_id' => 3, 'perm_key' => 'admin_menu_2', 'extras' => NULL, 'assignment_time' => 1786451674],
+                ['role_id' => 3, 'perm_key' => 'admin_menu_21', 'extras' => NULL, 'assignment_time' => 1793395000],
+                ['role_id' => 3, 'perm_key' => 'admin_menu_22', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 3, 'perm_key' => 'admin_menu_7', 'extras' => NULL, 'assignment_time' => 1786451674],
+                ['role_id' => 3, 'perm_key' => 'admin_menu_23', 'extras' => NULL, 'assignment_time' => 1793395000],
+                ['role_id' => 3, 'perm_key' => 'admin_menu_24', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 3, 'perm_key' => 'admin_menu_3', 'extras' => NULL, 'assignment_time' => 1786451674],
                 ['role_id' => 3, 'perm_key' => 'admin_menu_4', 'extras' => NULL, 'assignment_time' => 1786451674],
                 ['role_id' => 3, 'perm_key' => 'admin_menu_5', 'extras' => NULL, 'assignment_time' => 1786451674],
                 ['role_id' => 3, 'perm_key' => 'admin_menu_8', 'extras' => NULL, 'assignment_time' => 1786451674],
                 ['role_id' => 5, 'perm_key' => 'user', 'extras' => 'delete,edit,add,view', 'assignment_time' => 1786451693],
                 ['role_id' => 5, 'perm_key' => 'admin_menu_1', 'extras' => NULL, 'assignment_time' => 1786451693],
-                ['role_id' => 5, 'perm_key' => 'admin_menu_2', 'extras' => NULL, 'assignment_time' => 1786451693],
+                ['role_id' => 5, 'perm_key' => 'admin_menu_21', 'extras' => NULL, 'assignment_time' => 1793395000],
+                ['role_id' => 5, 'perm_key' => 'admin_menu_22', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 5, 'perm_key' => 'admin_menu_7', 'extras' => NULL, 'assignment_time' => 1786451693],
+                ['role_id' => 5, 'perm_key' => 'admin_menu_23', 'extras' => NULL, 'assignment_time' => 1793395000],
+                ['role_id' => 5, 'perm_key' => 'admin_menu_24', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 5, 'perm_key' => 'admin_menu_3', 'extras' => NULL, 'assignment_time' => 1786451693],
                 ['role_id' => 5, 'perm_key' => 'admin_menu_4', 'extras' => NULL, 'assignment_time' => 1786451693],
                 ['role_id' => 5, 'perm_key' => 'admin_menu_5', 'extras' => NULL, 'assignment_time' => 1786451693],
                 ['role_id' => 5, 'perm_key' => 'admin_menu_8', 'extras' => NULL, 'assignment_time' => 1786451693],
                 ['role_id' => 2, 'perm_key' => 'user', 'extras' => 'delete,edit,add,view', 'assignment_time' => 1786451703],
                 ['role_id' => 2, 'perm_key' => 'admin_menu_1', 'extras' => NULL, 'assignment_time' => 1786451703],
-                ['role_id' => 2, 'perm_key' => 'admin_menu_2', 'extras' => NULL, 'assignment_time' => 1786451703],
+                ['role_id' => 2, 'perm_key' => 'admin_menu_21', 'extras' => NULL, 'assignment_time' => 1793395000],
+                ['role_id' => 2, 'perm_key' => 'admin_menu_22', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 2, 'perm_key' => 'admin_menu_7', 'extras' => NULL, 'assignment_time' => 1786451703],
+                ['role_id' => 2, 'perm_key' => 'admin_menu_23', 'extras' => NULL, 'assignment_time' => 1793395000],
+                ['role_id' => 2, 'perm_key' => 'admin_menu_24', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 2, 'perm_key' => 'admin_menu_3', 'extras' => NULL, 'assignment_time' => 1786451703],
                 ['role_id' => 2, 'perm_key' => 'admin_menu_4', 'extras' => NULL, 'assignment_time' => 1786451703],
                 ['role_id' => 2, 'perm_key' => 'admin_menu_5', 'extras' => NULL, 'assignment_time' => 1786451703],
                 ['role_id' => 2, 'perm_key' => 'admin_menu_8', 'extras' => NULL, 'assignment_time' => 1786451703],
                 ['role_id' => 1, 'perm_key' => 'user', 'extras' => NULL, 'assignment_time' => 1786453446],
                 ['role_id' => 1, 'perm_key' => 'admin_menu_1', 'extras' => NULL, 'assignment_time' => 1786453446],
-                ['role_id' => 1, 'perm_key' => 'admin_menu_2', 'extras' => NULL, 'assignment_time' => 1786453446],
+                ['role_id' => 1, 'perm_key' => 'admin_menu_21', 'extras' => NULL, 'assignment_time' => 1793395000],
+                ['role_id' => 1, 'perm_key' => 'admin_menu_22', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 1, 'perm_key' => 'admin_menu_7', 'extras' => NULL, 'assignment_time' => 1786453446],
+                ['role_id' => 1, 'perm_key' => 'admin_menu_23', 'extras' => NULL, 'assignment_time' => 1793395000],
+                ['role_id' => 1, 'perm_key' => 'admin_menu_24', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 1, 'perm_key' => 'admin_menu_9', 'extras' => NULL, 'assignment_time' => 1786453446],
                 ['role_id' => 1, 'perm_key' => 'admin_menu_3', 'extras' => NULL, 'assignment_time' => 1786453446],
                 ['role_id' => 1, 'perm_key' => 'admin_menu_4', 'extras' => NULL, 'assignment_time' => 1786453446],
@@ -311,5 +326,71 @@ class CreateBaseData
         // Table `tags` — no data
 
         // Table `update_history` — no data
+
+        // ───────────────────── 菜单（与 migrations 最终状态对齐） ─────────────────────
+        $now = time();
+
+        // 1. 系统默认位置 top/left/right/footer（migration 2026_11_06_100000）
+        \zapcms\services\MenuLocation::seedDefaults();
+
+        // 2. 每个位置创建同名菜单并分配（migration 2026_11_06_200000 的全新安装等价物）
+        foreach (\zapcms\services\MenuLocation::instance()->all() as $loc) {
+            $menuId = (int) \zap\DB::insert('menus', [
+                'title'      => $loc['title'],
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+            if ($menuId <= 0) {
+                continue;
+            }
+            \zap\DB::update('menu_locations', ['menu_id' => $menuId], ['id' => (int) $loc['id']]);
+
+            // 3. 按 catalog.show_position 勾选种入菜单项并还原层级
+            //    （migration 2026_11_06_120000 的全新安装等价物）
+            $catalogs = \zap\DB::table('catalog')
+                ->where('show_position', '<>', '')
+                ->get(FETCH_ASSOC) ?: [];
+            usort($catalogs, function ($a, $b) {
+                return substr_count((string) ($a['path'] ?? ''), ',')
+                     - substr_count((string) ($b['path'] ?? ''), ',');
+            });
+
+            $map = []; // catalog.id => menu_item.id（本菜单内）
+            foreach ($catalogs as $c) {
+                $positions = array_filter(
+                    explode(',', (string) ($c['show_position'] ?? '')),
+                    'strlen'
+                );
+                if (!in_array($loc['key'], $positions, true)) {
+                    continue;
+                }
+
+                // 找最近的、同样属于本菜单的祖先栏目
+                $ancestors  = array_filter(explode(',', (string) ($c['path'] ?? '')), 'strlen');
+                $parentMiId = 0;
+                foreach ($ancestors as $aid) {
+                    if ((int) $aid === (int) $c['id']) {
+                        continue;
+                    }
+                    if (isset($map[(int) $aid])) {
+                        $parentMiId = $map[(int) $aid];
+                    }
+                }
+
+                $map[(int) $c['id']] = (int) \zap\DB::insert('menu_items', [
+                    'menu_id'     => $menuId,
+                    'location_key'=> $loc['key'],
+                    'parent_id'   => $parentMiId,
+                    'item_type'   => 'catalog',
+                    'ref_id'      => (int) $c['id'],
+                    'title'       => null,
+                    'url'         => null,
+                    'link_target' => null,
+                    'sort_order'  => (int) ($c['sort_order'] ?? 0),
+                    'created_at'  => $now,
+                    'updated_at'  => $now,
+                ]);
+            }
+        }
     }
 }
