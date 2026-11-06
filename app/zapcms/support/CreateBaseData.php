@@ -50,6 +50,7 @@ class CreateBaseData
                 ['id' => 22, 'title' => '栏目', 'pid' => 1, 'path' => '1,22,', 'level' => 2, 'icon' => 'fa fa-square-poll-horizontal', 'link_to' => 'Catalog', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(catalog[/.]?.*)', 'show_position' => '1', 'sort_order' => 1, 'updated_at' => 1793395000, 'created_at' => 1793395000],
                 ['id' => 23, 'title' => '外观', 'pid' => 0, 'path' => '23,', 'level' => 1, 'icon' => 'fa-solid fa-palette', 'link_to' => '', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(theme[/.]?.*|menu-location[/.]?.*|menu_location[/.]?.*)', 'show_position' => '1', 'sort_order' => 3, 'updated_at' => 1793395000, 'created_at' => 1793395000],
                 ['id' => 24, 'title' => '菜单', 'pid' => 23, 'path' => '23,24,', 'level' => 2, 'icon' => 'fa-solid fa-bars', 'link_to' => 'MenuLocation', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(menu-location[/.]?.*|menu_location[/.]?.*)', 'show_position' => '1,2', 'sort_order' => 1, 'updated_at' => 1793395000, 'created_at' => 1793395000],
+                ['id' => 25, 'title' => '多语言', 'pid' => 3, 'path' => '3,25,', 'level' => 2, 'icon' => 'fa fa-language', 'link_to' => 'System@languages', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(system/languages.*)', 'show_position' => '1,2', 'sort_order' => 10, 'updated_at' => 1793395000, 'created_at' => 1793395000],
             ], true);
         });
 
