@@ -1,5 +1,6 @@
 <?php
 use zap\facades\Url;
+use zapcms\services\AdminMenu;
 
 !IS_AJAX && $this->layout('layouts/common');
 $this->view->page_title = '系统菜单管理';
@@ -40,7 +41,8 @@ $this->view->page_title = '系统菜单管理';
                     <th style="width:60px">排序</th>
                     <th class="w-100">菜单名称</th>
                     <th>链接</th>
-                    <th style="width:110px">操作</th>
+                    <th style="width:130px">显示位置</th>
+                    <th style="width:150px">操作</th>
                 </tr>
             </thead>
             <tbody>
@@ -75,17 +77,30 @@ $this->view->page_title = '系统菜单管理';
                             <small class="text-muted ms-1">ID:<?php echo e($admin_menu['id']); ?></small>
                         </div>
                     </td>
-                    <td class="text-muted"><?php echo e($admin_menu['link_to']); ?></td>
+                    <td class="text-muted text-break"><?php echo e($admin_menu['link_to']); ?></td>
+                    <td>
+                        <?php
+                        $positions = array_filter(explode(',', $admin_menu['show_position'] ?? ''), 'strlen');
+                        foreach ($positions as $p) {
+                            echo '<span class="badge rounded-pill text-bg-secondary me-1">' . e(AdminMenu::positionTitle($p)) . '</span>';
+                        }
+                        ?>
+                    </td>
                     <td>
                         <button type="button" class="btn btn-outline-success btn-sm me-1"
                                 onclick="addOrEdit(<?php echo e($admin_menu['id']); ?>)"
                                 data-bs-toggle="tooltip" data-bs-title="添加子菜单">
                             <i class="fa fa-plus"></i>
                         </button>
-                        <button type="button" class="btn btn-outline-info btn-sm"
+                        <button type="button" class="btn btn-outline-info btn-sm me-1"
                                 onclick="addOrEdit(<?php echo $admin_menu['pid'],',',$admin_menu['id'];?>)"
                                 data-bs-toggle="tooltip" data-bs-title="编辑">
                             <i class="fa fa-pen"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm"
+                                onclick="removeRow(<?php echo e($admin_menu['id']); ?>)"
+                                data-bs-toggle="tooltip" data-bs-title="删除">
+                            <i class="fa fa-trash"></i>
                         </button>
                     </td>
                 </tr>
@@ -124,15 +139,49 @@ $this->view->page_title = '系统菜单管理';
             ZapToast.alert('请选择需要删除的菜单',{bgColor:bgWarning,position:Toast_Pos_Center});
             return;
         }
-        $.ajax({
-            url:'<?php echo Url::action("AdminMenu@remove");?>',
-            method:'post',
-            data:checkedCatalog,
-            success:function (data){
-                Zap.reload()
-                ZapToast.alert(data.msg,{bgColor:data.code===0?bgSuccess:bgDanger,position:Toast_Pos_Center});
-            }
-        })
+        Swal.fire({
+            title:'确定删除选中的菜单？',
+            text:'将同时删除其所有子菜单，且不可恢复！',
+            icon:'warning',
+            showCancelButton:true,
+            confirmButtonText:'删除',
+            cancelButtonText:'取消',
+            confirmButtonColor:'#d33'
+        }).then(function (result){
+            if(!result.isConfirmed) return;
+            $.ajax({
+                url:'<?php echo Url::action("AdminMenu@remove");?>',
+                method:'post',
+                data:checkedCatalog,
+                success:function (data){
+                    Zap.reload()
+                    ZapToast.alert(data.msg,{bgColor:data.code===0?bgSuccess:bgDanger,position:Toast_Pos_Center});
+                }
+            })
+        });
+    }
+
+    function removeRow(id){
+        Swal.fire({
+            title:'确定删除该菜单？',
+            text:'将同时删除其所有子菜单，且不可恢复！',
+            icon:'warning',
+            showCancelButton:true,
+            confirmButtonText:'删除',
+            cancelButtonText:'取消',
+            confirmButtonColor:'#d33'
+        }).then(function (result){
+            if(!result.isConfirmed) return;
+            $.ajax({
+                url:'<?php echo Url::action("AdminMenu@remove");?>',
+                method:'post',
+                data:{ ['admin_menu['+id+'][id]']: id },
+                success:function (data){
+                    Zap.reload()
+                    ZapToast.alert(data.msg,{bgColor:data.code===0?bgSuccess:bgDanger,position:Toast_Pos_Center});
+                }
+            })
+        });
     }
 
     function addOrEdit(pid,menuId){
@@ -148,22 +197,30 @@ $this->view->page_title = '系统菜单管理';
             url: formUrl,
             buttons:[{close:true,title:"关闭"},{title:"保存",class:'btn-success'}],
             btn2:function (){
+                var $btn = $('#adminMenu .btn-success');
+                var title = $.trim($('#data_title').val());
+                if(!title){
+                    $('#data_title').addClass('is-invalid');
+                    Swal.fire({icon:'warning',title:'请填写菜单名称'});
+                    return;
+                }
+                $btn.prop('disabled', true).text('保存中...');
                 $.ajax({
                     url:'<?php echo Url::action("AdminMenu@saveAdminMenu");?>',
                     method:'post',
                     data:$('#adminMenu form').serialize(),
                     success:function (data){
-                        ZapToast.alert(data.msg,{
-                            bgColor:data.code===0?bgSuccess:bgDanger,
-                            position:Toast_Pos_Center,
-                            delay: 2000,
-                            callback:function(){ location.reload();}
-                        });
-                        document.activeElement && document.activeElement.blur();
+                        $btn.prop('disabled', false).text('保存');
+                        if(data.code !== 0){
+                            Swal.fire({icon:'error',title:'保存失败',text:data.msg});
+                            return;
+                        }
+                        ZapToast.alert(data.msg,{bgColor:bgSuccess,position:Toast_Pos_Center,delay:1500,callback:function(){ location.reload(); }});
                         m.hide();
                     },
                     error:function(xhr){
-                        ZapToast.alert('保存失败：' + xhr.statusText,{bgColor:bgDanger,position:Toast_Pos_Center});
+                        $btn.prop('disabled', false).text('保存');
+                        Swal.fire({icon:'error',title:'保存失败',text:xhr.statusText});
                     }
                 })
             }

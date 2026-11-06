@@ -36,6 +36,34 @@ class AdminMenuController extends AdminController
             $menu_id = intval(Request::post('menu_id'));
             $data['icon'] = $data['icon'] ?? 'fa fa-circle-notch';
             $data['show_position'] = join(',', $data['show_position'] ?? []);
+
+            // 校验：菜单名称必填
+            if (empty(trim((string)($data['title'] ?? '')))) {
+                Response::json(['code' => 1, 'msg' => '请填写菜单名称']);
+                return;
+            }
+
+            // 校验：上级菜单合法性
+            $pid = intval($data['pid'] ?? 0);
+            if ($pid > 0) {
+                if ($menu_id && $pid === $menu_id) {
+                    Response::json(['code' => 1, 'msg' => '上级菜单不能选择自身']);
+                    return;
+                }
+                $parent = AdminMenu::instance()->get($pid);
+                if (empty($parent)) {
+                    Response::json(['code' => 1, 'msg' => '所选上级菜单不存在']);
+                    return;
+                }
+                if ($menu_id) {
+                    $me = AdminMenu::instance()->get($menu_id);
+                    if ($me && \zap\util\Str::startsWith($parent['path'], $me['path'])) {
+                        Response::json(['code' => 1, 'msg' => '上级菜单不能是自身的子菜单']);
+                        return;
+                    }
+                }
+            }
+
             if($menu_id){
                 AdminMenu::instance()->update($data,$menu_id);
             }else{

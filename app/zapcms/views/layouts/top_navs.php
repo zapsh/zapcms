@@ -1,18 +1,19 @@
 <aside class="app-sidebar bg-dark shadow" data-bs-theme="dark">
     <style>
       .docs-btn-text {
-  overflow: hidden;           /* 防止文字溢出 */
   white-space: nowrap;        /* 强制不换行，配合max-width实现折叠 */
-  opacity: 0;
-  max-width: 0;
-  transition: 
+  overflow: hidden;           /* 防止文字溢出 */
+  opacity: 1;
+  max-width: 150px;
+  transition:
     opacity 0.3s ease-in-out,
     max-width 0.4s ease-in-out; /* 宽度稍慢，制造“展开”感 */
 }
 
-body.sidebar-mini.sidebar-open .docs-btn-text {
-  opacity: 1;
-  max-width: 150px;           /* 过渡到目标宽度 */
+/* 仅在折叠态（sidebar-mini）且未悬停展开（无 sidebar-open）时隐藏文字 */
+body.sidebar-mini:not(.sidebar-open) .docs-btn-text {
+  opacity: 0;
+  max-width: 0;
 }
     </style>    <!-- 侧边栏品牌区域 -->
     <div class="sidebar-brand">
