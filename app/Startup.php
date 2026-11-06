@@ -364,7 +364,7 @@ class Startup
     /**
      * 将固定链接结构编译为路径正则
      *
-     * 支持 %year% / %monthnum% / %day% / %postname% / %node_id% / %node_type%，
+     * 支持 %year% / %monthnum% / %day% / %node_slug% / %node_id% / %node_type%，
      * 未识别的 %tag% 宽松匹配为任意非 / 段。
      *
      * @param string $structure
@@ -376,7 +376,7 @@ class Startup
             '%year%'      => '(?P<year>\d{4})',
             '%monthnum%'  => '(?P<monthnum>\d{1,2})',
             '%day%'       => '(?P<day>\d{1,2})',
-            '%postname%'  => '(?P<postname>[^/]+)',
+            '%node_slug%'  => '(?P<node_slug>[^/]+)',
             '%node_id%'   => '(?P<node_id>\d+)',
             '%node_type%' => '(?P<node_type>[^/]+)',
         ];
@@ -392,7 +392,7 @@ class Startup
      * 按固定链接结构解析路径（日期和名称型 / 月份和名称型 / 数字型 / 自定义）
      *
      * - 结构含 %node_id%：按节点 ID 解析
-     * - 结构含 %postname%：按 slug（末段）解析
+     * - 结构含 %node_slug%：按 slug（末段）解析
      * - 纯 slug 结构与基础型（查询串）返回 null，走默认解析
      *
      * @param array $params URL 路径段
@@ -404,7 +404,7 @@ class Startup
             return null;
         }
         $structure = get_permalink_structure();
-        if (str_contains($structure, '?') || rtrim($structure, '/') === '/%postname%') {
+        if (str_contains($structure, '?') || rtrim($structure, '/') === '/%node_slug%') {
             return null;
         }
 
@@ -417,8 +417,8 @@ class Startup
         if (!empty($m['node_id'])) {
             return $this->resolveNodeById((int) $m['node_id']);
         }
-        if (!empty($m['postname'])) {
-            return $this->resolveNodeBySlug($m['postname']);
+        if (!empty($m['node_slug'])) {
+            return $this->resolveNodeBySlug($m['node_slug']);
         }
         return null;
     }

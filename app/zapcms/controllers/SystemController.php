@@ -695,7 +695,7 @@ class SystemController extends AdminController
     public function permalink()
     {
         if (Request::isPost()) {
-            $structure     = Request::post('permalink_structure', '/%postname%/');
+            $structure     = Request::post('permalink_structure', '/%node_slug%/');
             $catalogPrefix = Request::post('catalog_prefix', '');
 
             // 基本清理（栏目前缀允许留空，表示栏目直接以 /{slug} 访问）
@@ -725,7 +725,7 @@ class SystemController extends AdminController
                 ['title' => '设置'],
                 ['title' => '固定链接设置'],
             ],
-            'current_structure'     => option('permalink.structure', '/%postname%/'),
+            'current_structure'     => option('permalink.structure', '/%node_slug%/'),
             'current_catalog_prefix' => option('permalink.catalog_prefix', ''),
         ];
 

@@ -1,5 +1,5 @@
 <?php
-$currentStructure = $current_structure ?? '/%postname%/';
+$currentStructure = $current_structure ?? '/%node_slug%/';
 // 归一化，保证与预设匹配（兼容历史保存的 /?n=%node_id%/ 形式）
 if (strpos($currentStructure, '?') !== false) {
     $currentStructure = '/' . ltrim(rtrim(trim($currentStructure), '/'), '/');
@@ -17,12 +17,12 @@ $presets = [
     ],
     'day_name' => [
         'label'    => '日期和名称型',
-        'structure' => '/%year%/%monthnum%/%day%/%postname%/',
+        'structure' => '/%year%/%monthnum%/%day%/%node_slug%/',
         'example'   => rtrim(home_url(), '/') . '/2024/01/15/sample-post/',
     ],
     'month_name' => [
         'label'    => '月份和名称型',
-        'structure' => '/%year%/%monthnum%/%postname%/',
+        'structure' => '/%year%/%monthnum%/%node_slug%/',
         'example'   => rtrim(home_url(), '/') . '/2024/01/sample-post/',
     ],
     'numeric' => [
@@ -32,7 +32,7 @@ $presets = [
     ],
     'post_name' => [
         'label'    => '文章名称型',
-        'structure' => '/%postname%/',
+        'structure' => '/%node_slug%/',
         'example'   => rtrim(home_url(), '/') . '/sample-post/',
     ],
 ];
@@ -51,7 +51,7 @@ $structureTags = [
     '%year%'      => '发布年份（如 2024）',
     '%monthnum%'  => '发布月份（如 01）',
     '%day%'       => '发布日期（如 31）',
-    '%postname%'  => '文章别名（slug）',
+    '%node_slug%'  => '文章别名（slug）',
     '%node_id%'   => '节点 ID',
     '%node_type%' => '内容类型（article, product 等）',
 ];
@@ -104,8 +104,8 @@ $this->layout('layouts/common');
                                 <span class="input-group-text"><?php echo htmlspecialchars(rtrim(home_url(), '/')); ?></span>
                                 <input type="text" class="form-control font-monospace"
                                        id="custom_structure" name="custom_structure"
-                                       value="<?php echo htmlspecialchars($currentPreset === 'custom' ? $currentStructure : '/%postname%/'); ?>"
-                                       placeholder="/%postname%/">
+                                       value="<?php echo htmlspecialchars($currentPreset === 'custom' ? $currentStructure : '/%node_slug%/'); ?>"
+                                       placeholder="/%node_slug%/">
                             </div>
                             <div class="form-text">请以 <code>/</code> 开头，并使用下方支持的标签</div>
                         </div>
@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 customBox.style.display = 'none';
                 // 自动填入预设值
-                customInput.value = presetMap[this.value] || '/%postname%/';
+                customInput.value = presetMap[this.value] || '/%node_slug%/';
             }
         });
     });

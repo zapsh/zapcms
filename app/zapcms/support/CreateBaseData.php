@@ -183,7 +183,7 @@ class CreateBaseData
                 ['id' => 63, 'option_name' => 'mail.password', 'option_value' => '', 'sort_order' => 0, 'autoload' => 0],
                 ['id' => 64, 'option_name' => 'mail.port', 'option_value' => '25', 'sort_order' => 0, 'autoload' => 0],
                 ['id' => 65, 'option_name' => 'mail.timeout', 'option_value' => '5', 'sort_order' => 0, 'autoload' => 0],
-                ['id' => 80, 'option_name' => 'permalink.structure', 'option_value' => '/%postname%/', 'sort_order' => 0, 'autoload' => 1],
+                ['id' => 80, 'option_name' => 'permalink.structure', 'option_value' => '/%node_slug%/', 'sort_order' => 0, 'autoload' => 1],
                 ['id' => 81, 'option_name' => 'permalink.catalog_prefix', 'option_value' => '', 'sort_order' => 0, 'autoload' => 1],
                 ['id' => 1036, 'option_name' => 'basic_home.service_title', 'option_value' => '服务项目', 'sort_order' => 0, 'autoload' => 0],
                 ['id' => 1037, 'option_name' => 'basic_home.service_subtitle', 'option_value' => 'SERVICES', 'sort_order' => 0, 'autoload' => 0],

@@ -563,13 +563,15 @@ function storage_url(string $path = ''): string
 /**
  * 获取固定链接结构
  *
- * @return string 如 '/%postname%/' 或 '/%year%/%monthnum%/%postname%/'
+ * @return string 如 '/%node_slug%/' 或 '/%year%/%monthnum%/%node_slug%/'
  */
 function get_permalink_structure(): string
 {
     static $structure = null;
     if ($structure === null) {
-        $structure = (string) option('permalink.structure', '/%postname%/');
+        $structure = (string) option('permalink.structure', '/%node_slug%/');
+        // 历史兼容：旧数据使用 %postname% 占位符，统一迁移为 %node_slug%
+        $structure = str_replace('%postname%', '%node_slug%', $structure);
         // 归一化：基础型（含查询串，如 /?n=%node_id%）只去掉多余斜杠；
         // 路径型统一为 / 开头 / 结尾。兼容历史误存为 /?n=%node_id%/ 的数据。
         if (str_contains($structure, '?')) {
@@ -578,7 +580,7 @@ function get_permalink_structure(): string
             $structure = '/' . trim(trim($structure), '/') . '/';
         }
         if ($structure === '//') {
-            $structure = '/%postname%/';
+            $structure = '/%node_slug%/';
         }
     }
     return $structure;
@@ -606,7 +608,7 @@ function get_catalog_prefix(): string
  * @param string|null $locale 指定语言，默认取当前语言
  * @return string
  *
- * 支持标签：%year%, %monthnum%, %day%, %postname%, %node_id%, %node_type%
+ * 支持标签：%year%, %monthnum%, %day%, %node_slug%, %node_id%, %node_type%
  */
 function build_permalink(array $node, ?string $locale = null): string
 {
@@ -621,8 +623,8 @@ function build_permalink(array $node, ?string $locale = null): string
     }
 
     // 如果有 slug 且不是占位符，优先使用 slug 格式 /{slug}/
-    // 但只有当结构是简单的 /%postname%/ 时才直接用 slug
-    if ($hasSlug && $structure === '/%postname%/') {
+    // 但只有当结构是简单的 /%node_slug%/ 时才直接用 slug
+    if ($hasSlug && $structure === '/%node_slug%/') {
         return append_url_suffix(locale_site_url($slug, $locale));
     }
 
@@ -640,9 +642,9 @@ function build_permalink(array $node, ?string $locale = null): string
         $time = time();
     }
 
-    // 无 slug 时，依赖 %postname% 的结构无法生成确定性路径，
+    // 无 slug 时，依赖 %node_slug% 的结构无法生成确定性路径，
     // 回退为基础型链接 /?n={id}，保证链接可访问（路由端支持 ?n= 解析）
-    if (!$hasSlug && str_contains($structure, '%postname%')) {
+    if (!$hasSlug && str_contains($structure, '%node_slug%')) {
         return rtrim(locale_site_url('', $locale), '/') . '/?n=' . $id;
     }
 
@@ -651,7 +653,7 @@ function build_permalink(array $node, ?string $locale = null): string
         '%year%'      => date('Y', $time),
         '%monthnum%'  => date('m', $time),
         '%day%'       => date('d', $time),
-        '%postname%'  => $hasSlug ? $slug : $id,
+        '%node_slug%'  => $hasSlug ? $slug : $id,
         '%node_id%'   => $id,
         '%node_type%' => $node['node_type'] ?? 'default',
     ];
@@ -699,7 +701,7 @@ function node_url(int $nodeId, string $type = 'default', ?string $locale = null)
     $structure = get_permalink_structure();
 
     // 文章名称型且有 slug：直接用 slug
-    if ($structure === '/%postname%/' && !empty($slug) && $slug !== '--zap-link-url') {
+    if ($structure === '/%node_slug%/' && !empty($slug) && $slug !== '--zap-link-url') {
         return append_url_suffix(locale_site_url($slug, $locale));
     }
 
@@ -755,7 +757,7 @@ function resolve_link_url(array $linkRow, ?string $locale = null): string
             }
             if (!empty($linkTo) && $linkTo !== '--zap-link-url') {
                 $structure = get_permalink_structure();
-                if ($structure === '/%postname%/') {
+                if ($structure === '/%node_slug%/') {
                     return append_url_suffix(locale_site_url($linkTo, $locale));
                 }
                 // 自定义结构：按 slug 反查节点，用完整结构生成链接
