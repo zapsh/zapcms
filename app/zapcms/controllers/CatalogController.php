@@ -6,6 +6,9 @@ use zapcms\controllers\AdminController;
 use zapcms\models\AdminLog;
 use zapcms\services\Catalog;
 use zapcms\services\Locale;
+use zapcms\services\MenuLocation;
+use zapcms\services\MenuItem;
+use zapcms\services\NodeType;
 use zapcms\services\SlugHelper;
 use zapcms\services\Translator;
 use zap\DB;
@@ -51,17 +54,27 @@ class CatalogController extends AdminController
             $catalog['slug'] = SlugHelper::generate(empty($catalog['slug']) ? $catalog['title'] : $catalog['slug']);
         }
 
-        $catalog['show_position'] = join(',', $catalog['show_position'] ?? []);
         $menu = Catalog::instance();
+        $cid = 0;
         if($catalogId){
             $menu->update($catalog,$catalogId);
             $this->saveCatalogTranslations($catalogId);
+            $cid = $catalogId;
         }else{
             $newId = (int) $menu->add($catalog);
             if($newId > 0){
                 $this->saveCatalogTranslations($newId);
+                $cid = $newId;
             }
         }
+
+        // 同步菜单位置勾选到 menu_items（新增缺失 / 移除未勾选）
+        $menuLocations = Request::post('menu_locations', []);
+        if ($cid > 0 && is_array($menuLocations)) {
+            MenuItem::instance()->syncCatalogLocations($cid, $menuLocations);
+        }
+        // 栏目标题/URL 变化可能影响菜单回退显示，清菜单缓存
+        MenuItem::instance()->clearMenuCache();
 
         AdminLog::info(
             AdminLog::CATEGORY_CONTENT,
@@ -126,6 +139,11 @@ class CatalogController extends AdminController
 
         $data['catalog'] = $data['cid'] == 0 ? [] : Catalog::instance()->get($data['cid']);
 
+        // 前台菜单位置选项（含自定义位置）+ 本栏目已归属的位置
+        $data['locations'] = Catalog::getLocationOptions();
+        $locMap = MenuItem::instance()->catalogLocationMap();
+        $data['catalog_locations'] = $data['cid'] > 0 ? ($locMap[$data['cid']] ?? []) : [];
+
         // 已保存的栏目译文（locale => row）
         $data['translations'] = !empty($data['catalog']['id']) && Locale::enabled()
             ? Translator::getAll(Translator::TYPE_NODE, (int) $data['catalog']['id'])
@@ -182,5 +200,49 @@ class CatalogController extends AdminController
             'nodes'     => $nodes,
             'total'     => count($catalogs) + count($nodes),
         ]);
+    }
+
+    /**
+     * 栏目树懒加载：按父级取直接子节点（用于后台"栏目管理"可展开树）。
+     *
+     * @return void JSON {nodes:[{id,pid,title,icon,slug,link_to,node_type,node_type_title,sort_order,has_children,locations:[{key,title}]}]}
+     */
+    public function children()
+    {
+        $parentId = intval(Request::get('parent_id', 0));
+
+        $rows = Catalog::instance()->getChildren($parentId);
+
+        // 位置标题 + 栏目归属映射（用于行内位置徽标，点击直达菜单构建器）
+        $locTitles = [];
+        foreach (MenuLocation::instance()->all() as $loc) {
+            $locTitles[$loc['key']] = $loc['title'];
+        }
+        $catLocMap = MenuItem::instance()->catalogLocationMap();
+
+        $nodes = [];
+        foreach ($rows as $row) {
+            $locs = array_values(array_intersect(
+                array_keys($locTitles),
+                $catLocMap[(int) $row['id']] ?? []
+            ));
+            $nodes[] = [
+                'id'             => (int) $row['id'],
+                'pid'            => (int) ($row['pid'] ?? 0),
+                'title'          => $row['title'] ?? '',
+                'icon'           => $row['icon'] ?? '',
+                'slug'           => $row['slug'] ?? '',
+                'link_to'        => $row['link_to'] ?? '',
+                'node_type'      => $row['node_type'] ?: 'catalog',
+                'node_type_title'=> NodeType::getTitle($row['node_type'] ?: 'catalog'),
+                'sort_order'     => (int) ($row['sort_order'] ?? 0),
+                'has_children'   => !empty($row['has_children']),
+                'locations'      => array_map(function ($k) use ($locTitles) {
+                    return ['key' => $k, 'title' => $locTitles[$k] ?? $k];
+                }, $locs),
+            ];
+        }
+
+        Response::json(['code' => 0, 'nodes' => $nodes, 'total' => count($nodes)]);
     }
 }

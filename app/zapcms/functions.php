@@ -1092,3 +1092,109 @@ function themeSettings(): \zapcms\services\ThemeSettings
 {
     return new \zapcms\services\ThemeSettings();
 }
+
+/**
+ * 获取栏目/节点菜单项的前端链接地址
+ *
+ * - link_type = custom_link → 直接使用 link_to（外部链接 / 站内路径）；
+ * - 其余（link-url / 普通栏目 / 普通节点）统一走 smart_node_url 解析。
+ *
+ * @param array       $item   栏目/节点行数据
+ * @param string|null $locale 指定语言
+ * @return string
+ */
+function catalog_item_url(array $item, ?string $locale = null): string
+{
+    if (($item['link_type'] ?? '') === 'custom_link') {
+        return url_link($item['link_to'] ?? '#', $locale);
+    }
+    return smart_node_url($item, $locale);
+}
+
+/**
+ * 渲染指定菜单位置的导航（前端模板调用）
+ *
+ * 用法：<?php echo catalog_menu('about-left'); ?>
+ * 返回 Bootstrap nav 结构的 HTML 字符串；该位置无菜单时返回空串。
+ *
+ * @param string $key     菜单位置 key（如 left / about-left）
+ * @param array  $options ['active_catalog_id' => int, 'ul_class' => string]
+ * @return string
+ */
+function catalog_menu(string $key, array $options = []): string
+{
+    $activeCatalogId = (int) ($options['active_catalog_id'] ?? ($GLOBALS['catalog_id'] ?? 0));
+    $ulClass         = $options['ul_class'] ?? 'nav flex-column catalog-menu';
+
+    $tree = \zapcms\services\Catalog::instance()->getPositionMenu($key);
+    if (empty($tree)) {
+        return '';
+    }
+
+    $html = '<ul class="' . htmlspecialchars($ulClass, ENT_QUOTES) . '">';
+    $html .= catalog_menu_render($tree, $activeCatalogId);
+    $html .= '</ul>';
+
+    return $html;
+}
+
+/**
+ * 递归渲染菜单位置导航树
+ */
+function catalog_menu_render(array $items, int $activeCatalogId, int $level = 0): string
+{
+    $html = '';
+    foreach ($items as $item) {
+        $id          = (int) ($item['id'] ?? 0);
+        $hasChildren = !empty($item['children']);
+        $isActive    = $id === $activeCatalogId;
+        // 优先使用 menu_items 已解析的 url，否则回退到按 link_type 推导
+        $url         = $item['url'] ?? catalog_item_url($item);
+        $targetAttr  = (!empty($item['target']) && $item['target'] === '_blank')
+            ? ' target="_blank" rel="noopener"' : '';
+
+        // mega-menu 富字段：css_class 挂到 <li>，icon 前置、badge 后置到链接文字
+        $liClass = 'nav-item' . (!empty($item['css_class']) ? ' ' . $item['css_class'] : '');
+        $linkClass = 'nav-link' . ($isActive ? ' active' : '');
+
+        $iconHtml = !empty($item['icon'])
+            ? '<i class="' . htmlspecialchars($item['icon'], ENT_QUOTES) . '"></i> '
+            : '';
+        $badgeHtml = !empty($item['badge'])
+            ? ' <span class="badge text-bg-danger ms-1">' . htmlspecialchars($item['badge'], ENT_QUOTES) . '</span>'
+            : '';
+
+        $html .= '<li class="' . htmlspecialchars($liClass, ENT_QUOTES) . '">';
+        $html .= '<a href="' . htmlspecialchars($url, ENT_QUOTES) . '"' . $targetAttr . ' class="' . $linkClass . '">';
+        $html .= $iconHtml . htmlspecialchars($item['title'] ?? '', ENT_QUOTES) . $badgeHtml;
+        if ($hasChildren) {
+            $html .= ' <i class="nav-arrow fas fa-angle-left right"></i>';
+        }
+        $html .= '</a>';
+
+        if ($hasChildren) {
+            $childActive = catalog_menu_has_active($item['children'], $activeCatalogId);
+            $html .= '<ul class="nav nav-treeview"' . ($childActive ? ' style="display:block"' : '') . '>';
+            $html .= catalog_menu_render($item['children'], $activeCatalogId, $level + 1);
+            $html .= '</ul>';
+        }
+        $html .= '</li>';
+    }
+    return $html;
+}
+
+/**
+ * 判断子树中是否包含当前激活栏目（用于展开父级）
+ */
+function catalog_menu_has_active(array $items, int $activeCatalogId): bool
+{
+    foreach ($items as $item) {
+        if ((int) ($item['id'] ?? 0) === $activeCatalogId) {
+            return true;
+        }
+        if (!empty($item['children']) && catalog_menu_has_active($item['children'], $activeCatalogId)) {
+            return true;
+        }
+    }
+    return false;
+}

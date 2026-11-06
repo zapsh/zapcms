@@ -379,6 +379,23 @@ class CreateTables
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });
 
+        Schema::dropIfExists('menu_locations');
+        Schema::create('menu_locations',function(TableSchema $table){
+            $table->integer('id')->autoIncrement();
+            $table->varchar('title', 255);
+            $table->varchar('key', 64);
+            $table->varchar('description', 255)->nullable();
+            $table->tinyint('is_system')->default('0');
+            $table->integer('sort_order')->nullable()->default('0');
+            $table->integer('updated_at')->nullable();
+            $table->integer('created_at')->nullable();
+
+            $table->addPrimaryKey('id');
+            $table->addUniqueIndex('uk_menu_location_key',['key']);
+
+            $table->setTableEngine(TableSchema::ENGINE_INNODB);
+        });
+
         Schema::dropIfExists('migrations');
         Schema::create('migrations',function(TableSchema $table){
             $table->integer('id')->autoIncrement();

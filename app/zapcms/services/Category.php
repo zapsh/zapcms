@@ -193,6 +193,48 @@ class Category
         }
     }
 
+    /**
+     * 取某父级的直接子节点（用于后台栏目树懒加载）。
+     *
+     * 仅查询 WHERE parentColumn = parentId，不拉取整棵树；
+     * 并一次性计算 has_children（避免 N+1）方便前端渲染展开按钮。
+     *
+     * @param int   $parentId
+     * @param array $conditions 形如 ['status'=>1] 或 [[col,op,val]]
+     * @return array
+     */
+    public function getChildren(int $parentId, array $conditions = []): array
+    {
+        $query = DB::table($this->table)->where($this->parentColumn, $parentId);
+        foreach ($conditions as $name => $value) {
+            if (is_int($name)) {
+                $query->where(...$value);
+            } else {
+                $query->where($name, $value);
+            }
+        }
+        $children = $query->orderBy('sort_order ASC, id ASC')->get(FETCH_ASSOC) ?: [];
+        if (empty($children)) {
+            return [];
+        }
+
+        // 计算 has_children（一次查询，避免逐节点计数）
+        $ids  = array_column($children, $this->primaryKey);
+        $subs = DB::table($this->table)
+            ->whereIn($this->parentColumn, $ids)
+            ->get(FETCH_ASSOC) ?: [];
+        $hasMap = [];
+        foreach ($subs as $row) {
+            $hasMap[$row[$this->parentColumn]] = true;
+        }
+        foreach ($children as &$child) {
+            $child['has_children'] = isset($hasMap[$child[$this->primaryKey]]);
+        }
+        unset($child);
+
+        return $children;
+    }
+
     public function get($id){
         return DB::table($this->table)->where($this->primaryKey, $id)->fetch(FETCH_ASSOC);
     }
