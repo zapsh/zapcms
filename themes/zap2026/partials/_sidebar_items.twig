@@ -1,9 +1,9 @@
 {#
- * 递归渲染侧边栏菜单项（支持 MenuItem 树与旧栏目树两种结构）
+ * 递归渲染侧边栏菜单项（数据源统一为 menu_items 菜单树，兼容旧栏目行字段）
  *
  * 高亮规则（与 basic 主题 partials/_sidebar.php 一致）：
  *  - current           ：当前页对应的菜单项（PageState::markActivePath 已给当前项
- *                        及其全部祖先打 active 标记；无标记的旧栏目树用当前栏目 id 兜底）
+ *                        及其全部祖先打 active 标记；无标记数据用当前栏目 id 兜底）
  *  - current-ancestor  ：子孙中含当前项的父级，同步高亮
  *
  * 递归方式：include 自身渲染 children，避免 Twig 宏递归的兼容性问题。

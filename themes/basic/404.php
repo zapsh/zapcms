@@ -4,7 +4,7 @@ $this->extend('layout/default');
 $__state = pageState();
 $__state['is404'] = true;
 $this->beginBlock('content');
-$catalogMenu = pageState()->getCatalogList();
+$catalogMenu = pageState()->getNavMenu('top');
 ?>
 <style>
     .error-404-page {
@@ -117,7 +117,7 @@ $catalogMenu = pageState()->getCatalogList();
                 <h4>您可能还想访问：</h4>
                 <div>
                     <?php foreach ($catalogMenu as $menu): ?>
-                    <a href="<?php echo smart_node_url($menu); ?>">
+                    <a href="<?php echo htmlspecialchars($menu['url'] ?? '#', ENT_QUOTES); ?>">
                         <?php echo htmlspecialchars($menu['title']); ?>
                     </a>
                     <?php endforeach; ?>

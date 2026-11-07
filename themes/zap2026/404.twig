@@ -2,7 +2,7 @@
 
 {% block content %}
 {% do pageState.offsetSet('is404', true) %}
-{% set catalogMenu = pageState.getCatalogList() %}
+{% set catalogMenu = pageState.getNavMenu('top') %}
 <style>
     .error-404-page { text-align: center; padding: 60px 0; }
     .error-404-icon { font-size: 64px; color: #1e6bff; margin-bottom: 10px; }
@@ -37,7 +37,7 @@
                 <h4>您可能还想访问：</h4>
                 <div>
                     {% for menu in catalogMenu %}
-                    <a href="{{ node_url(menu) }}">{{ menu.title }}</a>
+                    <a href="{{ menu.url|default('#') }}">{{ menu.title }}</a>
                     {% endfor %}
                 </div>
             </div>

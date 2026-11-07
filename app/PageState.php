@@ -5,6 +5,7 @@ use ArrayObject;
 use zapcms\models\Node;
 use zapcms\services\Catalog;
 use zapcms\services\Locale;
+use zapcms\services\MenuItem;
 use zapcms\services\Translator;
 use zap\facades\Cache;
 
@@ -178,32 +179,17 @@ class PageState extends ArrayObject
     }
 
     /**
-     * 获取顶级栏目菜单（带缓存）
-     */
-    public function getCatalogList(): ?array
-    {
-        if (!$this['catalogList']) {
-            // 缓存里存放未翻译的原始树，翻译在每次请求时叠加，避免跨语言污染缓存
-            $tree = Cache::get('top_menu', function () {
-                return Catalog::instance()->getTreeArray();
-            }, 5000);
-            $this['catalogList'] = $this->applyMenuTranslation($tree);
-        }
-        return $this['catalogList'];
-    }
-
-    /**
      * 取某菜单位置的导航树（供主题导航/页脚使用）
      *
-     * 数据源：后台「外观 > 菜单」构建、并分配到该位置的菜单（menu_items 表，带文件缓存）；
-     * 该位置未分配菜单 / 无菜单项时，回退到旧栏目树按 show_position 过滤。
+     * 唯一数据源：后台「外观 > 菜单」构建、并分配到该位置的菜单（menu_items 表，带文件缓存）；
+     * 位置未分配菜单 / 无菜单项时返回空数组，不再回退旧栏目树。
      * 译文在每次请求时叠加，避免跨语言污染缓存。
      *
      * @param string $position 位置 key（top / left / right / footer / 自定义）
      */
     public function getNavMenu(string $position): array
     {
-        $tree = Catalog::instance()->getPositionMenu($position);
+        $tree = MenuItem::instance()->getPositionMenu($position);
         $tree = $this->applyMenuTranslation($tree) ?: [];
         return $this->markActivePath($tree);
     }
@@ -268,48 +254,23 @@ class PageState extends ArrayObject
     }
 
     /**
-     * 取侧边栏菜单：只返回包含当前页面的顶级分支（栏目相关菜单）
+     * 取侧边栏目录树：从该位置的 menu_items 菜单中，返回包含当前页面的顶级分支
      *
      * 例如当前页属于「公司简介」时，只返回公司简介及其子孙，
      * 不输出菜单里其它顶级栏目（新闻中心 / 产品中心…）。
      *
-     * 回退：当前栏目不在该位置菜单中（或命中的菜单分支根与当前顶级栏目不一致）时，
-     * 改用旧栏目树中包含当前栏目的分支（即旧版「当前顶级栏目子树」行为）；
-     * 两者都未命中时返回空数组（侧边栏自动隐藏）。
+     * 数据源只有 menu_items：某个栏目没挂进该位置菜单时，侧边栏自然不显示它，
+     * 需要在后台「外观 > 菜单」把它加进对应位置。未命中任何分支时返回空数组。
      *
      * @param string $position 菜单位置 key（如 left）
      */
     public function getSidebarMenu(string $position = 'left'): array
     {
-        // 当前页面的顶级栏目 id（catalogPaths 按 level ASC，第一个即顶级）
-        $topCatalogId = 0;
-        foreach (($this['catalogPaths'] ?? []) as $p) {
-            $pid = (int) ($p['id'] ?? 0);
-            if ($pid > 0) {
-                $topCatalogId = $pid;
-                break;
-            }
-        }
-
-        // 主数据源：该位置的后台菜单（MenuItem）。
-        // 分支根须与当前顶级栏目一致才采用，避免菜单里零散挂的子项
-        // （父级不在该菜单）导致侧边栏缺父少兄弟
         foreach ($this->getNavMenu($position) as $branch) {
-            if (is_array($branch)
-                && !empty($branch['active'])
-                && ($topCatalogId === 0 || (int) ($branch['id'] ?? 0) === $topCatalogId)) {
-                return [$branch];
-            }
-        }
-
-        // 回退：旧栏目树按当前栏目路径取分支
-        $tree = $this->applyMenuTranslation(Catalog::instance()->getTreeArray()) ?: [];
-        foreach ($this->markActivePath($tree) as $branch) {
             if (is_array($branch) && !empty($branch['active'])) {
                 return [$branch];
             }
         }
-
         return [];
     }
 
@@ -399,12 +360,11 @@ class PageState extends ArrayObject
     }
 
     /**
-     * 获取搜索页侧边栏菜单
+     * 搜索页侧边栏：直接输出左侧菜单（menu_items），不再按栏目类型筛栏目树
      */
     public function getSearchSidebarMenu(): array
     {
-        $types = ['article', 'product'];
-        return Catalog::instance()->getTreeArray([['node_type', 'IN', $types]]);
+        return $this->getNavMenu('left');
     }
 
     /**

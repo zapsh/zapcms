@@ -1,5 +1,5 @@
 {% set state = pageState %}
-{# 导航 / 页脚数据源：后台「外观 > 菜单」构建并分配到对应位置的菜单（未分配时回退栏目树） #}
+{# 导航 / 页脚数据源：后台「外观 > 菜单」构建并分配到对应位置的菜单（menu_items） #}
 {% set catalogMenu = state.getNavMenu('top') %}
 {% set footerCatalogMenu = state.getNavMenu('footer') %}
 

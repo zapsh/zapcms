@@ -43,10 +43,8 @@ if (!function_exists('_zap_sidebar_item_active')) {
 /**
  * 递归渲染侧边栏菜单
  *
- * 兼容两种数据结构：
- *  - MenuItem 树（getPositionMenu 主数据源）：含 url/target/active/children
- *  - 旧栏目树（getPositionMenu 回退源 / 搜索页栏目树）：含 slug/node_type/link_* 字段
- *
+ * 数据源统一是 menu_items 菜单树（含 url/target/active/children）；
+ * 仍保留对旧栏目行（slug/node_type/link_*）的渲染兼容，便于第三方传入。
  * 选中子项时父级追加 current-ancestor 类同步高亮。
  */
 if (!function_exists('_zap_sidebar_render_menu')) {
@@ -102,8 +100,8 @@ if (!function_exists('_zap_sidebar_render_menu')) {
 ?>
 <aside class="sidebar col-sm-3">
     <?php
-    // 主题小工具区域：sidebar（后台「外观 > 小工具」配置，未配置时输出空）
-    echo widget(pageState()->nodeMimeType);
+    // 小工具区域：按当前内容模型取（首页/搜索页等无模型时回退 sidebar）
+    echo widget((string) (pageState()->nodeMimeType ?: 'sidebar'));
     ?>
     <?php if (!empty($catalogs)): ?>
     <div class="widget">

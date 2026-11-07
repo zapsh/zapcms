@@ -2,7 +2,7 @@
 defined('IN_ZAPCMS') or die('No permission to access');
 
 $state = pageState();
-// 导航 / 页脚数据源：后台「外观 > 菜单」构建并分配到对应位置的菜单（未分配时回退栏目树）
+// 导航 / 页脚数据源：后台「外观 > 菜单」构建并分配到对应位置的菜单（menu_items）
 $catalogMenu = $state->getNavMenu('top');
 $footerCatalogMenu = $state->getNavMenu('footer');
 

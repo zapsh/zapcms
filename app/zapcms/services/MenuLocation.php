@@ -17,8 +17,8 @@ use zap\traits\SingletonTrait;
  *   - 系统内置 4 个默认位置（top / left / right / footer），不可删除；
  *   - 管理员可自定义任意位置（如 about-left、footer-links），用于特定页面/区域。
  *
- * 栏目（catalog）的 show_position 字段存储逗号分隔的位置 key 列表，
- * 模板通过 catalog_menu('about-left') 在任意区域输出该位置的菜单。
+ * 模板通过 catalog_menu('about-left') 在任意区域输出该位置分配的菜单；
+ * 前台菜单只读取 menu_items，栏目表的 show_position 不再参与渲染。
  */
 class MenuLocation
 {

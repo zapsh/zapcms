@@ -1126,7 +1126,7 @@ function catalog_menu(string $key, array $options = []): string
     $activeCatalogId = (int) ($options['active_catalog_id'] ?? ($GLOBALS['catalog_id'] ?? 0));
     $ulClass         = $options['ul_class'] ?? 'nav flex-column catalog-menu';
 
-    $tree = \zapcms\services\Catalog::instance()->getPositionMenu($key);
+    $tree = \zapcms\services\MenuItem::instance()->getPositionMenu($key);
     if (empty($tree)) {
         return '';
     }

@@ -445,6 +445,63 @@ class MenuItem
     }
 
     /**
+     * 历史整型位置 → 位置 key 映射（仅兼容旧调用，新位置一律用 key）
+     */
+    private const POSITION_KEY_MAP = [
+        1 => 'top',
+        2 => 'left',
+        3 => 'right',
+        4 => 'footer',
+    ];
+
+    /** @var array<string, array> 请求内菜单树缓存（避免重复 COUNT / include） */
+    private array $treeCache = [];
+
+    /**
+     * 前台菜单树唯一入口：按显示位置取 menu_items 的嵌套树
+     *
+     * 位置未分配菜单 / 无菜单项时返回空数组，不再回退栏目树。
+     * 顶层导航、页脚、侧边栏、catalog_menu() 都走这里，
+     * 由调用方叠加译文与 active 激活标记。
+     *
+     * @param int|string|array $position 位置 key、旧整型枚举或 key 数组
+     * @return array 每项含 id/menu_item_id/title/url/target/item_type/ref_id/children
+     */
+    public function getPositionMenu($position = 'left'): array
+    {
+        $keys = $this->normalizePositionKeys($position);
+        if ($keys === []) {
+            return [];
+        }
+
+        $cacheKey = implode('|', $keys);
+        if (array_key_exists($cacheKey, $this->treeCache)) {
+            return $this->treeCache[$cacheKey];
+        }
+
+        $tree = $this->cachedMergedTree($keys);
+        return $this->treeCache[$cacheKey] = (is_array($tree) ? $tree : []);
+    }
+
+    /** 将旧整型枚举 / key / 数组归一化为位置 key 列表 */
+    protected function normalizePositionKeys($position): array
+    {
+        $raw  = is_array($position) ? $position : [$position];
+        $keys = [];
+        foreach ($raw as $p) {
+            if (is_numeric($p)) {
+                $mapped = self::POSITION_KEY_MAP[(int) $p] ?? null;
+                if ($mapped !== null) {
+                    $keys[] = $mapped;
+                }
+            } elseif (is_string($p) && $p !== '') {
+                $keys[] = $p;
+            }
+        }
+        return array_values(array_unique($keys));
+    }
+
+    /**
      * 取多位置合并后的菜单树（带文件缓存，前台渲染专用）
      */
     public function cachedMergedTree(array $keys): array
@@ -493,6 +550,7 @@ class MenuItem
      */
     public function clearMenuCache(): void
     {
+        $this->treeCache = [];
         foreach (glob(var_path('cache/menu_*.php')) ?: [] as $f) {
             @unlink($f);
         }
