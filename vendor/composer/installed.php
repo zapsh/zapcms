@@ -3,11 +3,11 @@
         'name' => 'zapsh/zapcms',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '6fef4f837664cada1611a8139e05aa649e6d4f25',
+        'reference' => '9d7b69fa0920617d4031201c0ffd2a95e1171bd8',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => true,
+        'dev' => false,
     ),
     'versions' => array(
         'ezyang/htmlpurifier' => array(
@@ -46,15 +46,6 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
-        'phpstan/phpstan' => array(
-            'pretty_version' => '2.3.4',
-            'version' => '2.3.4.0',
-            'reference' => 'f20ce6f3c82556cfcfc086b152445a12d1d64fff',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../phpstan/phpstan',
-            'aliases' => array(),
-            'dev_requirement' => true,
-        ),
         'psr/log' => array(
             'pretty_version' => '3.0.2',
             'version' => '3.0.2.0',
@@ -71,9 +62,9 @@
             ),
         ),
         'symfony/deprecation-contracts' => array(
-            'pretty_version' => 'v3.7.1',
-            'version' => '3.7.1.0',
-            'reference' => 'f3202fa1b5097b0af062dc978b32ecf63404e31d',
+            'pretty_version' => 'v3.8.1',
+            'version' => '3.8.1.0',
+            'reference' => 'feb1edf4e546af3b85c5caebe8359a20db230ca3',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/deprecation-contracts',
             'aliases' => array(),
@@ -109,7 +100,7 @@
         'zapsh/zap-php-framework' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '09e906f2e33622cacf4b53a689c30ab6e208b799',
+            'reference' => 'ba45fb9e634f1f1bfbf8a04132c770162b36efa9',
             'type' => 'library',
             'install_path' => __DIR__ . '/../zapsh/zap-php-framework',
             'aliases' => array(),
@@ -118,7 +109,7 @@
         'zapsh/zapcms' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '6fef4f837664cada1611a8139e05aa649e6d4f25',
+            'reference' => '9d7b69fa0920617d4031201c0ffd2a95e1171bd8',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
