@@ -56,8 +56,8 @@ class CatalogController extends Controller
             BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'catalog', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]),$key === $lastKey);
         }
 
-        // 侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），含译文与激活链路标记
-        pageState()->subCatalogList = pageState()->getNavMenu('left');
+        // 侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），只显示当前栏目所在分支
+        pageState()->subCatalogList = pageState()->getSidebarMenu('left');
         try{
             if(pageState()->nodeMimeType==='page') {
                 view('page', ['node' => pageState()->node]);
@@ -104,7 +104,7 @@ class CatalogController extends Controller
                 $view->page = $page;
                 //// 模板页面没有相关联的栏目菜单时，读取左侧导航栏目菜单作为兜底（侧边栏位于页面左侧）
                 if (empty(pageState()->subCatalogList) && !empty($view->nodes)) {
-                    pageState()->subCatalogList = pageState()->getNavMenu('left');
+                    pageState()->subCatalogList = pageState()->getSidebarMenu('left');
                 }
             }
 

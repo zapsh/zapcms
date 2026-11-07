@@ -363,11 +363,25 @@ a.none:hover {
     transition: all 0.2s;
 }
 
-.main-navbar-nav li > .dropdown-menu > li > a:hover, 
+.main-navbar-nav li > .dropdown-menu > li > a:hover,
 .main-navbar-nav li > .dropdown-menu > li > a:focus {
     color: #1e6bff;
     background-color: #f8f9fa;
     padding-left: 25px;
+}
+
+/* 下拉菜单里当前页对应的子项高亮 */
+.main-navbar-nav li > .dropdown-menu > li.active > a,
+.main-navbar-nav li > .dropdown-menu > li.active > a:hover,
+.main-navbar-nav li > .dropdown-menu > li.active > a:focus {
+    color: #1e6bff;
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+/* 父级激活时高亮其下拉指示，与链接文字一致 */
+.main-navbar-nav > li.active > a.dropdown-toggle {
+    color: #1e6bff;
 }
 
 .main-navbar-nav li > .dropdown-menu > li > a i {
@@ -1449,8 +1463,8 @@ p.text {
     transition: all 0.3s;
 }
 
-.sidebar li.current a,
-.sidebar li.current a:hover {
+.sidebar li.current > a,
+.sidebar li.current > a:hover {
     background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     color: #FFFFFF;
 }

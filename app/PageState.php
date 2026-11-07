@@ -239,25 +239,63 @@ class PageState extends ArrayObject
             return $tree;
         }
 
-        $walk = function (array $items) use (&$walk, $ids): bool {
-            $found = false;
-            foreach ($items as &$item) {
+        // 注意：必须让递归返回修改后的数组再回填，否则按值传递会因写时分离
+        // 导致所有 active 标记停留在内部副本上，最终 return 的原树一个标记都没有
+        $walk = function (array $items) use (&$walk, $ids): array {
+            foreach ($items as $key => $item) {
                 if (!is_array($item)) {
                     continue;
                 }
-                $self = isset($ids[(string) ($item['id'] ?? '')]);
-                $childFound = !empty($item['children']) && $walk($item['children']);
-                if ($self || $childFound) {
-                    $item['active'] = true;
-                    $found = true;
+                $childActive = false;
+                if (!empty($item['children'])) {
+                    $item['children'] = $walk($item['children']);
+                    foreach ($item['children'] as $child) {
+                        if (!empty($child['active'])) {
+                            $childActive = true;
+                            break;
+                        }
+                    }
                 }
+                if ($childActive || isset($ids[(string) ($item['id'] ?? '')])) {
+                    $item['active'] = true;
+                }
+                $items[$key] = $item;
             }
-            unset($item);
-            return $found;
+            return $items;
         };
-        $walk($tree);
 
-        return $tree;
+        return $walk($tree);
+    }
+
+    /**
+     * 取侧边栏菜单：只返回包含当前页面的顶级分支（栏目相关菜单）
+     *
+     * 例如当前页属于「公司简介」时，只返回公司简介及其子孙，
+     * 不输出菜单里其它顶级栏目（新闻中心 / 产品中心…）。
+     *
+     * 回退：当前栏目不在该位置菜单中时，改用旧栏目树中包含当前栏目的分支
+     * （即旧版「当前顶级栏目子树」行为）；两者都未命中时返回空数组（侧边栏自动隐藏）。
+     *
+     * @param string $position 菜单位置 key（如 left）
+     */
+    public function getSidebarMenu(string $position = 'left'): array
+    {
+        // 主数据源：该位置的后台菜单（MenuItem）
+        foreach ($this->getNavMenu($position) as $branch) {
+            if (is_array($branch) && !empty($branch['active'])) {
+                return [$branch];
+            }
+        }
+
+        // 回退：旧栏目树按当前栏目路径取分支
+        $tree = $this->applyMenuTranslation(Catalog::instance()->getTreeArray()) ?: [];
+        foreach ($this->markActivePath($tree) as $branch) {
+            if (is_array($branch) && !empty($branch['active'])) {
+                return [$branch];
+            }
+        }
+
+        return [];
     }
 
     /**

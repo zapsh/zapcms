@@ -40,8 +40,8 @@ class NodeController extends Controller
         }
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);
 
-        //侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），含译文与激活链路标记
-        pageState()->subCatalogList = pageState()->getNavMenu('left');
+        //侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），只显示当前栏目所在分支
+        pageState()->subCatalogList = pageState()->getSidebarMenu('left');
         $this->renderNode($node, pageState()->nodeMimeType ?? ($node['node_type'] ?? 'page'));
     }
 
@@ -62,8 +62,8 @@ class NodeController extends Controller
         }
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);
 
-        //侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），含译文与激活链路标记
-        pageState()->subCatalogList = pageState()->getNavMenu('left');
+        //侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），只显示当前栏目所在分支
+        pageState()->subCatalogList = pageState()->getSidebarMenu('left');
         $this->renderNode($node, 'article');
     }
 
@@ -78,8 +78,8 @@ class NodeController extends Controller
         }
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);
 
-        //侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），含译文与激活链路标记
-        pageState()->subCatalogList = pageState()->getNavMenu('left');
+        //侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），只显示当前栏目所在分支
+        pageState()->subCatalogList = pageState()->getSidebarMenu('left');
         // 加载自定义字段（node_meta），如产品价格
         $nodeModel = Node::findById($node['id'] ?? 0);
         $node['meta'] = $nodeModel ? $nodeModel->loadMeta() : [];
@@ -99,7 +99,7 @@ class NodeController extends Controller
         }
         
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);
-        pageState()->subCatalogList = pageState()->getNavMenu('left');
+        pageState()->subCatalogList = pageState()->getSidebarMenu('left');
 
         $this->renderNode($node, 'faq');
     }

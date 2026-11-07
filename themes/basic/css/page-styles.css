@@ -346,7 +346,7 @@ ul.list-inline.post-meta li i { color: #1e6bff; }
     text-decoration: none;
 }
 .sidebar .widget ul li a:hover,
-.sidebar .widget ul li.current a {
+.sidebar .widget ul li.current > a {
     background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     color: #fff;
 }
