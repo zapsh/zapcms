@@ -144,7 +144,7 @@ class CatalogController extends AdminController
     {
         $nodeType = trim((string) Request::get('node_type', ''));
         $conditions = $nodeType !== '' ? ['node_type' => $nodeType] : [];
-        $catalogList = Catalog::instance()->getTreeArray($conditions);
+        $catalogList = Catalog::instance()->getTreeArray($conditions, ['columns' => ['title', 'level']]);
         $nodeRelations = [];
 
         ob_start();
@@ -227,25 +227,20 @@ class CatalogController extends AdminController
         $limit    = min(50, max(1, intval(Request::get('limit', 30))));
         $nodeType = trim((string) Request::get('node_type', '')); // 按内容模型类型过滤栏目
 
-        // 搜索栏目
-        $catalogs = [];
-        Catalog::instance()->forEachAll(function ($row) use (&$catalogs, $keyword, $nodeType) {
-            if ($nodeType !== '' && ($row['node_type'] ?: 'catalog') !== $nodeType) {
-                return;
-            }
-            if ($keyword !== '' && stripos($row['title'], $keyword) === false) {
-                return;
-            }
+        // 搜索栏目：条件下推 SQL + LIMIT，避免上万分类时全表拉取再在 PHP 里过滤
+        $conditions = $nodeType !== '' ? ['node_type' => $nodeType] : [];
+        $catalogs   = [];
+        foreach (Catalog::instance()->search($keyword, $limit, $conditions, '', ['slug', 'node_type']) as $row) {
             $catalogs[] = [
                 'id'         => (int) $row['id'],
                 'title'      => $row['title'],
                 'slug'       => $row['slug'] ?? '',
-                'node_type'  => $row['node_type'] ?: 'catalog',
+                'node_type'  => $row['node_type'] ?? 'catalog',
                 'mime_type'  => $row['mime_type'] ?? '',
                 'kind'       => 'catalog',
-                'path_label' => str_repeat('— ', max(0, (int) $row['level'] - 1)) . $row['title'],
+                'path_label' => str_repeat('— ', max(0, (int) ($row['level'] ?? 1) - 1)) . $row['title'],
             ];
-        });
+        }
 
         // 搜索节点（排除 catalog 类型，因为 catalog 已在上方列出）
         $nodeQuery = \zapcms\models\Node::createQuery()
@@ -272,6 +267,30 @@ class CatalogController extends AdminController
             'nodes'     => $nodes,
             'total'     => count($catalogs) + count($nodes),
         ]);
+    }
+
+    /**
+     * 父级下拉的分类搜索（AJAX）：后台栏目表单在分类上万时按需搜索，不再渲染整棵树
+     *
+     * @return void JSON {options:[{id,title,level,path}]}
+     */
+    public function options()
+    {
+        $keyword     = trim((string) Request::get('keyword', ''));
+        $limit       = min(100, max(1, intval(Request::get('limit', 30))));
+        $excludePath = (string) Request::get('exclude_path', '');
+
+        $rows = Catalog::instance()->search($keyword, $limit, [], $excludePath);
+        $options = [];
+        foreach ($rows as $row) {
+            $options[] = [
+                'id'    => (int) $row['id'],
+                'title' => (string) ($row['title'] ?? ''),
+                'level' => (int) ($row['level'] ?? 1),
+                'path'  => (string) ($row['path'] ?? ''),
+            ];
+        }
+        Response::json(['code' => 0, 'options' => $options]);
     }
 
     /**

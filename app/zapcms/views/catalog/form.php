@@ -13,20 +13,29 @@ use zapcms\services\NodeType;
     <div class="row g-2">
         <div class="col-md-6">
             <label for="catalog_pid" class="form-label small">上级栏目</label>
-            <select class="form-select form-select-sm" id="catalog_pid" name="catalog[pid]">
+            <?php
+            // 分类上万时不渲染整棵树：初始只给顶层 + 当前祖先链，其余通过下方搜索按需加载
+            $currentPid   = (int) ($catalog['pid'] ?? ($pid ?? 0));
+            $parentOpts   = Catalog::instance()->getSelectOptions(
+                (int) ($catalog['id'] ?? 0), (string) ($catalog['path'] ?? '')
+            );
+            $excludePath  = (string) ($catalog['path'] ?? '');
+            ?>
+            <select class="form-select form-select-sm" id="catalog_pid" name="catalog[pid]"
+                    data-exclude-path="<?php echo e($excludePath); ?>">
                 <option value="0">- 无 -</option>
-                <?php
-                Catalog::instance()->forEachAll(function ($row) use ($catalog, $pid) {
-                    ?>
+                <?php foreach ($parentOpts as $row): ?>
                     <option value="<?php echo e($row['id']); ?>"
-                        <?php echo ($catalog['pid'] ?? ($pid ?? 0)) == $row['id'] ? 'selected' : ''; ?>
-                        <?php echo !empty($catalog['path']) && \zap\util\Str::startsWith($row['path'], $catalog['path']) ? 'disabled' : null; ?>>
-                        <?php echo str_repeat('— ', max(0, intval($row['level']) - 1)); ?><?php echo e($row['title']); ?>
+                        <?php echo $currentPid === (int) $row['id'] ? 'selected' : ''; ?>>
+                        <?php echo str_repeat('— ', max(0, (int) $row['level'] - 1)); ?><?php echo e($row['title']); ?>
                     </option>
-                <?php
-                });
-                ?>
+                <?php endforeach; ?>
             </select>
+            <div class="input-group input-group-sm mt-1">
+                <input type="text" class="form-control" id="catalog_pid_search" placeholder="搜索更多上级栏目（输入名称关键词）">
+                <button class="btn btn-outline-secondary" type="button" id="catalog_pid_search_btn">搜索</button>
+            </div>
+            <div class="form-text small text-muted">仅加载匹配的栏目，支持上万级分类；不能选自己及其子级。</div>
         </div>
         <div class="col-md-6">
             <label for="catalog_node_type" class="form-label small">内容模型</label>
@@ -495,8 +504,31 @@ use zapcms\services\NodeType;
         }
     }
 
+    // ===================== 上级栏目异步搜索（分类上万时不渲染整棵树） =====================
+    function searchCatalogParents() {
+        var keyword = $('#catalog_pid_search').val().trim();
+        var $sel = $('#catalog_pid');
+        if (keyword === '') return;
+        $.getJSON('<?php echo url_action('Catalog@options'); ?>', {
+            keyword: keyword,
+            limit: 100,
+            exclude_path: $sel.data('exclude-path') || ''
+        }, function (resp) {
+            if (resp.code !== 0) return;
+            (resp.options || []).forEach(function (row) {
+                if ($sel.find('option[value="' + row.id + '"]').length) return;
+                var indent = '— '.repeat(Math.max(0, (row.level || 1) - 1));
+                $('<option>').val(row.id).text(indent + row.title).appendTo($sel);
+            });
+        });
+    }
+
     // 触发 link_type 初始状态 & 别名交互
     $(function () {
+        $('#catalog_pid_search_btn').on('click', searchCatalogParents);
+        $('#catalog_pid_search').on('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); searchCatalogParents(); }
+        });
         chLinkType(document.getElementById('catalog_link_type'));
         $('#catalog_slug').on('input', updateCatalogSlugPreview);
         // 别名留空时，失焦后按栏目名称自动生成

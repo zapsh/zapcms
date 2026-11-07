@@ -42,8 +42,50 @@ class CatalogController extends Controller
         }
     }
 
+    /**
+     * 解析栏目页模板，支持主题按分类 slug / id 建自定义布局：
+     *
+     *   catalog-{slug}.php   （如 themes/basic/catalog-about-us.php，slug 仅允许 ASCII 字母数字 - _）
+     *   catalog-{id}.php     （中文 slug 或 slug 会变时更稳定，如 catalog-28.php）
+     *   {mime}_list / {mime} （现有按内容模型的模板）
+     *   catalog.php          （通用栏目模板）
+     *
+     * PHP 与 Twig 主题都支持（theme_file_is_exists 会试 .php / .twig）。
+     */
+    private function resolveCatalogTemplate(): string
+    {
+        $node = pageState()->node ?: [];
+        $mime = (string) (pageState()->nodeMimeType ?: '');
+        $id   = (int) ($node['id'] ?? 0);
+        $slug = strtolower((string) ($node['slug'] ?? ''));
+        $safe = trim(substr(preg_replace('/[^a-z0-9_-]+/', '-', $slug) ?? '', 0, 80), '-');
+
+        $candidates = [];
+        if ($safe !== '') {
+            $candidates[] = 'catalog-' . $safe;
+        }
+        if ($id > 0) {
+            $candidates[] = 'catalog-' . $id;
+        }
+        if ($mime !== '') {
+            if ($mime !== 'page') {
+                $candidates[] = $mime . '_list';
+            }
+            $candidates[] = $mime;
+        }
+        $candidates[] = 'catalog';
+
+        foreach ($candidates as $template) {
+            if (theme_file_is_exists($template)) {
+                return $template;
+            }
+        }
+        return 'catalog';
+    }
+
     function index(){
         pageState()->getCatalog();
+        $template = $this->resolveCatalogTemplate();
 
         pageState()->catalogPaths = \zapcms\services\Translator::applyBatch(
             (array) Catalog::instance()->getCatalogPathById(pageState()->nodeId),
@@ -60,7 +102,7 @@ class CatalogController extends Controller
         pageState()->subCatalogList = pageState()->getSidebarMenu('left');
         try{
             if(pageState()->nodeMimeType==='page') {
-                view('page', ['node' => pageState()->node]);
+                view($template, ['node' => pageState()->node]);
                 return;
             }else{
                 // 模块接管整页列表渲染（约定式 catalog_render_{mime} 及旧式
@@ -83,8 +125,7 @@ class CatalogController extends Controller
                     $pagerBase = home_url();
                 }
                 $page->withPath($pagerBase . '?' . ($queryParams ? http_build_query($queryParams) . '&' : '') . 'page={page}');
-                // 根据栏目 mimeType 选择不同的模板文件，若不存在则使用默认的模板文件
-                $view = View::make( theme_file_is_exists(pageState()->nodeMimeType . '_list') ? pageState()->nodeMimeType.'_list' : pageState()->nodeMimeType);
+                $view = View::make($template);
                 $query = DB::table('node_relation','nr')->leftJoin(['node','n'],'nr.node_id=n.id')
                     ->select('n.id','n.title','n.slug','n.image','n.pub_time','n.node_type')
                     ->where('nr.catalog_id',pageState()->nodeId)

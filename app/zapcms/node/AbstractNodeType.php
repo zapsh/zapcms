@@ -166,7 +166,10 @@ class AbstractNodeType
         }
         $data['node'] = $node;
         $data['node_relations'] = $this->getNodeRelationships($id);
-        $data['catalogList'] = Catalog::instance()->getTreeArray(['node_type'=>$data['node']['node_type']]);
+        $data['catalogList'] = Catalog::instance()->getTreeArray(
+            ['node_type'=>$data['node']['node_type']],
+            ['columns' => ['title', 'level']]
+        );
         $this->display($data,'form');
     }
 
@@ -239,7 +242,10 @@ class AbstractNodeType
                 }
             }
         }
-        $data['catalogList'] = Catalog::instance()->getTreeArray(['node_type'=>$this->nodeType]);
+        $data['catalogList'] = Catalog::instance()->getTreeArray(
+            ['node_type'=>$this->nodeType],
+            ['columns' => ['title', 'level']]
+        );
         $this->display($data,'form');
     }
 
