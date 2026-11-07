@@ -48,9 +48,10 @@ class CreateBaseData
                 ['id' => 20, 'title' => '日志查看', 'pid' => 3, 'path' => '3,20,', 'level' => 2, 'icon' => 'fa fa-file-lines', 'link_to' => 'System@logs', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(system/logs[/.]?.*)', 'show_position' => '1,2', 'sort_order' => 9, 'updated_at' => 1793300000, 'created_at' => 1793300000],
                 ['id' => 21, 'title' => '内容', 'pid' => 1, 'path' => '1,21,', 'level' => 2, 'icon' => 'fa fa-cube', 'link_to' => 'Node', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(node[/.]?.*)', 'show_position' => '1', 'sort_order' => 0, 'updated_at' => 1793395000, 'created_at' => 1793395000],
                 ['id' => 22, 'title' => '栏目', 'pid' => 1, 'path' => '1,22,', 'level' => 2, 'icon' => 'fa fa-square-poll-horizontal', 'link_to' => 'Catalog', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(catalog[/.]?.*)', 'show_position' => '1', 'sort_order' => 1, 'updated_at' => 1793395000, 'created_at' => 1793395000],
-                ['id' => 23, 'title' => '外观', 'pid' => 0, 'path' => '23,', 'level' => 1, 'icon' => 'fa-solid fa-palette', 'link_to' => '', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(theme[/.]?.*|menu-location[/.]?.*|menu_location[/.]?.*)', 'show_position' => '1', 'sort_order' => 3, 'updated_at' => 1793395000, 'created_at' => 1793395000],
+                ['id' => 23, 'title' => '外观', 'pid' => 0, 'path' => '23,', 'level' => 1, 'icon' => 'fa-solid fa-palette', 'link_to' => '', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(theme[/.]?.*|menu-location[/.]?.*|menu_location[/.]?.*|widget[/.]?.*)', 'show_position' => '1', 'sort_order' => 3, 'updated_at' => 1793395000, 'created_at' => 1793395000],
                 ['id' => 24, 'title' => '菜单', 'pid' => 23, 'path' => '23,24,', 'level' => 2, 'icon' => 'fa-solid fa-bars', 'link_to' => 'MenuLocation', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(menu-location[/.]?.*|menu_location[/.]?.*)', 'show_position' => '1,2', 'sort_order' => 1, 'updated_at' => 1793395000, 'created_at' => 1793395000],
                 ['id' => 25, 'title' => '多语言', 'pid' => 3, 'path' => '3,25,', 'level' => 2, 'icon' => 'fa fa-language', 'link_to' => 'System@languages', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(system/languages.*)', 'show_position' => '1,2', 'sort_order' => 10, 'updated_at' => 1793395000, 'created_at' => 1793395000],
+                ['id' => 26, 'title' => '小工具', 'pid' => 23, 'path' => '23,26,', 'level' => 2, 'icon' => 'fa-solid fa-shapes', 'link_to' => 'Widget', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(widget[/.]?.*)', 'show_position' => '1,2', 'sort_order' => 2, 'updated_at' => 1793395000, 'created_at' => 1793395000],
             ], true);
         });
 
@@ -276,6 +277,7 @@ class CreateBaseData
                 ['role_id' => 3, 'perm_key' => 'admin_menu_7', 'extras' => NULL, 'assignment_time' => 1786451674],
                 ['role_id' => 3, 'perm_key' => 'admin_menu_23', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 3, 'perm_key' => 'admin_menu_24', 'extras' => NULL, 'assignment_time' => 1793395000],
+                ['role_id' => 3, 'perm_key' => 'admin_menu_26', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 3, 'perm_key' => 'admin_menu_3', 'extras' => NULL, 'assignment_time' => 1786451674],
                 ['role_id' => 3, 'perm_key' => 'admin_menu_4', 'extras' => NULL, 'assignment_time' => 1786451674],
                 ['role_id' => 3, 'perm_key' => 'admin_menu_5', 'extras' => NULL, 'assignment_time' => 1786451674],
@@ -287,6 +289,7 @@ class CreateBaseData
                 ['role_id' => 5, 'perm_key' => 'admin_menu_7', 'extras' => NULL, 'assignment_time' => 1786451693],
                 ['role_id' => 5, 'perm_key' => 'admin_menu_23', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 5, 'perm_key' => 'admin_menu_24', 'extras' => NULL, 'assignment_time' => 1793395000],
+                ['role_id' => 5, 'perm_key' => 'admin_menu_26', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 5, 'perm_key' => 'admin_menu_3', 'extras' => NULL, 'assignment_time' => 1786451693],
                 ['role_id' => 5, 'perm_key' => 'admin_menu_4', 'extras' => NULL, 'assignment_time' => 1786451693],
                 ['role_id' => 5, 'perm_key' => 'admin_menu_5', 'extras' => NULL, 'assignment_time' => 1786451693],
@@ -298,6 +301,7 @@ class CreateBaseData
                 ['role_id' => 2, 'perm_key' => 'admin_menu_7', 'extras' => NULL, 'assignment_time' => 1786451703],
                 ['role_id' => 2, 'perm_key' => 'admin_menu_23', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 2, 'perm_key' => 'admin_menu_24', 'extras' => NULL, 'assignment_time' => 1793395000],
+                ['role_id' => 2, 'perm_key' => 'admin_menu_26', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 2, 'perm_key' => 'admin_menu_3', 'extras' => NULL, 'assignment_time' => 1786451703],
                 ['role_id' => 2, 'perm_key' => 'admin_menu_4', 'extras' => NULL, 'assignment_time' => 1786451703],
                 ['role_id' => 2, 'perm_key' => 'admin_menu_5', 'extras' => NULL, 'assignment_time' => 1786451703],
@@ -309,6 +313,7 @@ class CreateBaseData
                 ['role_id' => 1, 'perm_key' => 'admin_menu_7', 'extras' => NULL, 'assignment_time' => 1786453446],
                 ['role_id' => 1, 'perm_key' => 'admin_menu_23', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 1, 'perm_key' => 'admin_menu_24', 'extras' => NULL, 'assignment_time' => 1793395000],
+                ['role_id' => 1, 'perm_key' => 'admin_menu_26', 'extras' => NULL, 'assignment_time' => 1793395000],
                 ['role_id' => 1, 'perm_key' => 'admin_menu_9', 'extras' => NULL, 'assignment_time' => 1786453446],
                 ['role_id' => 1, 'perm_key' => 'admin_menu_3', 'extras' => NULL, 'assignment_time' => 1786453446],
                 ['role_id' => 1, 'perm_key' => 'admin_menu_4', 'extras' => NULL, 'assignment_time' => 1786453446],

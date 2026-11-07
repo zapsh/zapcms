@@ -207,4 +207,30 @@ class Theme
             Option::replace($key, $value);
         }
     }
+
+    /**
+     * 主题声明的小工具区域（theme.json 的 widget_areas，key => title）。
+     * 未声明时回退到默认 sidebar / footer，保证任何主题都能使用小工具。
+     *
+     * @param string|null $theme 指定主题，默认取当前启用主题
+     */
+    public function getWidgetAreas(?string $theme = null): array
+    {
+        $defaults = [
+            'sidebar' => '侧边栏',
+            'footer'  => '页脚',
+        ];
+
+        $theme = $theme ?? (string) config('config.theme', '');
+        if ($theme === '') {
+            return $defaults;
+        }
+
+        $info = IOUtils::readJsonFile(themes_path("{$theme}/theme.json"), true) ?: [];
+        $areas = $info['widget_areas'] ?? [];
+        if (!is_array($areas) || empty($areas)) {
+            return $defaults;
+        }
+        return $areas;
+    }
 }

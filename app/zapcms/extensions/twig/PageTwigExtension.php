@@ -66,6 +66,10 @@ class PageTwigExtension extends AbstractExtension implements GlobalsInterface
             new TwigFunction('hook', fn(string $tag, ...$args) => \zapcms\Hook::fire($tag, ...$args), $html),
             new TwigFunction('apply_filters', fn(string $tag, $value, ...$args) => \zapcms\Hook::applyFilters($tag, $value, ...$args), $html),
 
+            // 小工具区域
+            new TwigFunction('widget', fn(string $area) => \widget($area), $html),
+            new TwigFunction('widget_areas', fn() => \widget_areas()),
+
             // 杂项
             new TwigFunction('html_lang', fn() => \zapcms\services\Locale::htmlLang()),
             new TwigFunction('number_format', fn($value, int $decimals = 2) => number_format((float) $value, $decimals)),

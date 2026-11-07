@@ -1198,3 +1198,24 @@ function catalog_menu_has_active(array $items, int $activeCatalogId): bool
     }
     return false;
 }
+
+/**
+ * 输出某个小工具区域的所有小工具
+ *
+ * @param string $area 区域 key（主题 theme.json 的 widget_areas 声明，如 sidebar / footer）
+ * @return string HTML
+ */
+function widget(string $area): string
+{
+    return \zapcms\services\WidgetManager::instance()->renderArea($area);
+}
+
+/**
+ * 返回可用的小工具区域 [key => title]
+ *
+ * @return array<string,string>
+ */
+function widget_areas(): array
+{
+    return \zapcms\services\WidgetManager::instance()->areas();
+}

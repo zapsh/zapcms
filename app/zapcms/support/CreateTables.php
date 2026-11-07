@@ -462,6 +462,25 @@ class CreateTables
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });
 
+        // 小工具实例（按区域组织，config 存 JSON），对应 migration 2026_11_07_100000
+        Schema::dropIfExists('widgets');
+        Schema::create('widgets',function(TableSchema $table){
+            $table->integer('id')->autoIncrement();
+            $table->varchar('widget_key', 64);
+            $table->varchar('area', 64);
+            $table->varchar('title', 255)->nullable();
+            $table->text('config')->nullable();
+            $table->tinyint('status')->default('1');
+            $table->integer('sort_order')->default('0');
+            $table->integer('created_at')->nullable();
+            $table->integer('updated_at')->nullable();
+
+            $table->addPrimaryKey('id');
+            $table->addIndex('idx_widget_area',['area', 'sort_order']);
+
+            $table->setTableEngine(TableSchema::ENGINE_INNODB);
+        });
+
         Schema::dropIfExists('migrations');
         Schema::create('migrations',function(TableSchema $table){
             $table->integer('id')->autoIncrement();

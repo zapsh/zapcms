@@ -3,13 +3,16 @@
 {% set nodeId = nodeId|default(state.nodeId ?? 0) %}
 {% set catalogs = subCatalogList|default(state.subCatalogList ?? []) %}
 
-{% if catalogs is not empty %}
-    {% set catalogPaths = state.catalogPaths ?? [] %}
-    {% set firstCatalog = catalogPaths[0] ?? null %}
-    {% set firstCatalogTitle = firstCatalog.title ?? '' %}
-    {% set lastCatalog = catalogPaths is not empty ? catalogPaths|last : null %}
-    {% set lastCatalogId = lastCatalog.id ?? 0 %}
-    <aside class="sidebar col-sm-3">
+<aside class="sidebar col-sm-3">
+    {# 主题小工具区域：sidebar（后台「外观 > 小工具」配置，未配置时输出空） #}
+    {{ widget('sidebar') }}
+
+    {% if catalogs is not empty %}
+        {% set catalogPaths = state.catalogPaths ?? [] %}
+        {% set firstCatalog = catalogPaths[0] ?? null %}
+        {% set firstCatalogTitle = firstCatalog.title ?? '' %}
+        {% set lastCatalog = catalogPaths is not empty ? catalogPaths|last : null %}
+        {% set lastCatalogId = lastCatalog.id ?? 0 %}
         <div class="widget">
             <h4>{{ firstCatalogTitle ? firstCatalogTitle : (node.title ?? '') }}</h4>
             <ul>
@@ -27,5 +30,5 @@
                 {% endfor %}
             </ul>
         </div>
-    </aside>
-{% endif %}
+    {% endif %}
+</aside>
