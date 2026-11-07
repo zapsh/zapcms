@@ -60,8 +60,8 @@ class HtmlXss
      *
      * 与 clean() 不同：不解析 HTML，只做字符转义，安全用于 input value / title 等属性场景。
      */
-    public static function escape($text): string
+    public static function escape(string $text): string
     {
-        return htmlspecialchars((string) $text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return htmlspecialchars($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 }

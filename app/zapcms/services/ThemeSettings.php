@@ -12,6 +12,8 @@
 
 namespace zapcms\services;
 
+use zapcms\support\IOUtils;
+
 class ThemeSettings
 {
     private string $theme;
@@ -29,7 +31,7 @@ class ThemeSettings
     {
         // 主题配置存储时没有统一前缀，直接用 Option 查出所有
         // 以 theme.json 的 option_keys 来限定范围（可选）
-        $themeInfo = json_decode(file_get_contents(themes_path("{$this->theme}/theme.json")), true) ?: [];
+        $themeInfo = IOUtils::readJsonFile(themes_path("{$this->theme}/theme.json"), true, [], true);
         $keys = $themeInfo['settings']['option_keys'] ?? [];
 
         if (!empty($keys)) {

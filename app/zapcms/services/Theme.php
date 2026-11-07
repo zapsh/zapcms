@@ -43,12 +43,11 @@ class Theme
         $themes = $this->getAllThemes();
         $themes_info = [];
         foreach ($themes as $theme){
-            $themeInfo = json_decode(file_get_contents(themes_path("{$theme['dirname']}/theme.json")),true) ;
-            if(json_last_error() !== JSON_ERROR_NONE){
+            $themeInfo = IOUtils::readJsonFile(
+                themes_path("{$theme['dirname']}/theme.json"), true, null, true
+            );
+            if (!is_array($themeInfo)) {
                 continue;
-            }
-            if(!is_array($themeInfo)){
-                $themeInfo = [];
             }
             $themeInfo['dirname'] = $theme['dirname'];
             $themeInfo['name'] = $themeInfo['name'] ?? $theme['dirname'];
@@ -73,11 +72,11 @@ class Theme
         }
 
         $themeFile = themes_path("{$theme}/theme.json");
-        $info = IOUtils::readJsonFile($themeFile, true) ?: [];
+        $info = IOUtils::readJsonFile($themeFile, true, [], true);
         $jsonDefaults = $info['options'] ?? [];
 
         $phpFile = themes_path("{$theme}/defaults.php");
-        $phpDefaults = is_file($phpFile) ? (require $phpFile) : [];
+        $phpDefaults = is_file($phpFile) ? IOUtils::readPhpFile($phpFile, []) : [];
         if (!is_array($phpDefaults)) {
             $phpDefaults = [];
         }
@@ -223,7 +222,7 @@ class Theme
             $theme = (string) option('website.theme', 'basic');
         }
 
-        $info  = $theme === '' ? [] : (IOUtils::readJsonFile(themes_path("{$theme}/theme.json"), true) ?: []);
+        $info  = $theme === '' ? [] : IOUtils::readJsonFile(themes_path("{$theme}/theme.json"), true, [], true);
         $areas = $info['widget_areas'] ?? [];
         if (is_array($areas) && $areas !== []) {
             return $areas;

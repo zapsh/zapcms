@@ -3,6 +3,7 @@
 namespace zapcms\services;
 
 use zap\DB;
+use zapcms\support\IOUtils;
 
 /**
  * 菜单项服务（WordPress 式菜单组成）
@@ -499,10 +500,7 @@ class MenuItem
 
     protected function writeMenuCache($file, $data): void
     {
-        $dir = dirname($file);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-        file_put_contents($file, '<?php return ' . var_export($data, true) . ';');
+        // 原子写，避免并发请求读到写了一半的菜单缓存
+        IOUtils::writePhpFile($file, $data);
     }
 }

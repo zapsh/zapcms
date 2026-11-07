@@ -129,7 +129,7 @@ class ThemeController extends AdminController
             AdminLog::info(AdminLog::CATEGORY_SYSTEM, '保存主题设置', '主题：' . $theme);
         }
 
-        $customSettings = IOUtils::readJsonFile($themeFile,true) ?:[];
+        $customSettings = IOUtils::readJsonFile($themeFile, true, [], true);
         $options = Theme::instance()->getOptions($theme);
         view('theme.settings',[
             'settings'=>$customSettings,
@@ -161,7 +161,7 @@ class ThemeController extends AdminController
         }
 
         $themeSettings = Option::getArray($theme,'REGEXP');
-        $customSettings = IOUtils::readJsonFile($themeFile,true) ?:[];
+        $customSettings = IOUtils::readJsonFile($themeFile, true, [], true);
         $themeSettings = array_merge($customSettings['options'] ?? [],$themeSettings);
         view('theme.custom_page',[
             'page'=>$method,
