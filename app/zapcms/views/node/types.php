@@ -31,7 +31,7 @@ use zap\facades\Url;
         </form>
         <div class="d-flex gap-2 ms-auto">
             <a href="<?= Url::action('Node/typesConfig')?>" class="btn btn-outline-secondary btn-sm">
-                <i class="fa fa-sliders-h"></i> 显示配置
+                <i class="fa fa-sliders-h"></i> 显示设置
             </a>
             <a href="<?= Url::action('Node/typesForm')?>" class="btn btn-primary btn-sm">
                 <i class="fa fa-plus"></i> 添加模型

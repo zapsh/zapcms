@@ -1,9 +1,11 @@
-<div class="list-group list-group-flush nav nav-pills flex-column mt-3" id="settings-nav" role="tablist" aria-label="Navigation 19">
-               
-    <a href="<?php echo zap\facades\Url::action("Node@types");?>" class="list-group-item list-group-item-action"  aria-selected="false" tabindex="-1">
-    <i class="fa fa-cog me-2" aria-hidden="true"></i>内容模型
-    </a>
-    <a href="<?php echo zap\facades\Url::action("Node@typesConfig");?>" class="list-group-item list-group-item-action"  aria-selected="false" tabindex="-1">
-    <i class="fa fa-sliders-h me-2" aria-hidden="true"></i>显示设置
-    </a>
-</div>
+<?php
+/**
+ * 内容/表单页左侧的快捷入口占位（现输出为空）。
+ *
+ * 原先这里平铺着「内容模型」「显示设置」两个链接，现已迁移：
+ *  - 「内容模型」→ 后台左侧菜单「内容管理」下的二级菜单；
+ *  - 「显示设置」→ 内容模型页面 (node/views/node/types.php) 内的链接，
+ *    不做三级菜单，设置类页面也不再显示左侧快捷菜单。
+ *
+ * 保留本文件是为了兼容各视图里已有的 partial('_left_navs') 引用。
+ */

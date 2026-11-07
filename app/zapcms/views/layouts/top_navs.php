@@ -15,6 +15,46 @@ body.sidebar-mini:not(.sidebar-open) .docs-btn-text {
   opacity: 0;
   max-width: 0;
 }
+
+/* 侧栏配色：统一低对比白色叠加，不用深色块/高饱和蓝，层级靠缩进与细线区分 */
+.app-sidebar .sidebar-menu > .nav-item > .nav-link.active,
+.app-sidebar .sidebar-menu > .nav-item.menu-open > .nav-link {
+  background-color: rgba(255, 255, 255, .07);
+}
+.app-sidebar .sidebar-menu > .nav-item > .nav-link:hover,
+.app-sidebar .sidebar-menu > .nav-item > .nav-link:focus {
+  background-color: rgba(255, 255, 255, .05);
+}
+
+.app-sidebar .sidebar-menu > .nav-item > .nav-treeview {
+  background-color: rgba(255, 255, 255, .03);
+  border-left: 1px solid rgba(255, 255, 255, .10);
+  border-radius: 0 .25rem .25rem 0;
+  margin: .1rem 0 .25rem .5rem;
+  padding: .2rem 0;
+}
+.app-sidebar .sidebar-menu > .nav-item > .nav-treeview > .nav-item > .nav-link {
+  padding-left: 1.35rem;
+  font-size: .88rem;
+  color: rgba(255, 255, 255, .62);
+}
+.app-sidebar .sidebar-menu > .nav-item > .nav-treeview > .nav-item > .nav-link:hover,
+.app-sidebar .sidebar-menu > .nav-item > .nav-treeview > .nav-item > .nav-link:focus {
+  background-color: rgba(255, 255, 255, .05);
+  color: rgba(255, 255, 255, .92);
+}
+.app-sidebar .sidebar-menu > .nav-item > .nav-treeview > .nav-item > .nav-link.active {
+  background-color: rgba(255, 255, 255, .075);
+  color: #fff;
+  box-shadow: inset 2px 0 0 rgba(255, 255, 255, .28);
+}
+
+/* 递归渲染时更深层子菜单同样保持低对比 */
+.app-sidebar .nav-treeview .nav-treeview-nested {
+  background-color: rgba(255, 255, 255, .025);
+  border-left: 1px solid rgba(255, 255, 255, .08);
+  margin: .1rem 0 .2rem .5rem;
+}
     </style>    <!-- 侧边栏品牌区域 -->
     <div class="sidebar-brand">
         <a href="<?php echo \zap\facades\Url::action('Index'); ?>" class="brand-link text-decoration-none">
@@ -26,7 +66,7 @@ body.sidebar-mini:not(.sidebar-open) .docs-btn-text {
     <!-- 侧边栏菜单滚动区 -->
     <div class="sidebar-wrapper">
         <nav class="mt-2">
-            <ul class="nav sidebar-menu flex-column <?php echo \zapcms\Hook::fire('admin_menu_class'); ?>" data-zui-toggle="treeview" role="menu" data-accordion="false">
+            <ul class="nav sidebar-menu flex-column nav-indent <?php echo \zapcms\Hook::fire('admin_menu_class'); ?>" data-zui-toggle="treeview" role="menu" data-accordion="false">
                 <?php echo \zapcms\Hook::fire('admin_menu_before'); ?>
                 <li class="nav-item">
                     <a href="<?php echo \zap\facades\Url::action('Index'); ?>" class="nav-link">
@@ -40,133 +80,110 @@ body.sidebar-mini:not(.sidebar-open) .docs-btn-text {
 
                 $menuTree = AdminMenu::instance()->getTreeArray();
 
-                // 根据用户权限过滤菜单（约定：admin_menu_{id} 对应菜单项权限 key）
-                $rbac = app()->rbac;
-                if ($rbac !== null && !$rbac->isSuperAdmin()) {
-                    $visibleTree = [];
-                    foreach ($menuTree as $group) {
-                        $groupId = $group['id'] ?? 0;
-                        if (!$rbac->check("admin_menu_{$groupId}")) {
+                // 按角色权限递归过滤（约定：admin_menu_{id} 为权限 key）
+                $rbac       = app()->rbac;
+                $needFilter = $rbac !== null && !$rbac->isSuperAdmin();
+                $filterMenu = function (array $items) use (&$filterMenu, $rbac, $needFilter): array {
+                    $out = [];
+                    foreach ($items as $item) {
+                        $id = (int) ($item['id'] ?? 0);
+                        if ($needFilter && !$rbac->check("admin_menu_{$id}")) {
                             continue;
                         }
-
-                        $rawChildren = $group['children'] ?? [];
-                        $visibleChildren = [];
-                        foreach ($rawChildren as $child) {
-                            $childId = $child['id'] ?? 0;
-                            if ($rbac->check("admin_menu_{$childId}")) {
-                                $visibleChildren[] = $child;
+                        if (!empty($item['children'])) {
+                            $item['children'] = $filterMenu($item['children']);
+                            // 纯分组（自身无链接）且子项全被过滤 → 隐藏
+                            if (empty($item['children']) && empty($item['link_to'])) {
+                                continue;
                             }
                         }
-                        $group['children'] = $visibleChildren;
-
-                        // 分组没有 link_to 且所有子项都被过滤掉 → 隐藏该分组
-                        if (empty($visibleChildren) && empty($group['link_to'])) {
-                            continue;
-                        }
-
-                        $visibleTree[] = $group;
+                        $out[] = $item;
                     }
-                    $menuTree = $visibleTree;
-                }
+                    return $out;
+                };
+                $menuTree = $filterMenu($menuTree);
 
-                foreach ($menuTree as $group):
-                    $groupTitle = $group['title'] ?? $group['name'] ?? '';
-                    if (empty($groupTitle)) continue;
-
-                    $children = $group['children'] ?? [];
-                    $hasChildren = !empty($children);
-                    $groupAction = Url::action($group['link_to'] ?? '');
-
-                    // 判断当前 group 自身或任意子节点是否激活
-                    // active_rule 优先 → 正则匹配 controller/method；否则用 URL 匹配
-                    $groupActive = false;
-                    if (!$hasChildren) {
-                        if ($group['active_rule'] ?? '') {
-                            $groupActive = Url::active($group['active_rule']);
-                        } elseif ($groupAction && $groupAction !== '#') {
-                            $groupActive = Url::active($groupAction);
+                // 自身或任意子孙命中当前路由 → 该项及其祖先高亮 / 展开
+                $menuActive = function (array $item) use (&$menuActive): bool {
+                    $rule = (string) ($item['active_rule'] ?? '');
+                    if ($rule !== '' && Url::active($rule)) {
+                        return true;
+                    }
+                    $action = Url::action($item['link_to'] ?? '');
+                    if ($action && $action !== '#' && Url::active($action)) {
+                        return true;
+                    }
+                    foreach (($item['children'] ?? []) as $child) {
+                        if (is_array($child) && $menuActive($child)) {
+                            return true;
                         }
                     }
-                    echo "\n<!-- Menu Group: " . htmlspecialchars($groupTitle) . " -->\n";
-                    echo "<!-- Group Active: " . ($groupActive ? 'true' : 'false') . " -->\n";
+                    return false;
+                };
 
-                    // 检查子节点激活状态，并决定父级是否展开
-                    $childActiveAny = false;
-                    if ($hasChildren):
-                        foreach ($children as $child):
-                            $childActive = false;
-                            if ($child['active_rule'] ?? '') {
-                                $childActive = Url::active($child['active_rule']);
-                            } else {
-                                $childAction = Url::action($child['link_to'] ?? '');
-                                $childActive = ($childAction && $childAction !== '#') ? Url::active($childAction) : false;
-                            }
-                            if ($childActive) {
-                                $childActiveAny = true;
-                                $groupActive = true; // 父级也标记为激活
-                                break;
-                            }
-                        endforeach;
-                    endif;
-
-                    // 无 action 的菜单项用 # 占位，确保可点击
-                    if (empty($groupAction)) {
-                        $groupAction = '#';
-                    }
-
-                    // 父级 li 的 class
-                    $liClass = 'nav-item';
-                    if ($hasChildren) {
-                        $liClass .= $childActiveAny ? ' menu-open' : '';
-                    }
-
-                    // 父级链接 class
-                    $linkClass = 'nav-link';
-                    if (!$hasChildren && $groupActive) {
-                        $linkClass .= ' active';
-                    } elseif ($hasChildren && $groupActive) {
-                        $linkClass .= ' active';
-                    }
-
-                    // 图标
-                    $icon = $group['icon'] ?? 'fas fa-circle';
+                $iconOf = function ($icon): string {
+                    $icon = (string) ($icon ?: 'fas fa-circle');
                     if (strpos($icon, 'fa ') !== 0 && !strpos($icon, 'fas ') && !strpos($icon, 'far ') && !strpos($icon, 'fab ')) {
                         $icon = 'fa ' . $icon;
                     }
+                    return $icon;
+                };
+
+                /**
+                 * 递归渲染任意层级菜单。
+                 * 二级及以下的「有子项且自身有 action」父项：主链接仍可进入自身页面，
+                 * 展开箭头是独立的 href="#" 按钮（treeview JS 会阻止默认跳转变展开）。
+                 */
+                $renderMenu = function (array $items, int $depth = 0) use (&$renderMenu, $menuActive, $iconOf): void {
+                    foreach ($items as $item) {
+                        $title = (string) ($item['title'] ?? $item['name'] ?? '');
+                        if ($title === '') {
+                            continue;
+                        }
+                        $children    = $item['children'] ?? [];
+                        $hasChildren = !empty($children);
+                        $action      = Url::action($item['link_to'] ?? '');
+                        if (empty($action)) {
+                            $action = '#';
+                        }
+                        $active    = $menuActive($item);
+                        $liClass   = 'nav-item' . ($hasChildren && $active ? ' menu-open' : '');
+                        $linkExtra = $active ? ' active' : '';
+                        $icon      = $iconOf($item['icon'] ?? '');
+
+                        echo '<li class="' . e($liClass) . '">';
+
+                        if ($hasChildren && $depth > 0 && $action !== '#') {
+                            echo '<div class="nav-link nav-link-group p-0 d-flex align-items-center' . $linkExtra . '">';
+                            echo '<a href="' . e($action) . '" class="nav-link flex-grow-1' . $linkExtra . '">';
+                            echo '<i class="nav-icon ' . htmlspecialchars($icon) . '"></i><p>' . htmlspecialchars($title) . '</p>';
+                            echo '</a>';
+                            echo '<a href="#" class="nav-link nav-link-toggle flex-grow-0 px-2" aria-label="展开子菜单">';
+                            echo '<i class="nav-arrow fas fa-angle-left right"></i></a>';
+                            echo '</div>';
+                        } elseif ($hasChildren) {
+                            echo '<a href="#" class="nav-link' . $linkExtra . '" role="button">';
+                            echo '<i class="nav-icon ' . htmlspecialchars($icon) . '"></i>';
+                            echo '<p>' . htmlspecialchars($title) . '<i class="nav-arrow fas fa-angle-left right"></i></p>';
+                            echo '</a>';
+                        } else {
+                            echo '<a href="' . e($action) . '" class="nav-link' . $linkExtra . '">';
+                            echo '<i class="nav-icon ' . htmlspecialchars($icon) . '"></i>';
+                            echo '<p>' . htmlspecialchars($title) . '</p>';
+                            echo '</a>';
+                        }
+
+                        if ($hasChildren) {
+                            echo '<ul class="nav nav-treeview' . ($depth >= 1 ? ' nav-treeview-nested' : '') . '">';
+                            $renderMenu($children, $depth + 1);
+                            echo '</ul>';
+                        }
+                        echo '</li>';
+                    }
+                };
+
+                $renderMenu($menuTree, 0);
                 ?>
-                    <li class="<?php echo e($liClass); ?>">
-                        <?php if ($hasChildren): ?>
-                        <a href="#" class="<?php echo e($linkClass); ?>" role="button">
-                            <i class="nav-icon <?php echo htmlspecialchars($icon); ?>"></i>
-                            <p>
-                                <?php echo htmlspecialchars($groupTitle); ?>
-                                <i class="nav-arrow fas fa-angle-left right"></i>
-                            </p>
-                        </a>
-                        <ul class="nav nav-treeview">
-                            <?php foreach ($children as $child):
-                                $childTitle = $child['title'] ?? $child['name'] ?? '';
-                                $childAction = Url::action($child['link_to'] ?? '#');
-                                $childActive = Url::active($child['active_rule'] ?: $childAction) ? ' active' : '';
-                                $childIcon = $child['icon'] ?? 'far fa-circle';
-                            ?>
-                            <li class="nav-item">
-                                <a href="<?php echo $childAction === '#' ? '#' : $childAction; ?>" class="nav-link<?php echo e($childActive); ?>">
-                                    <i class="nav-icon <?php echo htmlspecialchars($childIcon); ?>"></i>
-                                    <p><?php echo htmlspecialchars($childTitle); ?></p>
-                                </a>
-                            </li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <?php else: ?>
-                        <a href="<?php echo $groupAction === '#' ? '#' : $groupAction; ?>" class="<?php echo e($linkClass); ?>">
-                            <i class="nav-icon <?php echo htmlspecialchars($icon); ?>"></i>
-                            <p><?php echo htmlspecialchars($groupTitle); ?></p>
-                        </a>
-                        <?php endif; ?>
-                    </li>
-                <?php endforeach; ?>
                 <?php echo \zapcms\Hook::fire('admin_menu_after'); ?>
             </ul>
             <?php echo \zapcms\Hook::fire('admin_menu_footer'); ?>

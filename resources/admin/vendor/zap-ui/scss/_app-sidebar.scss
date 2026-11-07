@@ -143,9 +143,17 @@
       }
     }
 
-    // First Level Submenu
+    // First Level Submenu：低对比同色系叠加 + 细引导线，层级靠缩进区分
     > .nav-treeview {
       background-color: var(--#{$zui-prefix}sidebar-submenu-bg);
+      border-left: 1px solid rgba(255, 255, 255, .10);
+      border-radius: 0 ($border-radius * .67) ($border-radius * .67) 0;
+      margin: .1rem 0 .25rem;
+      padding-block: .2rem;
+
+      > .nav-item > .nav-link.active {
+        box-shadow: inset 2px 0 0 rgba(255, 255, 255, .28);
+      }
     }
   }
 
