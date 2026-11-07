@@ -7,7 +7,6 @@ $title = htmlspecialchars(
 );
 
 $catalogs = !empty($subCatalogList) ? $subCatalogList : ($state->subCatalogList ?? []);
-$currentId = $nodeId ?? $state->nodeId ?? 0;
 
 // 获取 catlogPaths 第一个的title（搜索页等未设置栏目路径时安全降级）
 $catalogPaths = $state->catalogPaths ?? [];
@@ -15,7 +14,90 @@ $firstCatalog = $catalogPaths[0] ?? null;
 $firstCatalogTitle = $firstCatalog['title'] ?? '';
 
 $lastCatalog = !empty($catalogPaths) ? end($catalogPaths) : null;
-$lastCatalogId = $lastCatalog['id'] ?? 0;
+$lastCatalogId = (int)($lastCatalog['id'] ?? 0);
+
+/**
+ * 判断菜单项或其子孙是否处于激活链路
+ *
+ * MenuItem 结构带 active 标记（PageState::markActivePath 已标记自身及全部祖先）；
+ * 旧栏目树结构无该标记，用「当前栏目 id」兜底比对。
+ */
+if (!function_exists('_zap_sidebar_item_active')) {
+    function _zap_sidebar_item_active(array $item, int $lastCatalogId): bool
+    {
+        if (!empty($item['active'])) {
+            return true;
+        }
+        if ($lastCatalogId > 0 && (int)($item['id'] ?? 0) === $lastCatalogId) {
+            return true;
+        }
+        foreach (($item['children'] ?? []) as $child) {
+            if (is_array($child) && _zap_sidebar_item_active($child, $lastCatalogId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+/**
+ * 递归渲染侧边栏菜单
+ *
+ * 兼容两种数据结构：
+ *  - MenuItem 树（getPositionMenu 主数据源）：含 url/target/active/children
+ *  - 旧栏目树（getPositionMenu 回退源 / 搜索页栏目树）：含 slug/node_type/link_* 字段
+ *
+ * 选中子项时父级追加 current-ancestor 类同步高亮。
+ */
+if (!function_exists('_zap_sidebar_render_menu')) {
+    function _zap_sidebar_render_menu(array $items, int $lastCatalogId, int $level = 0): string
+    {
+        $html = '';
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $hasChildren = !empty($item['children']);
+
+            $hasActiveChild = false;
+            foreach (($item['children'] ?? []) as $child) {
+                if (is_array($child) && _zap_sidebar_item_active($child, $lastCatalogId)) {
+                    $hasActiveChild = true;
+                    break;
+                }
+            }
+            $selfActive = _zap_sidebar_item_active($item, $lastCatalogId) && !$hasActiveChild;
+
+            $classes = [];
+            if ($selfActive) {
+                $classes[] = 'current';
+            }
+            if ($hasActiveChild) {
+                $classes[] = 'current-ancestor';
+            }
+
+            // MenuItem 项已解析好 url/target；旧栏目行走 smart_node_url
+            $isLinkUrl  = ($item['node_type'] ?? '') === 'link-url';
+            $href       = $item['url'] ?? smart_node_url($item);
+            $linkTarget = $item['target'] ?? ($isLinkUrl ? ($item['link_target'] ?? '') : '');
+
+            $html .= '<li' . ($classes ? ' class="' . implode(' ', $classes) . '"' : '') . '>';
+            $html .= '<a href="' . htmlspecialchars($href, ENT_QUOTES) . '"'
+                . ' title="' . htmlspecialchars($item['title'] ?? '', ENT_QUOTES) . '"'
+                . (($linkTarget === '_blank') ? ' target="_blank" rel="noopener"' : '') . '>';
+            $html .= htmlspecialchars($item['title'] ?? '', ENT_QUOTES);
+            $html .= '</a>';
+
+            if ($hasChildren) {
+                $html .= '<ul class="sub-menu">';
+                $html .= _zap_sidebar_render_menu($item['children'], $lastCatalogId, $level + 1);
+                $html .= '</ul>';
+            }
+            $html .= '</li>';
+        }
+        return $html;
+    }
+}
 
 ?>
 <aside class="sidebar col-sm-3">
@@ -27,20 +109,7 @@ $lastCatalogId = $lastCatalog['id'] ?? 0;
     <div class="widget">
         <h4><?php echo e(!empty($firstCatalogTitle) ? $firstCatalogTitle : $title); ?></h4>
         <ul>
-            <?php foreach ($catalogs as $catalog):
-                // link-url 类型：slug 是占位符 --zap-link-url，smart_node_url 会根据 link_type/link_to/link_object 生成真实 URL
-                $isLinkUrl = ($catalog['node_type'] ?? '') === 'link-url';
-                $href = smart_node_url($catalog);
-                $linkTarget = $isLinkUrl ? ($catalog['link_target'] ?? '') : '';
-            ?>
-                <li<?php if ($lastCatalogId == $catalog['id']) echo ' class="current"'; ?>>
-                    <a href="<?php echo $href; ?>"
-                       title="<?php echo htmlspecialchars($catalog['title']); ?>"
-                       <?php if ($linkTarget === '_blank'): ?>target="_blank" rel="noopener"<?php endif; ?>>
-                        <?php echo htmlspecialchars($catalog['title']); ?>
-                    </a>
-                </li>
-            <?php endforeach; ?>
+            <?php echo _zap_sidebar_render_menu((array) $catalogs, $lastCatalogId); ?>
         </ul>
     </div>
     <?php endif; ?>

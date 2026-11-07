@@ -34,6 +34,7 @@ $menusCount = count($menus);
 .mi-item.mi-drop-child  { box-shadow: inset 0 0 0 2px #198754; }
 
 /* ── 左栏「添加菜单项」面板（WordPress 式） ── */
+.mlm-panel{border:1px solid #dee2e6;border-radius:.375rem;overflow:hidden;}
 .mlm-panel .accordion-item { border-color: #e9ecef; }
 .mlm-panel .accordion-button { font-weight: 600; font-size: .875rem; padding: .55rem .75rem; color: #212529; }
 .mlm-panel .accordion-button:not(.collapsed) { background: #fff; box-shadow: inset 0 -1px 0 #dee2e6; }

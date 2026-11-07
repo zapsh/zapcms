@@ -1,6 +1,7 @@
 {% set state = pageState %}
-{% set catalogMenu = state.getCatalogList() %}
-{% set footerCatalogMenu = catalogMenu %}
+{# 导航 / 页脚数据源：后台「外观 > 菜单」构建并分配到对应位置的菜单（未分配时回退栏目树） #}
+{% set catalogMenu = state.getNavMenu('top') %}
+{% set footerCatalogMenu = state.getNavMenu('footer') %}
 
 {# ── SEO 兜底：控制器未设置 pageTitle 时统一补全 ── #}
 {% set siteTitle = (option('website.title', 'ZAP CMS') ?? '')|trim %}

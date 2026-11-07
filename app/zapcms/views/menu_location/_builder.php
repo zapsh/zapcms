@@ -33,7 +33,7 @@ foreach ($items as $it) {
     <script>window.__mlMenuId = <?php echo (int) ($menu['id'] ?? 0); ?>;</script>
 </div>
 
-<div class="container-fluid py-2">
+<div class="container-fluid px-0 py-2">
     <div class="row g-2">
         <!-- 左栏：添加菜单项 -->
         <div class="col-12 col-lg-4 border-lg-end">
@@ -148,7 +148,7 @@ foreach ($items as $it) {
         <!-- 右栏：菜单结构（WordPress 式：单行条目 + ▼ 展开编辑） -->
         <div class="col-12 col-lg-8">
             <div class="card">
-                <div class="card-header bg-white py-2 d-flex align-items-center flex-wrap">
+                <div class="card-header bg-body-tertiary py-2 d-flex align-items-center flex-wrap">
                     <h6 class="mb-0">菜单结构</h6>
                     <span class="ms-2 small text-muted">
                         按住条目直接拖动排序；拖到某项中部、或拖到它下方并靠右，可设为它的子菜单；点 <i class="fa fa-chevron-down"></i> 编辑。

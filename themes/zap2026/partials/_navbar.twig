@@ -23,9 +23,10 @@
                     {% set isActive = hasNid and (
                         (menu.id ~ '') == (nid ~ '')
                         or (menu.link_object is not null and menu.link_object != '' and (menu.link_object ~ '') == (nid ~ ''))
+                        or (menu.active ?? false)
                     ) %}
                     <li class="z-item{% if hasChildren %} has-dropdown{% endif %}{% if isActive %} is-active{% endif %}">
-                        <a href="{{ node_url(menu) }}" title="{{ menu.title }}"
+                        <a href="{{ menu.url|default(node_url(menu)) }}" title="{{ menu.title }}"
                            class="z-link{% if hasChildren %} z-link--toggle{% endif %}">
                             {{ menu.title }}{% if hasChildren %}<i class="fa fa-angle-down z-caret"></i>{% endif %}
                         </a>
@@ -34,7 +35,7 @@
                             {% for child in children %}
                                 {% set childActive = hasNid and (child.id ?? null) is not null and ((child.id ~ '') == (nid ~ '')) %}
                                 <li{% if childActive %} class="is-active"{% endif %}>
-                                    <a href="{{ node_url(child) }}" title="{{ child.title }}">{{ child.title }}</a>
+                                    <a href="{{ child.url|default(node_url(child)) }}" title="{{ child.title }}">{{ child.title }}</a>
                                 </li>
                             {% endfor %}
                         </ul>

@@ -10,19 +10,12 @@
 <footer class="site-footer">
     <div class="container">
         <div class="row">
-            <?php foreach ($footerCatalogMenu as $menu):
-                if (!in_array(4, explode(',', $menu['show_position'] ?? ''))) {
-                    continue;
-                }
-            ?>
+            <?php foreach ($footerCatalogMenu as $menu): ?>
             <div class="col-md-3 col-sm-6 col-12 fbox">
                 <h4><?php echo htmlspecialchars($menu['title']); ?></h4>
                 <ul class="big">
-                    <?php foreach ($menu['children'] as $child):
-                        if (!in_array(4, explode(',', $child['show_position'] ?? ''))) {
-                            continue;
-                        }
-                        $childUrl = smart_node_url($child);
+                    <?php foreach (($menu['children'] ?? []) as $child):
+                        $childUrl = $child['url'] ?? smart_node_url($child);
                     ?>
                     <li><a href="<?php echo $childUrl; ?>" title="<?php echo htmlspecialchars($child['title']); ?>"><?php echo htmlspecialchars($child['title']); ?></a></li>
                     <?php endforeach; ?>

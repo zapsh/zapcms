@@ -193,6 +193,74 @@ class PageState extends ArrayObject
     }
 
     /**
+     * 取某菜单位置的导航树（供主题导航/页脚使用）
+     *
+     * 数据源：后台「外观 > 菜单」构建、并分配到该位置的菜单（menu_items 表，带文件缓存）；
+     * 该位置未分配菜单 / 无菜单项时，回退到旧栏目树按 show_position 过滤。
+     * 译文在每次请求时叠加，避免跨语言污染缓存。
+     *
+     * @param string $position 位置 key（top / left / right / footer / 自定义）
+     */
+    public function getNavMenu(string $position): array
+    {
+        $tree = Catalog::instance()->getPositionMenu($position);
+        $tree = $this->applyMenuTranslation($tree) ?: [];
+        return $this->markActivePath($tree);
+    }
+
+    /**
+     * 给导航树中「当前激活节点及其全部祖先」打 active 标记
+     *
+     * 子菜单选中时父级（及其上级链路）也应高亮（类似 WordPress 的
+     * current-menu-ancestor）。模板只需判断 item.active。
+     */
+    protected function markActivePath(array $tree): array
+    {
+        // 当前页面可能命中的 id 集合：
+        //  - nodeId：栏目页 / 内容页的节点 id（菜单项指向该内容时精确命中）
+        //  - catalogId + catalogPaths：内容页时 nodeId 是内容 id，菜单树里是栏目 id，
+        //    需用「所属栏目及其路径」匹配，父级才能跟随子项高亮
+        $ids = [];
+        $nodeId = $this['nodeId'] ?? null;
+        if ($nodeId !== null && $nodeId !== '') {
+            $ids[(string) $nodeId] = true;
+        }
+        $catalogId = (int) ($this['catalogId'] ?? 0);
+        if ($catalogId > 0) {
+            $ids[(string) $catalogId] = true;
+        }
+        foreach (($this['catalogPaths'] ?? []) as $p) {
+            $pid = (int) ($p['id'] ?? 0);
+            if ($pid > 0) {
+                $ids[(string) $pid] = true;
+            }
+        }
+        if ($ids === []) {
+            return $tree;
+        }
+
+        $walk = function (array $items) use (&$walk, $ids): bool {
+            $found = false;
+            foreach ($items as &$item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+                $self = isset($ids[(string) ($item['id'] ?? '')]);
+                $childFound = !empty($item['children']) && $walk($item['children']);
+                if ($self || $childFound) {
+                    $item['active'] = true;
+                    $found = true;
+                }
+            }
+            unset($item);
+            return $found;
+        };
+        $walk($tree);
+
+        return $tree;
+    }
+
+    /**
      * 给栏目菜单树叠加当前语言的译文（递归 children）
      *
      * 先一次性取出整棵树用到的译文，避免逐条查询。

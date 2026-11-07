@@ -1147,14 +1147,18 @@ function catalog_menu_render(array $items, int $activeCatalogId, int $level = 0)
     foreach ($items as $item) {
         $id          = (int) ($item['id'] ?? 0);
         $hasChildren = !empty($item['children']);
-        $isActive    = $id === $activeCatalogId;
+        // 仅在有当前栏目上下文时比较；避免 custom_link(id=0) 在非栏目页被误激活
+        $isActive    = ($activeCatalogId > 0 && $id === $activeCatalogId);
         // 优先使用 menu_items 已解析的 url，否则回退到按 link_type 推导
         $url         = $item['url'] ?? catalog_item_url($item);
         $targetAttr  = (!empty($item['target']) && $item['target'] === '_blank')
             ? ' target="_blank" rel="noopener"' : '';
 
+        // 子树含激活项时父级也高亮（current-menu-ancestor 行为），并保持子树展开
+        $childActive = $hasChildren ? catalog_menu_has_active($item['children'], $activeCatalogId) : false;
+
         // mega-menu 富字段：css_class 挂到 <li>，icon 前置、badge 后置到链接文字
-        $liClass = 'nav-item' . (!empty($item['css_class']) ? ' ' . $item['css_class'] : '');
+        $liClass = 'nav-item' . (($isActive || $childActive) ? ' active' : '') . (!empty($item['css_class']) ? ' ' . $item['css_class'] : '');
         $linkClass = 'nav-link' . ($isActive ? ' active' : '');
 
         $iconHtml = !empty($item['icon'])
@@ -1173,7 +1177,6 @@ function catalog_menu_render(array $items, int $activeCatalogId, int $level = 0)
         $html .= '</a>';
 
         if ($hasChildren) {
-            $childActive = catalog_menu_has_active($item['children'], $activeCatalogId);
             $html .= '<ul class="nav nav-treeview"' . ($childActive ? ' style="display:block"' : '') . '>';
             $html .= catalog_menu_render($item['children'], $activeCatalogId, $level + 1);
             $html .= '</ul>';

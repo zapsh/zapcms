@@ -2,8 +2,9 @@
 defined('IN_ZAPCMS') or die('No permission to access');
 
 $state = pageState();
-$catalogMenu = $state->getCatalogList();
-$footerCatalogMenu = $catalogMenu;
+// 导航 / 页脚数据源：后台「外观 > 菜单」构建并分配到对应位置的菜单（未分配时回退栏目树）
+$catalogMenu = $state->getNavMenu('top');
+$footerCatalogMenu = $state->getNavMenu('footer');
 
 // ── SEO 兜底 ──────────────────────────────────────────────
 // 控制器默认不设置 pageTitle，这里统一补全，保证每个页面都有

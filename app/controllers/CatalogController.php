@@ -56,10 +56,8 @@ class CatalogController extends Controller
             BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'catalog', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]),$key === $lastKey);
         }
 
-        // catalog 可能为 null（nodeType 非 catalog 或 nodeId 无效时 getCatalog() 返回 null），加空值保护
-        $catalogData = pageState()->catalog ?: [];
-        $subParentId = (int)($catalogData['pid'] ?? 0) == 0 ? ($catalogData['id'] ?? 0) : $catalogData['pid'];
-        pageState()->subCatalogList = Catalog::instance()->getSubCatalogList($subParentId);
+        // 侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），含译文与激活链路标记
+        pageState()->subCatalogList = pageState()->getNavMenu('left');
         try{
             if(pageState()->nodeMimeType==='page') {
                 view('page', ['node' => pageState()->node]);
@@ -106,7 +104,7 @@ class CatalogController extends Controller
                 $view->page = $page;
                 //// 模板页面没有相关联的栏目菜单时，读取左侧导航栏目菜单作为兜底（侧边栏位于页面左侧）
                 if (empty(pageState()->subCatalogList) && !empty($view->nodes)) {
-                    pageState()->subCatalogList = \zapcms\services\Catalog::instance()->getPositionMenu(\zapcms\services\Catalog::POSITION_LEFT);
+                    pageState()->subCatalogList = pageState()->getNavMenu('left');
                 }
             }
 

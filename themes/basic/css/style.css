@@ -347,7 +347,7 @@ a.none:hover {
     z-index: 1000;
     min-width: 225px;
     border: none;
-    border-top: 3px solid #1e6bff;
+    /* border-top: 3px solid #1e6bff; */
     border-radius: 0 0 12px 12px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.15);
     padding: 10px 0;

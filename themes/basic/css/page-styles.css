@@ -351,6 +351,22 @@ ul.list-inline.post-meta li i { color: #1e6bff; }
     color: #fff;
 }
 
+/* 二级子菜单缩进 */
+.sidebar .widget ul ul.sub-menu {
+    padding-left: 14px;
+    margin-top: 2px;
+}
+
+/* 选中子菜单时父级同步高亮（current-menu-ancestor 行为） */
+.sidebar .widget ul li.current-ancestor > a {
+    background: #e8f0ff;
+    color: #1e6bff;
+}
+.sidebar .widget ul li.current-ancestor > a:hover {
+    background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
+    color: #fff;
+}
+
 /* ─── 分页 ─── */
 .pagination-wrapper {
     text-align: center;

@@ -6,7 +6,6 @@
 namespace app\controllers;
 
 use zapcms\services\BreadCrumb;
-use zapcms\services\Catalog;
 use zapcms\models\Node;
 use zapcms\models\NodeRelation;
 use zap\http\Controller;
@@ -41,9 +40,8 @@ class NodeController extends Controller
         }
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);
 
-        //侧边栏菜单
-        $topCatalog = current(pageState()->catalogPaths);
-        pageState()->subCatalogList = $this->translateCatalogList(Catalog::instance()->getSubCatalogList($topCatalog['id']));
+        //侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），含译文与激活链路标记
+        pageState()->subCatalogList = pageState()->getNavMenu('left');
         $this->renderNode($node, pageState()->nodeMimeType ?? ($node['node_type'] ?? 'page'));
     }
 
@@ -64,9 +62,8 @@ class NodeController extends Controller
         }
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);
 
-        //侧边栏菜单
-        $topCatalog = current(pageState()->catalogPaths);
-        pageState()->subCatalogList = $this->translateCatalogList(Catalog::instance()->getSubCatalogList($topCatalog['id']));
+        //侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），含译文与激活链路标记
+        pageState()->subCatalogList = pageState()->getNavMenu('left');
         $this->renderNode($node, 'article');
     }
 
@@ -81,9 +78,8 @@ class NodeController extends Controller
         }
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);
 
-        //侧边栏菜单
-        $topCatalog = current(pageState()->catalogPaths);
-        pageState()->subCatalogList = $this->translateCatalogList(Catalog::instance()->getSubCatalogList($topCatalog['id']));
+        //侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），含译文与激活链路标记
+        pageState()->subCatalogList = pageState()->getNavMenu('left');
         // 加载自定义字段（node_meta），如产品价格
         $nodeModel = Node::findById($node['id'] ?? 0);
         $node['meta'] = $nodeModel ? $nodeModel->loadMeta() : [];
@@ -103,9 +99,7 @@ class NodeController extends Controller
         }
         
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);
-        if (empty(pageState()->subCatalogList) ) {
-            pageState()->subCatalogList = \zapcms\services\Catalog::instance()->getPositionMenu(\zapcms\services\Catalog::POSITION_LEFT);
-        }
+        pageState()->subCatalogList = pageState()->getNavMenu('left');
 
         $this->renderNode($node, 'faq');
     }
@@ -116,14 +110,6 @@ class NodeController extends Controller
             ->select('n.title,n.id,n.slug')
             ->get(FETCH_ASSOC);
 
-        return \zapcms\services\Translator::applyBatch((array) $rows, null, \zapcms\services\Translator::TYPE_NODE, ['title', 'slug']);
-    }
-
-    /**
-     * 给侧边栏子栏目列表套用当前语言译文
-     */
-    private function translateCatalogList($rows)
-    {
         return \zapcms\services\Translator::applyBatch((array) $rows, null, \zapcms\services\Translator::TYPE_NODE, ['title', 'slug']);
     }
 }

@@ -7,6 +7,7 @@
  * @var array $catalogMenu 栏目菜单数据
  */
 $state = pageState();
+$navNodeId = $state->nodeId ?? null; // 首页等无 nodeId 时为 null，不做激活比较
 $childLastId = [];
 ?>
 <nav class="navbar navbar-expand-lg navbar-default">
@@ -25,7 +26,10 @@ $childLastId = [];
                 <?php while ($menu = array_shift($catalogMenu)):
                     $hasChildren = !empty($menu['children']);
                     $isChild     = count($childLastId) > 0;
-                    $isActive    = ($menu['id'] === $state->nodeId || $state->nodeId === $menu['link_object']);
+                    $isActive    = ($navNodeId !== null && $navNodeId !== ''
+                        && (((string) ($menu['id'] ?? '') === (string) $navNodeId
+                            || (isset($menu['link_object']) && (string) $menu['link_object'] === (string) $navNodeId)))
+                        ) || !empty($menu['active']); // 子项选中时父级链路高亮
                     $linkClass   = $isChild ? 'dropdown-item' : 'nav-link';
                     if ($hasChildren) {
                         $linkClass .= ' dropdown-toggle';
@@ -36,7 +40,7 @@ $childLastId = [];
                     echo $isActive ? ' active' : '';
                 ?>">
                     <a data-id="<?php echo $menu['id']; ?>"
-                       href="<?php echo smart_node_url($menu); ?>"
+                       href="<?php echo $menu['url'] ?? smart_node_url($menu); ?>"
                        title="<?php echo htmlspecialchars($menu['title']); ?>"
                        class="<?php echo $linkClass; ?>"
                        <?php if ($hasChildren): ?>role="button" aria-expanded="false"<?php endif; ?>>
