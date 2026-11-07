@@ -46,6 +46,9 @@ class Category
 
     protected int $defaultLevel = 1;
 
+    /** 单行按请求记忆化缓存：同一 id 在一次请求内多处调用只查一次库 */
+    protected array $rowCache = [];
+
     public function __construct(string $table, string $primaryKey = 'id', string $parentColumn = 'pid', string $pathColumn = 'path', string $levelColumn = 'level')
     {
         $this->table = $table;
@@ -133,6 +136,8 @@ class Category
         }
 
         DB::update($this->table,$data,[$this->primaryKey=>$id]);
+        // 行数据已变更，清空本请求内的单行缓存
+        $this->rowCache = [];
     }
 
     public function remove($id){
@@ -143,6 +148,7 @@ class Category
         $path = $category[$this->pathColumn];
         //删除子类
         DB::table($this->table)->where($this->pathColumn,'LIKE',"{$path}%")->delete();
+        $this->rowCache = [];
         return DB::table($this->table)->where($this->primaryKey,$id)->delete();
     }
 
@@ -236,7 +242,11 @@ class Category
     }
 
     public function get($id){
-        return DB::table($this->table)->where($this->primaryKey, $id)->fetch(FETCH_ASSOC);
+        $id = intval($id);
+        if (array_key_exists($id, $this->rowCache)) {
+            return $this->rowCache[$id];
+        }
+        return $this->rowCache[$id] = DB::table($this->table)->where($this->primaryKey, $id)->fetch(FETCH_ASSOC);
     }
 
     public function getAll($conditions){

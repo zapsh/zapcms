@@ -33,7 +33,7 @@
                         {% if hasChildren %}
                         <ul class="z-dropdown">
                             {% for child in children %}
-                                {% set childActive = hasNid and (child.id ?? null) is not null and ((child.id ~ '') == (nid ~ '')) %}
+                                {% set childActive = hasNid and (child.id ?? null) is not null and (((child.id ~ '') == (nid ~ '')) or (child.active ?? false)) %}
                                 <li{% if childActive %} class="is-active"{% endif %}>
                                     <a href="{{ child.url|default(node_url(child)) }}" title="{{ child.title }}">{{ child.title }}</a>
                                 </li>

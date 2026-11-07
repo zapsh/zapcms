@@ -206,6 +206,12 @@ class NodeType
      * @param mixed       $default   键不存在时的默认值
      * @return mixed
      */
+    /**
+     * 请求级配置缓存：同一内容模型一次请求只读一次。
+     * 底层 Cache 关闭或未命中时，避免同一请求内重复查询 options 表。
+     */
+    protected static array $configCache = [];
+
     public static function getConfig(?string $type_name, ?string $key = null, $default = null)
     {
         // type_name 为空（栏目未绑定内容模型）时直接返回默认值，避免 TypeError 与无意义查询
@@ -213,21 +219,24 @@ class NodeType
             return is_null($key) ? static::CONFIG_DEFAULTS : (static::CONFIG_DEFAULTS[$key] ?? $default);
         }
         $cacheKey = static::CONFIG_OPTION_PREFIX . $type_name;
-        $ttl = (int)config('cache.ttl', 0);
-        if ($ttl <= 0) {
-            $ttl = 10000;
-        }
-        $config = Cache::get($cacheKey, function () use ($cacheKey) {
-            $row = DB::table('options')->where('option_name', $cacheKey)->first();
-            $config = static::CONFIG_DEFAULTS;
-            if (!empty($row['option_value'])) {
-                $decoded = json_decode((string)$row['option_value'], true);
-                if (is_array($decoded)) {
-                    $config = array_merge($config, $decoded);
-                }
+        if (!array_key_exists($cacheKey, static::$configCache)) {
+            $ttl = (int)config('cache.ttl', 0);
+            if ($ttl <= 0) {
+                $ttl = 10000;
             }
-            return $config;
-        }, $ttl);
+            static::$configCache[$cacheKey] = Cache::get($cacheKey, function () use ($cacheKey) {
+                $row = DB::table('options')->where('option_name', $cacheKey)->first();
+                $config = static::CONFIG_DEFAULTS;
+                if (!empty($row['option_value'])) {
+                    $decoded = json_decode((string)$row['option_value'], true);
+                    if (is_array($decoded)) {
+                        $config = array_merge($config, $decoded);
+                    }
+                }
+                return $config;
+            }, $ttl);
+        }
+        $config = static::$configCache[$cacheKey];
         return is_null($key) ? $config : ($config[$key] ?? $default);
     }
 
@@ -256,6 +265,7 @@ class NodeType
 
         // 使配置缓存失效，下次 getConfig 重新读取
         Cache::delete($optionName);
+        unset(static::$configCache[$optionName]);
     }
 
     /**
@@ -268,6 +278,7 @@ class NodeType
 
         // 使配置缓存失效
         Cache::delete($optionName);
+        unset(static::$configCache[$optionName]);
     }
 
     /**

@@ -1,0 +1,48 @@
+{#
+ * 递归渲染侧边栏菜单项（支持 MenuItem 树与旧栏目树两种结构）
+ *
+ * 高亮规则（与 basic 主题 partials/_sidebar.php 一致）：
+ *  - current           ：当前页对应的菜单项（PageState::markActivePath 已给当前项
+ *                        及其全部祖先打 active 标记；无标记的旧栏目树用当前栏目 id 兜底）
+ *  - current-ancestor  ：子孙中含当前项的父级，同步高亮
+ *
+ * 递归方式：include 自身渲染 children，避免 Twig 宏递归的兼容性问题。
+#}
+{% for item in items %}
+    {% set children = item.children ?? [] %}
+
+    {# 直接子项处于激活链路（含深层），当前项即为祖先 #}
+    {% set childActive = false %}
+    {% for child in children %}
+        {% if child.active ?? false %}{% set childActive = true %}{% endif %}
+    {% endfor %}
+
+    {# 自身命中：active 标记（且不是因子孙命中）或旧数据按当前栏目 id 兜底 #}
+    {% set selfActive = ((item.active ?? false) and not childActive)
+        or (lastCatalogId > 0 and (item.id ?? 0) == lastCatalogId and not childActive) %}
+
+    {% set classes = [] %}
+    {% if selfActive %}{% set classes = classes|merge(['current']) %}{% endif %}
+    {% if childActive %}{% set classes = classes|merge(['current-ancestor']) %}{% endif %}
+
+    {# MenuItem 项已解析好 url/target；旧栏目行走 node_url #}
+    {% set isLinkUrl = (item.node_type ?? '') == 'link-url' %}
+    {% set href = item.url|default(node_url(item)) %}
+    {% set linkTarget = item.target|default(isLinkUrl ? (item.link_target ?? '') : '') %}
+
+    <li{% if classes is not empty %} class="{{ classes|join(' ') }}"{% endif %}>
+        <a href="{{ href }}"
+           title="{{ item.title }}"
+           {% if linkTarget == '_blank' %}target="_blank" rel="noopener"{% endif %}>
+            {{ item.title }}
+        </a>
+        {% if children is not empty %}
+            <ul class="sub-menu">
+                {{ include('partials/_sidebar_items.twig', {
+                    items: children,
+                    lastCatalogId: lastCatalogId,
+                }) }}
+            </ul>
+        {% endif %}
+    </li>
+{% endfor %}

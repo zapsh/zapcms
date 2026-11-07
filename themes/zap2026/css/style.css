@@ -1449,8 +1449,8 @@ p.text {
     transition: all 0.3s;
 }
 
-.sidebar li.current a,
-.sidebar li.current a:hover {
+.sidebar li.current > a,
+.sidebar li.current > a:hover {
     background: linear-gradient(135deg, #ff6a00 0%, #c2410c 100%);
     color: #FFFFFF;
 }

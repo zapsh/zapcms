@@ -16,18 +16,10 @@
         <div class="widget">
             <h4>{{ firstCatalogTitle ? firstCatalogTitle : (node.title ?? '') }}</h4>
             <ul>
-                {% for catalog in catalogs %}
-                    {% set isLinkUrl = (catalog.node_type ?? '') == 'link-url' %}
-                    {% set href = node_url(catalog) %}
-                    {% set linkTarget = isLinkUrl ? (catalog.link_target ?? '') : '' %}
-                    <li{% if lastCatalogId == catalog.id %} class="current"{% endif %}>
-                        <a href="{{ href }}"
-                           title="{{ catalog.title }}"
-                           {% if linkTarget == '_blank' %}target="_blank" rel="noopener"{% endif %}>
-                            {{ catalog.title }}
-                        </a>
-                    </li>
-                {% endfor %}
+                {{ include('partials/_sidebar_items.twig', {
+                    items: catalogs,
+                    lastCatalogId: lastCatalogId,
+                }) }}
             </ul>
         </div>
     {% endif %}

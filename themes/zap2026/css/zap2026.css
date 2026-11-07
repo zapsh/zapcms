@@ -118,6 +118,31 @@ a:hover {
     .z-toggle {
         display: none !important;
     }
+
+    /* 桌面端悬停展开下拉菜单 */
+    .z-item:hover > .z-dropdown,
+    .z-item.open > .z-dropdown {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
+    /* 悬停时箭头翻转 */
+    .z-item:hover > .z-link .z-caret,
+    .z-item.open > .z-link .z-caret {
+        transform: rotate(180deg);
+    }
+
+    /* 链接与下拉之间 12px 空隙的透明桥，避免鼠标移过去时下拉消失 */
+    .z-dropdown::before {
+        content: '';
+        position: absolute;
+        top: -14px;
+        left: 0;
+        right: 0;
+        height: 14px;
+    }
 }
 
 .z-menu {
@@ -682,9 +707,25 @@ a:hover {
 }
 
 .sidebar .widget ul li a:hover,
-.sidebar .widget ul li.current a {
+.sidebar .widget ul li.current > a {
     background: #fff3ea;
     color: var(--zap);
+}
+
+/* 二级子菜单缩进 */
+.sidebar .widget ul ul.sub-menu {
+    padding-left: 14px;
+    margin-top: 2px;
+}
+
+/* 选中子菜单时父级同步高亮（current-menu-ancestor 行为） */
+.sidebar .widget ul li.current-ancestor > a {
+    background: #fff;
+    color: var(--zap);
+    font-weight: 600;
+}
+.sidebar .widget ul li.current-ancestor > a:hover {
+    background: #fff3ea;
 }
 
 .post-content {

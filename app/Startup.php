@@ -13,6 +13,7 @@ namespace app;
 use app\controllers\ZqueryController;
 use Twig\Error\Error as TwigError;
 use zapcms\models\Node;
+use zapcms\services\Catalog;
 use zapcms\services\Locale;
 use zapcms\services\Translator;
 use zap\DB;
@@ -461,7 +462,8 @@ class Startup
     {
         if ($node['node_type'] === 'catalog' && empty($node['content'])) {
 
-            $catalog = DB::table('catalog')->where('id', $node['id'])->fetch(FETCH_ASSOC);
+            // 走 Catalog::get（请求内记忆化），与后续 getCatalog()/getCatalogPathById() 共享同一次查询
+            $catalog = Catalog::instance()->get($node['id']);
             // 栏目同时存在 node / catalog 两份记录且 id 相同，译文统一按 node 维度存放
             $catalog and $catalog = Translator::apply((array) $catalog, Locale::current());
             $pageState->catalog = $catalog;

@@ -273,16 +273,31 @@ class PageState extends ArrayObject
      * 例如当前页属于「公司简介」时，只返回公司简介及其子孙，
      * 不输出菜单里其它顶级栏目（新闻中心 / 产品中心…）。
      *
-     * 回退：当前栏目不在该位置菜单中时，改用旧栏目树中包含当前栏目的分支
-     * （即旧版「当前顶级栏目子树」行为）；两者都未命中时返回空数组（侧边栏自动隐藏）。
+     * 回退：当前栏目不在该位置菜单中（或命中的菜单分支根与当前顶级栏目不一致）时，
+     * 改用旧栏目树中包含当前栏目的分支（即旧版「当前顶级栏目子树」行为）；
+     * 两者都未命中时返回空数组（侧边栏自动隐藏）。
      *
      * @param string $position 菜单位置 key（如 left）
      */
     public function getSidebarMenu(string $position = 'left'): array
     {
-        // 主数据源：该位置的后台菜单（MenuItem）
+        // 当前页面的顶级栏目 id（catalogPaths 按 level ASC，第一个即顶级）
+        $topCatalogId = 0;
+        foreach (($this['catalogPaths'] ?? []) as $p) {
+            $pid = (int) ($p['id'] ?? 0);
+            if ($pid > 0) {
+                $topCatalogId = $pid;
+                break;
+            }
+        }
+
+        // 主数据源：该位置的后台菜单（MenuItem）。
+        // 分支根须与当前顶级栏目一致才采用，避免菜单里零散挂的子项
+        // （父级不在该菜单）导致侧边栏缺父少兄弟
         foreach ($this->getNavMenu($position) as $branch) {
-            if (is_array($branch) && !empty($branch['active'])) {
+            if (is_array($branch)
+                && !empty($branch['active'])
+                && ($topCatalogId === 0 || (int) ($branch['id'] ?? 0) === $topCatalogId)) {
                 return [$branch];
             }
         }
