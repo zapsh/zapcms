@@ -36,6 +36,7 @@ class NodeType
     public static function getNodeTypes(): array
     {
         if(is_null(static::$nodeTypes)){
+            static::$nodeTypes = [];
             $resultSet = DB::table('node_types')->where('status',1)
                 ->orderBy('sort_order DESC')
                 ->get(FETCH_ASSOC);

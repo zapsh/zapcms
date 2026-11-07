@@ -210,26 +210,46 @@ class Theme
 
     /**
      * 主题声明的小工具区域（theme.json 的 widget_areas，key => title）。
-     * 未声明时回退到默认 sidebar / footer，保证任何主题都能使用小工具。
+     * 未声明时以「sidebar / footer + 内容模型列表」作为默认区域（排除 link-url 等虚拟模型）。
      *
      * @param string|null $theme 指定主题，默认取当前启用主题
      */
     public function getWidgetAreas(?string $theme = null): array
     {
-        $defaults = [
+        // 前台由 Startup 写入 config.theme；后台 initAdminEnv() 会把它设为 false，
+        // 因此后台请求需回退到站点启用主题（option），否则永远只读到默认区域
+        $theme = $theme ?? (string) (config('config.theme') ?? '');
+        if ($theme === '') {
+            $theme = (string) option('website.theme', 'basic');
+        }
+
+        $info  = $theme === '' ? [] : (IOUtils::readJsonFile(themes_path("{$theme}/theme.json"), true) ?: []);
+        $areas = $info['widget_areas'] ?? [];
+        if (is_array($areas) && $areas !== []) {
+            return $areas;
+        }
+
+        // 未声明时才查内容模型表，避免每次调用都多一条 SQL
+        return $this->defaultWidgetAreas();
+    }
+
+    /**
+     * 默认小工具区域：sidebar / footer + 内容模型列表（type_name => title）
+     *
+     * link-url 是虚拟模型（仅用于栏目快捷链接），不产生真实内容，排除掉。
+     */
+    protected function defaultWidgetAreas(): array
+    {
+        $areas = [
             'sidebar' => '侧边栏',
             'footer'  => '页脚',
         ];
-
-        $theme = $theme ?? (string) config('config.theme', '');
-        if ($theme === '') {
-            return $defaults;
-        }
-
-        $info = IOUtils::readJsonFile(themes_path("{$theme}/theme.json"), true) ?: [];
-        $areas = $info['widget_areas'] ?? [];
-        if (!is_array($areas) || empty($areas)) {
-            return $defaults;
+        foreach (NodeType::getNodeTypes() as $key => $row) {
+            $type = (string) ($row['type_name'] ?? $key);
+            if ($type === '' || NodeType::isVirtual($type) || isset($areas[$type])) {
+                continue;
+            }
+            $areas[$type] = (string) ($row['title'] ?? $type);
         }
         return $areas;
     }

@@ -103,7 +103,7 @@ if (!function_exists('_zap_sidebar_render_menu')) {
 <aside class="sidebar col-sm-3">
     <?php
     // 主题小工具区域：sidebar（后台「外观 > 小工具」配置，未配置时输出空）
-    echo widget('sidebar');
+    echo widget(pageState()->nodeMimeType);
     ?>
     <?php if (!empty($catalogs)): ?>
     <div class="widget">

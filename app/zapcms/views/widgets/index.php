@@ -27,7 +27,7 @@ IS_AJAX !== true && $this->layout('layouts/common');
             <div class="card">
                 <div class="card-header bg-white py-2">
                     <h6 class="mb-0">小工具区域</h6>
-                    <div class="small text-muted">主题 theme.json 声明，可在此为各区域放置小工具。</div>
+                    <div class="small text-muted">主题 theme.json 的 widget_areas 声明；未声明时为侧边栏/页脚 + 内容模型列表。</div>
                 </div>
                 <div class="list-group list-group-flush" id="wgAreas">
                     <?php $first = array_key_first($areas); ?>

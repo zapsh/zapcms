@@ -15,7 +15,7 @@ use zapcms\widgets\Widget;
  * 小工具管理器
  *
  *  - 注册表：Widget 子类 → key，支持 Hook::filter('widgets.register') 动态扩展；
- *  - 区域（area）：由主题 theme.json 的 widget_areas 声明，默认 sidebar/footer；
+ *  - 区域（area）：由主题 theme.json 的 widget_areas 声明；未声明时为 sidebar/footer + 内容模型列表（排除 link-url 等虚拟模型）；
  *  - CRUD + 渲染：按区域加载小工具实例，逐个实例化并 output()。
  */
 class WidgetManager

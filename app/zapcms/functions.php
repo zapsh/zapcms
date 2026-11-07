@@ -1205,7 +1205,8 @@ function catalog_menu_has_active(array $items, int $activeCatalogId): bool
 /**
  * 输出某个小工具区域的所有小工具
  *
- * @param string $area 区域 key（主题 theme.json 的 widget_areas 声明，如 sidebar / footer）
+ * @param string $area 区域 key（主题 theme.json 的 widget_areas 声明；未声明时为
+ *                     sidebar / footer + 内容模型 type_name（如 article / product，虚拟模型 link-url 不含））
  * @return string HTML
  */
 function widget(string $area): string
