@@ -5,6 +5,8 @@ namespace zapcms\auth;
 use zapcms\services\Auth;
 use zap\DB;
 use zap\facades\Cache;
+use zap\http\Request;
+use zap\http\Response;
 
 class RBAC
 {
@@ -21,6 +23,9 @@ class RBAC
     protected ?array $rolePermissions = null;
     /** @var array|null [perm_key => []]  */
     protected ?array $userExtrasCache = null;
+
+    /** @var array|null 后台菜单 active_rule 映射（请求级内存缓存） */
+    protected static ?array $menuRuleCache = null;
 
     // ================================================================
     //  缓存控制
@@ -99,6 +104,105 @@ class RBAC
     }
 
     // ================================================================
+    //  请求级访问控制
+    // ================================================================
+
+    /**
+     * 请求级授权：把当前 controller/method 通过后台菜单 active_rule 映射到
+     * admin_menu_{id} 权限键并校验，使 URL 访问控制与菜单可见性对齐
+     * （此前菜单只是"隐藏"，手输 URL 仍可越权访问）。
+     *
+     * @param string $controller kebab-case 控制器名（如 node / catalog）
+     * @param string $method     小写方法名（index 省略，与 UrlHelper::active 格式一致）
+     * @return bool true = 拒绝访问（调用方应输出 403 并终止）
+     *
+     * 规则：
+     *  - 未登录 / 超级管理员 → 放行（登录由 Auth::check 把关）
+     *  - 请求未映射到任何菜单 → 放行（未纳入权限体系的入口不受影响，如 Upload）
+     *  - 命中多个菜单（父组宽规则 + 子项窄规则）→ 任一有权限即放行，避免父/子宽窄误杀
+     */
+    public static function guard(string $controller, string $method): bool
+    {
+        try {
+            $userId = (int) Auth::user('id');
+            if ($userId <= 0) {
+                return false; // 未登录入口（登录页等），登录由 Auth::check 把关
+            }
+
+            $rbac = new static();
+            if ($rbac->isSuperAdmin()) {
+                return false;
+            }
+
+            $controller = strtolower($controller);
+            $method     = strtolower($method);
+            $currentAction = $controller . ($method !== '' && $method !== 'index' ? '/' . $method : '');
+
+            $hits = [];
+            foreach (static::menuActiveRules() as $menuId => $rule) {
+                if (@preg_match('#^' . $rule . '$#i', $currentAction)) {
+                    $hits[] = $menuId;
+                }
+            }
+            if ($hits === []) {
+                return false; // 未映射到权限体系的入口
+            }
+            foreach ($hits as $menuId) {
+                if ($rbac->check('admin_menu_' . $menuId)) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (\Throwable $e) {
+            // 授权体系异常时放行，避免全站不可用（可用性优先）
+            return false;
+        }
+    }
+
+    /**
+     * 后台菜单的 active_rule 映射（请求级内存缓存）
+     *
+     * @return array menu_id => active_rule（仅含非空规则）
+     */
+    protected static function menuActiveRules(): array
+    {
+        if (static::$menuRuleCache === null) {
+            static::$menuRuleCache = [];
+            try {
+                $rows = DB::fetchAll('SELECT id, active_rule FROM {admin_menu}') ?: [];
+                foreach ($rows as $row) {
+                    $rule = trim((string) ($row['active_rule'] ?? ''));
+                    if ($rule !== '') {
+                        static::$menuRuleCache[(int) $row['id']] = $rule;
+                    }
+                }
+            } catch (\Throwable $e) {
+                static::$menuRuleCache = [];
+            }
+        }
+        return static::$menuRuleCache;
+    }
+
+    /**
+     * 输出 403 响应（AJAX → JSON；页面 → HTML），随后终止请求
+     */
+    public static function denyResponse(): void
+    {
+        http_response_code(403);
+        if (Request::isAjax()) {
+            Response::json(['code' => 403, 'msg' => '无权限访问该功能，请联系管理员分配权限']);
+        }
+        echo '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+            . '<title>403 - 无访问权限</title></head>'
+            . '<body style="font-family:sans-serif;padding:80px 20px;text-align:center;color:#555;background:#f8f9fa;">'
+            . '<h1 style="font-size:64px;margin:0;color:#dc3545;">403</h1>'
+            . '<p style="font-size:16px;">抱歉，您的账号没有权限访问该功能。</p>'
+            . '<p><a href="javascript:history.back()">« 返回上一页</a> &nbsp;|&nbsp; <a href="' . \zap\facades\Url::action('Index') . '">控制台</a></p>'
+            . '</body></html>';
+        exit;
+    }
+
+    // ================================================================
     //  权限检查
     // ================================================================
 
@@ -158,11 +262,12 @@ class RBAC
     {
         $userId = $userId ?? $this->getUserId();
 
-        // 非当前用户不走缓存，直接查
+        // 非当前用户不走缓存，直接查（禁用角色不参与鉴权）
         if ($userId !== $this->userId) {
             return DB::table('roles', 'r')
                 ->join('admin_roles', 'ar', 'r.role_id=ar.role_id')
                 ->where('ar.admin_id', $userId)
+                ->where('r.status', 1)
                 ->fetchAll(FETCH_ASSOC);
         }
 
@@ -171,6 +276,7 @@ class RBAC
             return DB::table('roles', 'r')
                 ->join('admin_roles', 'ar', 'r.role_id=ar.role_id')
                 ->where('ar.admin_id', $userId)
+                ->where('r.status', 1)
                 ->fetchAll(FETCH_ASSOC);
         }, $this->cacheTtl);
     }
@@ -211,6 +317,7 @@ class RBAC
         return DB::table('roles', 'r')
             ->join('admin_roles', 'ar', 'r.role_id=ar.role_id')
             ->where('ar.admin_id', $userId)
+            ->where('r.status', 1)
             ->where('r.name', $roleId)
             ->exists();
     }
@@ -231,6 +338,8 @@ class RBAC
 
     /**
      * 获取用户的所有角色 ID（带缓存）
+     *
+     * 禁用角色（roles.status != 1）不返回，不参与鉴权。
      */
     protected function getRoleIds(?int $userId = null): array
     {
@@ -238,8 +347,7 @@ class RBAC
 
         // 非当前用户不走缓存
         if ($userId !== $this->userId) {
-            $rows = DB::table('admin_roles')->where('admin_id', $userId)->fetchAll();
-            return array_column($rows, 'role_id');
+            return $this->queryRoleIds($userId);
         }
 
         if ($this->roleIds !== null) {
@@ -262,13 +370,28 @@ class RBAC
         if (is_array($cached)) {
             $this->roleIds = $cached;
         } else {
-            $this->roleIds = Cache::get($key, function () use ($userId) {
-                $rows = DB::table('admin_roles')->where('admin_id', $userId)->fetchAll();
-                return array_column($rows, 'role_id');
-            }, $this->cacheTtl);
+            $this->roleIds = Cache::get($key, fn () => $this->queryRoleIds($userId), $this->cacheTtl);
         }
 
         return $this->roleIds;
+    }
+
+    /**
+     * 从 DB 查询角色 ID（INNER JOIN roles 过滤禁用角色）
+     *
+     * @return int[]
+     */
+    protected function queryRoleIds(int $userId): array
+    {
+        return array_column(
+            DB::query(
+                "SELECT ar.role_id FROM {admin_roles} ar"
+                . " INNER JOIN {roles} r ON r.role_id = ar.role_id"
+                . " WHERE ar.admin_id = ? AND r.status = 1",
+                [$userId]
+            )->fetchAll(),
+            'role_id'
+        );
     }
 
     /**

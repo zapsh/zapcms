@@ -139,6 +139,11 @@ class Bootstrap
                 app()->router->method = strtolower($methodName);
                 // CSRF：控制器构造完成后、执行动作前统一校验
                 Csrf::guard($controllerName . '@' . $methodName);
+                // 请求级授权：按后台菜单 active_rule 映射 admin_menu_{id} 做 RBAC 校验
+                // （未映射到菜单的入口放行；超管放行）
+                if (\zapcms\auth\RBAC::guard($controllerName, strtolower($methodName))) {
+                    \zapcms\auth\RBAC::denyResponse();
+                }
                 $instance->_invoke($methodName, $extraParams);
                 return;
             }
@@ -159,6 +164,12 @@ class Bootstrap
 
         // CSRF：控制器构造完成后、执行动作前统一校验（GET/HEAD/OPTIONS 自动放行）
         Csrf::guard($controllerName . '@' . $methodName);
+
+        // 请求级授权：按后台菜单 active_rule 映射 admin_menu_{id} 做 RBAC 校验
+        // （未映射到菜单的入口放行；超管放行）
+        if (\zapcms\auth\RBAC::guard($controllerName, strtolower($methodName))) {
+            \zapcms\auth\RBAC::denyResponse();
+        }
 
         // 调用控制器方法（camelCase），传入额外参数
         if (!empty($extraParams)) {

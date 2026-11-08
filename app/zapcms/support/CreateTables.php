@@ -494,6 +494,9 @@ class CreateTables
     public function installBaseData()
     {
         CreateBaseData::install();
+        // permissions 注册表与后台菜单镜像（admin_menu_{id}）：
+        // 新装流程会把迁移标记为已执行而不跑，需在此补偿同步
+        \zapcms\services\AdminMenu::syncAllMenuPermissions();
     }
 
     public function installDemoData()

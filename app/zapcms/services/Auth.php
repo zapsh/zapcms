@@ -11,6 +11,7 @@
 namespace zapcms\services;
 
 
+use zap\DB;
 use zap\facades\Url;
 use zap\http\Request;
 use zap\http\Response;
@@ -19,6 +20,9 @@ class Auth
 {
 
     protected static $scope = 'zapAdmin';
+
+    /** 同一请求内只做一次账号状态校验（Auth::check 会被多处调用） */
+    protected static bool $statusChecked = false;
 
     public static function isLogin(): bool
     {
@@ -42,6 +46,29 @@ class Auth
             }
             Response::redirect($url)->with('info', $message);
         }
+
+        // 已登录：实时校验账号状态，账号被禁用/删除后立即踢下线
+        if (!static::$statusChecked) {
+            static::$statusChecked = true;
+            $userId = (int) (static::user('id') ?? 0);
+            if ($userId > 0 && !static::isAccountActive($userId)) {
+                static::signOut();
+                $message = '账号已被禁用或删除，请联系管理员';
+                if (Request::isAjax()) {
+                    Response::json(['code' => -1, 'msg' => $message]);
+                }
+                Response::redirect($url ?? Url::action('Auth@signIn'))->with('warning', $message);
+            }
+        }
+    }
+
+    /**
+     * 账号是否处于激活状态（admin.status === 'activated'）
+     */
+    protected static function isAccountActive(int $userId): bool
+    {
+        $admin = DB::table('admin')->select('status')->where('id', $userId)->fetch(FETCH_OBJ);
+        return !empty($admin) && strcasecmp((string) $admin->status, 'activated') === 0;
     }
 
     public static function user($key = null,$default = null){

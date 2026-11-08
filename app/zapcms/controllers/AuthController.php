@@ -62,6 +62,24 @@ class AuthController extends Controller
             // 登录成功：清除失败计数
             \zapcms\services\LoginThrottle::reset($key);
 
+            // 账号状态校验：非 activated 拒绝登录。
+            // 对外提示与密码错误保持一致，避免账号状态被探测。
+            if (strcasecmp((string)($admin->status ?? ''), 'activated') !== 0) {
+                \zapcms\models\AdminLog::warning(
+                    \zapcms\models\AdminLog::CATEGORY_AUTH,
+                    '禁用账号登录',
+                    "用户 {$admin->username}（状态 " . ($admin->status ?? 'unknown') . "）尝试登录被拒绝（IP {$ip}）",
+                    (int) $admin->id,
+                    $admin->username
+                );
+                if (Request::isAjax()) {
+                    Response::json(['code' => 1, 'msg' => '登录失败，用户名或密码错误']);
+                    return;
+                }
+                Response::redirect(Url::action('Auth@signIn'))->with('error', '登录失败，用户名或密码错误');
+                return;
+            }
+
             //登录成功
             // 必须先重建会话 ID：登录前的会话 ID 可能已被攻击者预置（会话固定）
             session()->regenerate(true);
