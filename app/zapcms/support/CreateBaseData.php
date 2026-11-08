@@ -126,7 +126,6 @@ class CreateBaseData
                 ['id' => 39, 'location_key' => '', 'parent_id' => 14, 'item_type' => 'catalog', 'ref_id' => 35, 'title' => NULL, 'url' => NULL, 'link_target' => NULL, 'sort_order' => 9, 'created_at' => 1793963469, 'updated_at' => 1794024130, 'icon' => NULL, 'image' => NULL, 'badge' => NULL, 'css_class' => NULL, 'column_break' => 0, 'menu_id' => 2],
                 ['id' => 41, 'location_key' => '', 'parent_id' => 0, 'item_type' => 'catalog', 'ref_id' => 30, 'title' => NULL, 'url' => NULL, 'link_target' => NULL, 'sort_order' => 4, 'created_at' => 1794024084, 'updated_at' => 1794024130, 'icon' => NULL, 'image' => NULL, 'badge' => NULL, 'css_class' => NULL, 'column_break' => 0, 'menu_id' => 2],
                 ['id' => 43, 'location_key' => '', 'parent_id' => 41, 'item_type' => 'catalog', 'ref_id' => 31, 'title' => NULL, 'url' => NULL, 'link_target' => NULL, 'sort_order' => 5, 'created_at' => 1794024127, 'updated_at' => 1794024130, 'icon' => NULL, 'image' => NULL, 'badge' => NULL, 'css_class' => NULL, 'column_break' => 0, 'menu_id' => 2],
-                ['id' => 44, 'location_key' => '', 'parent_id' => 0, 'item_type' => 'catalog', 'ref_id' => 40, 'title' => NULL, 'url' => NULL, 'link_target' => NULL, 'sort_order' => 11, 'created_at' => 1794063199, 'updated_at' => 1794063199, 'icon' => NULL, 'image' => NULL, 'badge' => NULL, 'css_class' => NULL, 'column_break' => 0, 'menu_id' => 1],
             ], true);
         });
 
