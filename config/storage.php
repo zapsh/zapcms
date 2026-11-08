@@ -25,8 +25,8 @@ return [
     ],
 
     'cos' => [
-        'secret_id'  => getenv('COS_SECRET_ID') ?: '',
-        'secret_key' => getenv('COS_SECRET_KEY') ?: '',
+        'secret_id'  => getenv('COS_ID') ?: '',
+        'secret_key' => getenv('COS_KEY') ?: '',
         'timeout'    => 60,
     ],
 

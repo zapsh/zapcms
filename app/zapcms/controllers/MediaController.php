@@ -36,7 +36,11 @@ class MediaController extends UploadController
      */
     public function tree()
     {
-        Response::json(['code' => 0, 'data' => $this->buildTree(StorageManager::list(''), 0)]);
+        try {
+            Response::json(['code' => 0, 'data' => $this->buildTree(StorageManager::list(''), 0)]);
+        } catch (\Throwable $e) {
+            Response::json(['code' => 1, 'msg' => '读取存储失败：' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -47,7 +51,12 @@ class MediaController extends UploadController
         $relPath = $this->cleanPath((string) Request::post('path', ''));
         $search  = trim((string) Request::post('search', ''));
 
-        $listing = StorageManager::list($relPath);
+        try {
+            $listing = StorageManager::list($relPath);
+        } catch (\Throwable $e) {
+            Response::json(['code' => 1, 'msg' => '读取存储失败：' . $e->getMessage()]);
+            return;
+        }
 
         $dirs = [];
         foreach ($listing['dirs'] as $dir) {
@@ -329,7 +338,11 @@ class MediaController extends UploadController
      */
     private function countFilesIn(string $path): int
     {
-        return count(StorageManager::list($path)['files']);
+        try {
+            return count(StorageManager::list($path)['files']);
+        } catch (\Throwable) {
+            return 0;
+        }
     }
 
     /**

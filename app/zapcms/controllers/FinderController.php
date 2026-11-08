@@ -32,7 +32,12 @@ class FinderController extends AdminController
         $path = str_replace(['..'],'',$path);
         $search = (string)req()->get('search','');
 
-        $listing = StorageManager::list($path);
+        try {
+            $listing = StorageManager::list($path);
+        } catch (\Throwable $e) {
+            \response(['code' => 1, 'msg' => '读取存储失败：' . $e->getMessage()])->withJson();
+            return;
+        }
 
         $entries = [];
         foreach ($listing['dirs'] as $dir) {
@@ -131,7 +136,11 @@ class FinderController extends AdminController
      */
     public function tree()
     {
-        \response(['code' => 0, 'data' => $this->buildFinderTree(StorageManager::list(''), '', 0)])->withJson();
+        try {
+            \response(['code' => 0, 'data' => $this->buildFinderTree(StorageManager::list(''), '', 0)])->withJson();
+        } catch (\Throwable $e) {
+            \response(['code' => 1, 'msg' => '读取存储失败：' . $e->getMessage()])->withJson();
+        }
     }
 
     /**

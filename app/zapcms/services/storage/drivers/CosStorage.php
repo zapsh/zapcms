@@ -35,7 +35,7 @@ class CosStorage implements StorageInterface
         $this->host   = $this->bucket !== '' && $this->region !== ''
             ? $this->bucket . '.cos.' . $this->region . '.myqcloud.com'
             : '';
-        $this->baseUrl = rtrim(trim((string) option('upload.cos_base_url', '')), '/');
+        $this->baseUrl = $this->normalizeBaseUrl((string) option('upload.cos_base_url', ''));
         $this->prefix    = trim((string) option('upload.cos_prefix', ''), '/');
         $this->thumbMode = (string) option('upload.cos_thumb', 'none');
 
@@ -156,12 +156,10 @@ class CosStorage implements StorageInterface
     public function list(string $prefix = ''): array
     {
         $prefix = ltrim(str_replace('\\', '/', $prefix), '/');
-        $fullPrefix = $this->objectKey($prefix);
-        if ($fullPrefix !== '') {
-            $fullPrefix .= '/';
-        }
+        $fullPrefix = $this->listingPrefix($prefix);
 
-        $parsed = $this->parseObjectListXml($this->listRaw($fullPrefix, '/'));
+        $xml    = $this->listRaw($fullPrefix, '/');
+        $parsed = $this->parseObjectListXml($xml);
 
         $dirs = [];
         foreach ($parsed['prefixes'] as $p) {
@@ -187,6 +185,9 @@ class CosStorage implements StorageInterface
             ];
         }
 
+        if ($dirs === [] && $files === [] && !$parsed['truncated']) {
+            $this->logEmptyListing($xml);
+        }
         return ['dirs' => $dirs, 'files' => $files];
     }
 
@@ -285,8 +286,16 @@ class CosStorage implements StorageInterface
         file_put_contents($tmp, 'zapcms storage test');
         try {
             $this->put($key, $tmp, ['mime' => 'text/plain']);
+
+            // 列举自检：验证 GetBucket 能列出刚写入的测试对象（媒体库浏览依赖列举）
+            $listed = $this->listObjectKeys($this->objectKey('__zap_storage_test') . '/');
+
             $this->delete($key);
-            return ['ok' => true, 'msg' => 'COS 连接正常（PUT / DELETE 均成功）'];
+            if (!in_array($this->objectKey($key), $listed, true)) {
+                return ['ok' => false, 'msg' => '写入成功，但列举异常：__zap_storage_test/ 下未找到测试对象'
+                    . '（列举到 ' . count($listed) . ' 个），媒体库可能无法浏览文件'];
+            }
+            return ['ok' => true, 'msg' => 'COS 连接正常（PUT / LIST / DELETE 均成功）'];
         } catch (\Throwable $e) {
             return ['ok' => false, 'msg' => $e->getMessage()];
         } finally {
@@ -310,9 +319,13 @@ class CosStorage implements StorageInterface
         return ltrim($fullKey, '/');
     }
 
+    /**
+     * 签名用 URI 路径。腾讯云 COS 按「解码后的原始路径」校验签名，
+     * 因此这里不做 URL 编码（中文等原样）；实际请求 URL 仍由 requestUrl() 编码。
+     */
     private function uriPath(string $objectKey): string
     {
-        return '/' . $this->encodeKey($objectKey);
+        return '/' . $objectKey;
     }
 
     private function requestUrl(string $objectKey): string
