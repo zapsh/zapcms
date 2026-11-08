@@ -61,8 +61,10 @@ class Bootstrap
         define('IS_AJAX', Request::isAjax());
         View::paths(realpath(__DIR__ . '/views'));
 
-        // 后台始终使用默认语言（后台界面文案不做跟随浏览器切换）
-        Locale::setCurrent(Locale::defaultLocale());
+        // 后台语言：优先会话里管理员显式选择的语言，否则用默认语言。
+        // 不做浏览器 Accept-Language 自动切换（后台界面文案不跟随浏览器）。
+        $sessionLocale = get_session(Locale::SESSION_KEY, '');
+        Locale::setCurrent(is_string($sessionLocale) && Locale::isValid($sessionLocale) ? $sessionLocale : Locale::defaultLocale());
 
         $theme = option('website.theme', 'basic');
         // 后端只加载 admin/functions.php，不加载前台的 functions.php

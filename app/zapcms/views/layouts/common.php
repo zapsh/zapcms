@@ -22,6 +22,13 @@ use \zap\facades\Url;
         })();
     </script>
     <link href="<?php echo \zapcms\support\Vite::css('zap-admin'); ?>" rel="stylesheet">
+    <style>
+        /* 顶部右侧图标小按钮：收紧左右内边距，避免图标之间间距过宽 */
+        .app-header .nav-icon-btn {
+            padding-left: .4rem !important;
+            padding-right: .4rem !important;
+        }
+    </style>
     
     <script src="<?php echo base_url();?>/assets/sweetalert2.all.min.js"></script>
     <script src="<?php echo base_url();?>/assets/jquery/jquery-3.6.4.min.js"></script>
@@ -105,36 +112,55 @@ use \zap\facades\Url;
                     </li>
                     <li class="nav-item d-none d-md-block">
                         <a href="<?php echo base_url('/');?>" class="nav-link" target="_blank">
-                            <i class="fa fa-external-link-alt me-1"></i> 访问网站
+                            <i class="fa fa-external-link-alt me-1"></i> <?php echo __('admin.visit_site'); ?>
                         </a>
                     </li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#" role="button" title="清理缓存" onclick="zapClearCacheQuick(event)">
+                        <a class="nav-link nav-icon-btn" href="#" role="button" title="<?php echo __('admin.clear_cache'); ?>" onclick="zapClearCacheQuick(event)">
                             <i class="fa fa-eraser"></i>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" data-zui-toggle="fullscreen" href="#" role="button" title="全屏">
-                            <i class="fa fa-expand"></i>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link nav-icon-btn" data-bs-toggle="dropdown" href="#" role="button" title="<?php echo __('admin.switch_language'); ?>" aria-label="<?php echo __('admin.switch_language'); ?>">
+                            <i class="fa fa-language"></i>
                         </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <?php
+                            // 勾选/加粗标记「当前语言」而非默认语言，切换后勾选要跟着走
+                            $currentLocale = \zapcms\services\Locale::current();
+                            foreach (\zapcms\services\Locale::all() as $lang):
+                                $isCurrent = $lang['code'] === $currentLocale;
+                                ?>
+                            <li>
+                                <form method="post" action="<?php echo \zap\facades\Url::action('Index@switchLocale'); ?>">
+                                    <?php echo csrf_field(); ?>
+                                    <input type="hidden" name="locale" value="<?php echo htmlspecialchars($lang['code']); ?>">
+                                    <button type="submit" class="dropdown-item d-flex align-items-center w-100<?php echo $isCurrent ? ' fw-semibold' : ''; ?>">
+                                        <span><?php echo htmlspecialchars($lang['native']); ?></span>
+                                        <?php if ($isCurrent): ?><i class="fa fa-check ms-auto"></i><?php endif; ?>
+                                    </button>
+                                </form>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
                     </li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link" data-bs-toggle="dropdown" href="#" role="button" title="主题外观" aria-label="主题外观">
+                        <a class="nav-link nav-icon-btn" data-bs-toggle="dropdown" href="#" role="button" title="<?php echo __('admin.appearance'); ?>" aria-label="<?php echo __('admin.appearance'); ?>">
                             <i class="fa fa-sun zap-theme-icon" data-zap-theme-icon></i>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end shadow" style="min-width: 170px;">
                             <button type="button" class="dropdown-item d-flex align-items-center zap-theme-option" data-theme="light" role="menuitemradio" aria-checked="false">
-                                <i class="fa fa-sun fa-fw me-2"></i><span>Light</span>
+                                <i class="fa fa-sun fa-fw me-2"></i><span><?php echo __('admin.theme_light'); ?></span>
                                 <i class="fa fa-check ms-auto zap-theme-check invisible"></i>
                             </button>
                             <button type="button" class="dropdown-item d-flex align-items-center zap-theme-option" data-theme="dark" role="menuitemradio" aria-checked="false">
-                                <i class="fa fa-moon fa-fw me-2"></i><span>Dark</span>
+                                <i class="fa fa-moon fa-fw me-2"></i><span><?php echo __('admin.theme_dark'); ?></span>
                                 <i class="fa fa-check ms-auto zap-theme-check invisible"></i>
                             </button>
                             <button type="button" class="dropdown-item d-flex align-items-center zap-theme-option" data-theme="auto" role="menuitemradio" aria-checked="false">
-                                <i class="fa fa-circle-half-stroke fa-fw me-2"></i><span>Auto</span>
+                                <i class="fa fa-circle-half-stroke fa-fw me-2"></i><span><?php echo __('admin.theme_auto'); ?></span>
                                 <i class="fa fa-check ms-auto zap-theme-check invisible"></i>
                             </button>
                         </div>
@@ -151,16 +177,16 @@ use \zap\facades\Url;
                                 <small class="text-muted text-nowrap"><?php echo htmlspecialchars(\zapcms\services\Auth::user()['email'] ?? ''); ?></small>
                             </div>
                             <a class="dropdown-item" href="<?php echo \zap\facades\Url::action('User@profile'); ?>">
-                                <i class="fa fa-user-cog me-2"></i>账户设置
+                                <i class="fa fa-user-cog me-2"></i><?php echo __('admin.account_settings'); ?>
                             </a>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="<?php echo \zap\facades\Url::action('System@settings'); ?>">
-                                <i class="fa fa-cog me-2"></i>系统设置
+                                <i class="fa fa-cog me-2"></i><?php echo __('admin.system_settings'); ?>
                             </a>
                             <?php echo \zapcms\Hook::fire('admin_user_dropdown'); ?>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item text-danger" href="<?php echo \zap\facades\Url::action('Auth@signOut'); ?>">
-                                <i class="fa fa-sign-out-alt me-2"></i>退出登录
+                                <i class="fa fa-sign-out-alt me-2"></i><?php echo __('admin.logout'); ?>
                             </a>
                         </div>
                     </li>

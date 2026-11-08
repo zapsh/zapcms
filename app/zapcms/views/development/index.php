@@ -364,6 +364,9 @@ $this->layout('layouts/common');
                 <button class="btn btn-sm btn-primary" id="btnSave" title="保存文件 (Ctrl+S)">
                     <i class="fa fa-save"></i> 保存
                 </button>
+                <button class="btn btn-sm btn-outline-secondary" data-zui-toggle="fullscreen" title="全屏编辑 (Esc 退出)">
+                    <i class="fa fa-expand"></i>
+                </button>
             </div>
         </div>
 

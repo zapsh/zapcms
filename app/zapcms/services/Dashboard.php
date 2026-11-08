@@ -108,8 +108,8 @@ class Dashboard
         return [
             [
                 'id'          => 'stats.node_types',
-                'title'       => '内容统计',
-                'description' => '各内容模型的条目数量与快捷入口',
+                'title'       => __('admin.widget_stats'),
+                'description' => __('admin.widget_stats_desc'),
                 'icon'        => 'fa fa-chart-simple',
                 'col'         => 'col-12',
                 'default_on'  => true,
@@ -122,8 +122,8 @@ class Dashboard
             ],
             [
                 'id'          => 'pages.list',
-                'title'       => '单页管理',
-                'description' => '站点单页列表，可快速进入编辑',
+                'title'       => __('admin.widget_pages'),
+                'description' => __('admin.widget_pages_desc'),
                 'icon'        => 'fa fa-file-alt',
                 'col'         => 'col-lg-7',
                 'default_on'  => true,
@@ -136,8 +136,8 @@ class Dashboard
             ],
             [
                 'id'          => 'system.website',
-                'title'       => '网站信息',
-                'description' => '语言、模板、上传与运行环境概要',
+                'title'       => __('admin.widget_website'),
+                'description' => __('admin.widget_website_desc'),
                 'icon'        => 'fa fa-circle-info',
                 'col'         => 'col-lg-5',
                 'default_on'  => true,
@@ -145,8 +145,8 @@ class Dashboard
             ],
             [
                 'id'          => 'activity.recent',
-                'title'       => '最近操作',
-                'description' => '后台最近 8 条操作审计记录',
+                'title'       => __('admin.widget_activity'),
+                'description' => __('admin.widget_activity_desc'),
                 'icon'        => 'fa fa-clock-rotate-left',
                 'col'         => 'col-12',
                 'default_on'  => true,
@@ -165,8 +165,8 @@ class Dashboard
             ],
             [
                 'id'          => 'system.server',
-                'title'       => '系统信息',
-                'description' => 'CMS / PHP / 数据库 / 服务器详细参数',
+                'title'       => __('admin.widget_system'),
+                'description' => __('admin.widget_system_desc'),
                 'icon'        => 'fa fa-server',
                 'col'         => 'col-12',
                 'default_on'  => true,
@@ -344,7 +344,7 @@ class Dashboard
         try {
             $html = (string)call_user_func($widget['render'], $widget, $adminId);
         } catch (\Throwable $e) {
-            $html = '<div class="alert alert-warning mb-0 small">组件「' . e($widget['title']) . '」加载失败</div>';
+            $html = '<div class="alert alert-warning mb-0 small">' . e(__('admin.widget_failed', ['title' => $widget['title']])) . '</div>';
         }
         $filtered = Hook::applyFilters('dashboard.widget.output', $html, $widget, $adminId);
         return is_string($filtered) ? $filtered : $html;

@@ -23,7 +23,7 @@ $icon_idx   = 0;
             <i class="<?php echo e($icon); ?> small-box-icon fs-1"></i>
             <a href="<?php echo url_action("Node@{$type}"); ?>"
                class="small-box-footer link-light link-underline-opacity-0 link-underline-opacity-50-hover">
-                管理 <?php echo e($title); ?> <i class="fa fa-chevron-right"></i>
+                <?php echo e(__('admin.manage', ['title' => $title])); ?> <i class="fa fa-chevron-right"></i>
             </a>
         </div>
     </div>

@@ -70,9 +70,9 @@ body.sidebar-mini:not(.sidebar-open) .docs-btn-text {
                 <?php echo \zapcms\Hook::fire('admin_menu_before'); ?>
                 <li class="nav-item">
                     <a href="<?php echo \zap\facades\Url::action('Index'); ?>" class="nav-link">
-                            <i class="nav-icon fa fa-dashboard"></i>
-                            <p>控制面板</p>
-                        </a>
+                        <i class="nav-icon fa fa-dashboard"></i>
+                        <p><?php echo __t('menu.dashboard', '控制面板'); ?></p>
+                    </a>
                 </li>
                 <?php
                 use zap\facades\Url;
@@ -139,6 +139,11 @@ body.sidebar-mini:not(.sidebar-open) .docs-btn-text {
                         $title = (string) ($item['title'] ?? $item['name'] ?? '');
                         if ($title === '') {
                             continue;
+                        }
+                        // 菜单标题翻译：有 i18n_key 时按 key 查译文，查不到回退数据库里的 title
+                        $i18nKey = trim((string) ($item['i18n_key'] ?? ''));
+                        if ($i18nKey !== '') {
+                            $title = __t('menu.' . $i18nKey, $title);
                         }
                         $children    = $item['children'] ?? [];
                         $hasChildren = !empty($children);

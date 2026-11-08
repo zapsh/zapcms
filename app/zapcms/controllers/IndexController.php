@@ -5,6 +5,8 @@ namespace zapcms\controllers;
 use zapcms\controllers\AdminController;
 use zapcms\services\Auth;
 use zapcms\services\Dashboard;
+use zapcms\services\Locale;
+use zap\facades\Url;
 use zap\http\Request;
 use zap\http\Response;
 use zap\view\View;
@@ -90,5 +92,19 @@ class IndexController extends AdminController
         }
         Dashboard::resetLayout($this->adminId());
         Response::json(['code' => 0, 'msg' => '已恢复默认布局']);
+    }
+
+    /**
+     * 切换后台内容语言（写入会话，跳回上一页）。
+     * 仅接受站内可用语言，非法值回退默认语言，防止任意写入会话。
+     */
+    public function switchLocale(): void
+    {
+        $locale = Locale::normalize((string) Request::post('locale', (string) Request::get('locale', '')));
+        if (!Locale::isValid($locale)) {
+            $locale = Locale::defaultLocale();
+        }
+        Locale::setCurrent($locale);
+        Response::back(Url::action('Index'));
     }
 }

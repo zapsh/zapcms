@@ -2,15 +2,15 @@
 
 use zapcms\services\Dashboard;
 
-$page_title = '控制台';
+$page_title = __('admin.dashboard');
 $this->layout('layouts/common');
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <span class="text-muted small">你好，<?php echo e(\zapcms\services\Auth::user('full_name', '')); ?></span>
+    <span class="text-muted small"><?php echo e(__('admin.hello', ['name' => \zapcms\services\Auth::user('full_name', '')])); ?></span>
     <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-dashboard-customize"
             data-bs-toggle="modal" data-bs-target="#dashboardCustomizeModal">
-        <i class="fa fa-table-columns me-1"></i>自定义首页
+        <i class="fa fa-table-columns me-1"></i><?php echo __('admin.customize'); ?>
     </button>
 </div>
 
@@ -27,7 +27,7 @@ $this->layout('layouts/common');
             <div class="card mb-4">
                 <div class="card-body text-center text-muted py-5">
                     <i class="fa fa-table-columns fs-1 d-block mb-2"></i>
-                    当前没有显示任何组件，点击右上角「自定义首页」添加。
+                    <?php echo __('admin.empty_dashboard'); ?>
                 </div>
             </div>
         </div>
@@ -41,21 +41,21 @@ $this->layout('layouts/common');
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header py-2">
-                <h6 class="modal-title"><i class="fa fa-table-columns me-1"></i>自定义控制台</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="关闭"></button>
+                <h6 class="modal-title"><i class="fa fa-table-columns me-1"></i><?php echo __('admin.customize_title'); ?></h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo __('admin.close'); ?>"></button>
             </div>
             <div class="modal-body">
                 <p class="text-muted small mb-2">
-                    设置仅对当前管理员生效。勾选显示、取消勾选隐藏，用箭头调整显示顺序。
+                    <?php echo __('admin.customize_desc'); ?>
                 </p>
                 <div id="dashboardWidgetList" class="list-group"></div>
             </div>
             <div class="modal-footer py-2">
                 <button type="button" class="btn btn-sm btn-outline-secondary me-auto" id="btn-dashboard-reset">
-                    <i class="fa fa-rotate-left me-1"></i>恢复默认
+                    <i class="fa fa-rotate-left me-1"></i><?php echo __('admin.restore_default'); ?>
                 </button>
-                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-sm btn-primary" id="btn-dashboard-save">保存</button>
+                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal"><?php echo __('admin.cancel'); ?></button>
+                <button type="button" class="btn btn-sm btn-primary" id="btn-dashboard-save"><?php echo __('admin.save'); ?></button>
             </div>
         </div>
     </div>
@@ -94,9 +94,9 @@ $this->layout('layouts/common');
                 $text.append($('<div class="text-muted" style="font-size:.75rem">').text(item.description));
                 $row.append($text);
 
-                $row.append($('<button type="button" class="btn btn-sm btn-light py-0 px-2" data-move="up" title="上移">')
+                $row.append($('<button type="button" class="btn btn-sm btn-light py-0 px-2" data-move="up" title="<?php echo __('admin.move_up'); ?>">')
                     .html('<i class="fa fa-arrow-up"></i>').prop('disabled', i === 0));
-                $row.append($('<button type="button" class="btn btn-sm btn-light py-0 px-2" data-move="down" title="下移">')
+                $row.append($('<button type="button" class="btn btn-sm btn-light py-0 px-2" data-move="down" title="<?php echo __('admin.move_down'); ?>">')
                     .html('<i class="fa fa-arrow-down"></i>').prop('disabled', i === items.length - 1));
 
                 $list.append($row);
@@ -104,13 +104,13 @@ $this->layout('layouts/common');
         }
 
         function load() {
-            $list.html('<div class="list-group-item text-center text-muted py-4">加载中...</div>');
+            $list.html('<div class="list-group-item text-center text-muted py-4"><?php echo __('admin.loading'); ?></div>');
             $.getJSON(Api.list, function (res) {
                 const data = res && res.data;
                 items = (data && Array.isArray(data.items)) ? data.items : [];
                 render();
             }).fail(function () {
-                $list.html('<div class="list-group-item text-center text-danger py-4">加载失败，请稍后重试</div>');
+                $list.html('<div class="list-group-item text-center text-danger py-4"><?php echo __('admin.load_failed'); ?></div>');
             });
         }
 
@@ -143,7 +143,7 @@ $this->layout('layouts/common');
         $('#btn-dashboard-save').on('click', function () {
             const $btn = $(this);
             const payload = collect();
-            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>保存中...');
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span><?php echo __('admin.saving'); ?>');
             $.ajax({
                 url: Api.save,
                 method: 'post',
@@ -152,7 +152,7 @@ $this->layout('layouts/common');
                 success: function (res) {
                     const ok = res && res.code === 0;
                     try {
-                        ZapToast.alert(res && res.msg ? res.msg : (ok ? '已保存' : '保存失败'), {
+                        ZapToast.alert(res && res.msg ? res.msg : (ok ? '<?php echo __('admin.saved'); ?>' : '<?php echo __('admin.save_failed'); ?>'), {
                             delay: 2000, bgColor: ok ? bgSuccess : bgDanger
                         });
                     } catch (err) { /* 提示失败不影响刷新 */ }
@@ -161,10 +161,10 @@ $this->layout('layouts/common');
                     }
                 },
                 error: function () {
-                    ZapToast.alert('请求失败，请稍后重试', {bgColor: bgDanger});
+                    ZapToast.alert('<?php echo __('admin.request_failed'); ?>', {bgColor: bgDanger});
                 },
                 complete: function () {
-                    $btn.prop('disabled', false).html('保存');
+                    $btn.prop('disabled', false).html('<?php echo __('admin.save'); ?>');
                 }
             });
         });
@@ -172,7 +172,7 @@ $this->layout('layouts/common');
         $('#btn-dashboard-reset').on('click', function () {
             $.post(Api.reset, {}, function (res) {
                 const ok = res && res.code === 0;
-                ZapToast.alert(res && res.msg ? res.msg : (ok ? '已恢复' : '操作失败'), {
+                ZapToast.alert(res && res.msg ? res.msg : (ok ? '<?php echo __('admin.restored'); ?>' : '<?php echo __('admin.operation_failed'); ?>'), {
                     delay: 2000, bgColor: ok ? bgSuccess : bgDanger
                 });
                 if (ok) {

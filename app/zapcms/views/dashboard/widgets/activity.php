@@ -8,28 +8,28 @@ $levelClass = [
 <div class="card mb-4">
     <div class="card-header">
         <h3 class="card-title">
-            <i class="fa fa-clock-rotate-left card-header-icon text-primary"></i> 最近操作
+            <i class="fa fa-clock-rotate-left card-header-icon text-primary"></i> <?php echo __('admin.widget_activity'); ?>
         </h3>
         <div class="card-tools">
-            <span class="badge text-bg-secondary"><?php echo count($logs); ?> 条</span>
+            <span class="badge text-bg-secondary"><?php echo e(__('admin.log_count', ['count' => count($logs)])); ?></span>
         </div>
     </div>
     <div class="card-body p-0">
         <?php if (empty($logs)): ?>
             <div class="p-4 text-center text-muted">
                 <i class="fa fa-inbox fs-1 d-block mb-2"></i>
-                暂无操作记录
+                <?php echo __('admin.empty_activity'); ?>
             </div>
         <?php else: ?>
             <div class="table-responsive">
                 <table class="table table-hover table-striped mb-0">
                     <thead class="table-light">
                     <tr>
-                        <th class="ps-3">操作</th>
-                        <th>管理员</th>
-                        <th>分类</th>
-                        <th>级别</th>
-                        <th class="text-end pe-3">时间</th>
+                        <th class="ps-3"><?php echo __('admin.action_label'); ?></th>
+                        <th><?php echo __('admin.admin'); ?></th>
+                        <th><?php echo __('admin.category'); ?></th>
+                        <th><?php echo __('admin.level'); ?></th>
+                        <th class="text-end pe-3"><?php echo __('admin.time'); ?></th>
                     </tr>
                     </thead>
                     <tbody>

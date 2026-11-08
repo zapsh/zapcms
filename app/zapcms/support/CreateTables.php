@@ -94,6 +94,7 @@ class CreateTables
             $table->varchar('active_rule', 255)->nullable();
             $table->varchar('show_position', 255)->nullable();
             $table->integer('sort_order')->nullable()->default('0');
+            $table->varchar('i18n_key', 64)->nullable()->default(''); // 翻译 key（内置菜单用，如 menu.content）
             $table->integer('updated_at')->nullable();
             $table->integer('created_at')->nullable();
 

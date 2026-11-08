@@ -570,6 +570,19 @@ function append_url_suffix(string $url): string
 }
 
 /**
+ * 带默认值的翻译：优先取当前语言译文，取不到时回退 $default。
+ *
+ * 与框架 __() 的区别：__() 第二参是「参数替换数组」，这里第二参是「兜底文案」。
+ * 用途：不想为默认语言写语言文件时，直接用默认文案兜底，例如
+ *   __t('menu.dashboard', '控制面板')  → 有 en 译文时返回译文，否则返回「控制面板」。
+ */
+function __t(string $key, string $default = ''): string
+{
+    $translated = \zap\i18n\Language::trans($key);
+    return $translated === $key ? $default : $translated;
+}
+
+/**
  * 附件/存储文件 URL
  *
  * 按后台「文件上传 → 附件 URL 模式」(upload.url_mode) 返回：

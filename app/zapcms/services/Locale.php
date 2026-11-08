@@ -336,6 +336,12 @@ class Locale
      */
     protected static function sync(string $locale): void
     {
+        // 后台 UI 语言文件目录（app/zapcms/languages/{locale}/admin.php）
+        $langPath = realpath(__DIR__ . '/../languages');
+        if ($langPath !== false) {
+            Language::addPath($langPath);
+        }
+
         Language::locale($locale);
         Language::fallback(static::defaultLocale());
         config_set('config.lang', $locale);

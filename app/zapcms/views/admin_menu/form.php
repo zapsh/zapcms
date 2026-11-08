@@ -90,6 +90,15 @@ use zapcms\services\AdminMenu;
         <input type="text" class="form-control form-control-sm" name="zap_data[sort_order]" id="data_sort_order"
                value="<?php echo e($menu['sort_order'] ?? 0); ?>"/>
     </div>
+    <div class="col-md-6">
+        <label for="data_i18n_key" class="form-label small">翻译 Key（可选）</label>
+        <input type="text" class="form-control form-control-sm" name="zap_data[i18n_key]" id="data_i18n_key"
+               value="<?php echo e($menu['i18n_key'] ?? ''); ?>" placeholder="如 media"/>
+        <div class="form-text small text-muted">
+            填写后菜单标题会按语言文件 <code>languages/{语言}/menu.php</code> 中的同名 key 翻译；
+            留空则始终显示「菜单名称」原文。仅字母、数字与下划线。
+        </div>
+    </div>
 </form>
 <script>
     (function () {
