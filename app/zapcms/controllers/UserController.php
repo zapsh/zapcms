@@ -153,6 +153,39 @@ class UserController extends AdminController
             Response::json(['code' => 1, 'msg' => '两次输入的密码不一致']);
         }
 
+        // ── 超管保护 ─────────────────────────────────────────────
+        $currentIsSuper = app()->rbac->isSuperAdmin();
+        $targetIsSuper  = $adminId > 0 && DB::table('admin_roles')
+            ->where('admin_id', $adminId)->where('role_id', 1)->exists();
+        $newIsSuper = in_array(1, array_map('intval', (array)$userRoles), true);
+
+        // 分配/收回超管角色、编辑超管账号，仅限超级管理员本人操作
+        if (($targetIsSuper || $newIsSuper) && !$currentIsSuper) {
+            AdminLog::warning(
+                AdminLog::CATEGORY_SECURITY,
+                '越权操作被拦截',
+                '非超级管理员尝试' . ($newIsSuper ? '分配超管角色给' : '编辑超管账号') . " {$username}"
+            );
+            Response::json(['code' => 1, 'msg' => '只有超级管理员可以管理超级管理员账号']);
+            return;
+        }
+
+        // 最后一个可登录的超管不可被降级或禁用（避免系统失去超管）
+        if ($targetIsSuper) {
+            $others = (int) DB::query(
+                "SELECT COUNT(*) FROM {admin_roles} ar"
+                . " INNER JOIN {admin} a ON a.id = ar.admin_id"
+                . " WHERE ar.role_id = 1 AND ar.admin_id != ? AND a.status = ?",
+                [$adminId, Admin::STATUS_ACTIVATED]
+            )->fetchColumn();
+            $status      = $data['status'] ?? Admin::STATUS_ACTIVATED;
+            $stillSuper  = $newIsSuper && $status === Admin::STATUS_ACTIVATED;
+            if ($others === 0 && !$stillSuper) {
+                Response::json(['code' => 1, 'msg' => '系统至少需要保留一个可登录的超级管理员']);
+                return;
+            }
+        }
+
         $now = time();
         $row = [
             'username'        => $username,
@@ -170,13 +203,18 @@ class UserController extends AdminController
             $row['password'] = Password::hash($password);
         }
 
+        // 同步角色关联前，先记录原有角色（用于审计对比）
+        $oldRoleIds = $adminId > 0
+            ? array_column(DB::table('admin_roles')->where('admin_id', $adminId)->fetchAll(), 'role_id')
+            : [];
+
         if ($adminId > 0) {
             DB::update('admin', $row, ['id' => $adminId]);
-            AdminLog::log('修改管理员', "更新了管理员: {$username}");
+            AdminLog::info(AdminLog::CATEGORY_USER, '修改管理员', "更新了管理员: {$username}（ID {$adminId}）");
         } else {
             $row['created_at'] = $now;
             $adminId = DB::insert('admin', $row);
-            AdminLog::log('新增管理员', "添加了管理员: {$username}");
+            AdminLog::info(AdminLog::CATEGORY_USER, '新增管理员', "添加了管理员: {$username}（ID {$adminId}）");
         }
 
         // 同步角色关联
@@ -188,6 +226,23 @@ class UserController extends AdminController
                     'role_id'         => (int)$roleId,
                     'assignment_time' => $now,
                 ]);
+            }
+        }
+
+        // 角色变更审计（授予/收回超管角色属敏感操作，用 WARNING 级别）
+        $newRoleIds = array_map('intval', (array)$userRoles);
+        $granted    = array_diff($newRoleIds, array_map('intval', $oldRoleIds));
+        $revoked    = array_diff(array_map('intval', $oldRoleIds), $newRoleIds);
+        if ($granted !== [] || $revoked !== []) {
+            $detail = sprintf(
+                '用户 %s（ID %d）角色变更：授予 [%s]，收回 [%s]',
+                $username, $adminId,
+                implode(',', $granted) ?: '-', implode(',', $revoked) ?: '-'
+            );
+            if (in_array(1, $granted, true) || in_array(1, $revoked, true)) {
+                AdminLog::warning(AdminLog::CATEGORY_SECURITY, '超管角色变更', $detail);
+            } else {
+                AdminLog::info(AdminLog::CATEGORY_USER, '用户角色变更', $detail);
             }
         }
 
@@ -227,19 +282,62 @@ class UserController extends AdminController
         // 保护超级管理员 (id=1)
         if (in_array(1, $ids, true)) {
             Response::json(['code' => 1, 'msg' => '不能删除超级管理员']);
+            return;
         }
 
         // 禁止删除自己
         $currentId = (int)Auth::user('id');
         if (in_array($currentId, $ids, true)) {
             Response::json(['code' => 1, 'msg' => '不能删除当前登录的账号']);
+            return;
+        }
+
+        // 删除超管账号仅限超级管理员本人操作
+        $idPh = implode(',', array_fill(0, count($ids), '?'));
+        $hasSuper = DB::query(
+            "SELECT COUNT(*) FROM {admin_roles} WHERE role_id = 1 AND admin_id IN ({$idPh})",
+            $ids
+        )->fetchColumn();
+        if ($hasSuper && !app()->rbac->isSuperAdmin()) {
+            AdminLog::warning(
+                AdminLog::CATEGORY_SECURITY,
+                '越权操作被拦截',
+                '非超级管理员尝试删除超级管理员账号（IDs: ' . implode(',', $ids) . '）'
+            );
+            Response::json(['code' => 1, 'msg' => '只有超级管理员可以删除超级管理员账号']);
+            return;
+        }
+
+        // 保护最后一个可登录的超管：删除后系统必须仍保留超管
+        $remaining = (int) DB::query(
+            "SELECT COUNT(*) FROM {admin_roles} ar"
+            . " INNER JOIN {admin} a ON a.id = ar.admin_id"
+            . " WHERE ar.role_id = 1 AND ar.admin_id NOT IN ({$idPh}) AND a.status = ?",
+            array_merge([Admin::STATUS_ACTIVATED], $ids)
+        )->fetchColumn();
+        if ($remaining === 0) {
+            Response::json(['code' => 1, 'msg' => '不能删除最后一个可登录的超级管理员']);
+            return;
+        }
+
+        // 删除前收集用户名（审计用）并失效这些用户的权限缓存
+        $names = array_column(
+            DB::query("SELECT username FROM {admin} WHERE id IN ({$idPh})", $ids)->fetchAll(),
+            'username'
+        );
+        foreach ($ids as $id) {
+            RBAC::invalidateUser((int)$id);
         }
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         DB::query("DELETE FROM {admin} WHERE id IN ({$placeholders})", $ids);
         DB::query("DELETE FROM {admin_roles} WHERE admin_id IN ({$placeholders})", $ids);
 
-        AdminLog::log('删除管理员', '删除了 ' . count($ids) . ' 个管理员');
+        AdminLog::warning(
+            AdminLog::CATEGORY_USER,
+            '删除管理员',
+            '删除了 ' . count($ids) . ' 个管理员：' . implode(', ', $names)
+        );
 
         Response::json(['code' => 0, 'msg' => '删除成功']);
     }
@@ -308,7 +406,7 @@ class UserController extends AdminController
         session()->set('zapAdmin', $session);
         app()->set('zapAdmin', $session);
 
-        AdminLog::log('更新个人资料', "姓名: {$fullName}");
+        AdminLog::info(AdminLog::CATEGORY_USER, '更新个人资料', "姓名: {$fullName}");
 
         Response::redirect(Url::action('User@profile', ['tab' => 'account']))->with('success', '个人资料更新成功');
     }
@@ -371,7 +469,7 @@ class UserController extends AdminController
         session()->set('zapAdmin', $session);
         app()->set('zapAdmin', $session);
 
-        AdminLog::log('更新头像', '上传了新头像');
+        AdminLog::info(AdminLog::CATEGORY_USER, '更新头像', '上传了新头像');
 
         Response::redirect(Url::action('User@profile', ['tab' => 'account']))->with('success', '头像更新成功');
     }
@@ -411,7 +509,7 @@ class UserController extends AdminController
             'updated_at' => time(),
         ], ['id' => $userId]);
 
-        AdminLog::log('修改密码', '更新了登录密码');
+        AdminLog::warning(AdminLog::CATEGORY_SECURITY, '修改密码', '更新了登录密码');
 
         Response::redirect(Url::action('User@profile', ['tab' => 'security']))->with('success', '密码修改成功');
     }
@@ -512,6 +610,22 @@ class UserController extends AdminController
             Response::json(['code' => 1, 'msg' => '角色名称不能为空']);
         }
 
+        // 超管角色（role_id=1）仅限超级管理员编辑；
+        // 非超管也不能修改自己所属角色的权限（自我提权）
+        if (!$currentIsSuper = app()->rbac->isSuperAdmin()) {
+            if ($roleId === 1) {
+                AdminLog::warning(AdminLog::CATEGORY_SECURITY, '越权操作被拦截', "非超级管理员尝试编辑超级管理员角色");
+                Response::json(['code' => 1, 'msg' => '只有超级管理员可以编辑超级管理员角色']);
+                return;
+            }
+            $myRoleIds = array_map('intval', array_column(app()->rbac->roles() ?? [], 'role_id'));
+            if ($roleId > 0 && in_array($roleId, $myRoleIds, true)) {
+                AdminLog::warning(AdminLog::CATEGORY_SECURITY, '越权操作被拦截', "用户尝试修改自己所属角色（role_id={$roleId}）的权限");
+                Response::json(['code' => 1, 'msg' => '不能修改自己所属角色的权限']);
+                return;
+            }
+        }
+
         $now = time();
         $row = [
             'name'        => $name,
@@ -521,11 +635,11 @@ class UserController extends AdminController
 
         if ($roleId > 0) {
             DB::update('roles', $row, ['role_id' => $roleId]);
-            AdminLog::log('修改角色', "修改了角色: {$name}");
+            AdminLog::info(AdminLog::CATEGORY_USER, '修改角色', "修改了角色: {$name}（ID {$roleId}），权限 " . count((array)$perms) . ' 项');
         } else {
             $row['created_at'] = $now;
             $roleId = DB::insert('roles', $row);
-            AdminLog::log('新增角色', "添加了角色: {$name}");
+            AdminLog::info(AdminLog::CATEGORY_USER, '新增角色', "添加了角色: {$name}（ID {$roleId}），权限 " . count((array)$perms) . ' 项');
         }
 
         // 同步权限关联
@@ -585,6 +699,17 @@ class UserController extends AdminController
         // 保护超级管理员角色
         if (in_array(1, $ids, true)) {
             Response::json(['code' => 1, 'msg' => '不能删除超级管理员角色']);
+            return;
+        }
+
+        // 删除仍挂有成员的角色：先失效这些成员的权限缓存
+        $ph0 = implode(',', array_fill(0, count($ids), '?'));
+        $memberIds = array_column(
+            DB::query("SELECT DISTINCT admin_id FROM {admin_roles} WHERE role_id IN ({$ph0})", $ids)->fetchAll(),
+            'admin_id'
+        );
+        foreach ($memberIds as $mid) {
+            RBAC::invalidateUser((int)$mid);
         }
 
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
@@ -592,7 +717,7 @@ class UserController extends AdminController
         DB::query("DELETE FROM {roles_permissions} WHERE role_id IN ({$placeholders})", $ids);
         DB::query("DELETE FROM {admin_roles} WHERE role_id IN ({$placeholders})", $ids);
 
-        AdminLog::log('删除角色', '删除了 ' . count($ids) . ' 个角色');
+        AdminLog::warning(AdminLog::CATEGORY_USER, '删除角色', '删除了 ' . count($ids) . ' 个角色（IDs: ' . implode(',', $ids) . '）');
 
         RBAC::invalidate();
 
@@ -727,11 +852,11 @@ class UserController extends AdminController
 
         if ($permId > 0) {
             DB::update('permissions', $row, ['perm_id' => $permId]);
-            AdminLog::log('修改权限', "修改了权限: {$title}");
+            AdminLog::info(AdminLog::CATEGORY_USER, '修改权限', "修改了权限: {$title}");
         } else {
             $row['created_at'] = $now;
             $permId = DB::insert('permissions', $row);
-            AdminLog::log('新增权限', "添加了权限: {$title}");
+            AdminLog::info(AdminLog::CATEGORY_USER, '新增权限', "添加了权限: {$title}");
         }
 
         RBAC::invalidate();
@@ -801,7 +926,7 @@ class UserController extends AdminController
             DB::query("DELETE FROM {roles_permissions} WHERE perm_key IN ({$pkPlaceholders})", $permKeys);
         }
 
-        AdminLog::log('删除权限', '删除了 ' . count($ids) . ' 个权限');
+        AdminLog::warning(AdminLog::CATEGORY_USER, '删除权限', '删除了 ' . count($ids) . ' 个权限（IDs: ' . implode(',', $ids) . '）');
 
         RBAC::invalidate();
 

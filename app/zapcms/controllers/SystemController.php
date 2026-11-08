@@ -589,6 +589,7 @@ class SystemController extends AdminController
             return;
         }
         if (Database::deleteBackup(basename($filename))) {
+            AdminLog::warning(AdminLog::CATEGORY_SYSTEM, '删除备份文件', '文件：' . basename($filename));
             Response::json(['code'=>0,'msg'=>'删除成功']);
         } else {
             Response::json(['code'=>1,'msg'=>'文件不存在或删除失败']);
@@ -610,6 +611,7 @@ class SystemController extends AdminController
         }
         $filePath = var_path('backups/sql') . '/' . basename($filename);
         if (Database::restore($filePath)) {
+            AdminLog::warning(AdminLog::CATEGORY_SECURITY, '还原数据库（整库）', '备份文件：' . basename($filename));
             Response::json(['code'=>0,'msg'=>'数据库还原成功']);
         } else {
             Response::json(['code'=>1,'msg'=>'数据库还原失败，请检查备份文件']);
@@ -631,6 +633,7 @@ class SystemController extends AdminController
         }
         $filePath = var_path('backups/sql') . '/' . basename($filename);
         if (Database::restoreData($filePath)) {
+            AdminLog::warning(AdminLog::CATEGORY_SECURITY, '还原数据库（仅数据）', '备份文件：' . basename($filename));
             Response::json(['code'=>0,'msg'=>'数据还原成功']);
         } else {
             Response::json(['code'=>1,'msg'=>'数据还原失败，请检查备份文件']);
@@ -714,6 +717,7 @@ class SystemController extends AdminController
             // 百度翻译密钥改走加密存储（secret.slug.baidu_key）
             $this->saveSecrets((array) Request::post('secrets', []), (array) Request::post('secrets_clear', []));
 
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '保存 Slug 设置', '生成规则：' . option('slug.style', 'default'));
             Response::json(['code' => 0, 'msg' => 'Slug 设置已保存']);
         }
 
@@ -789,6 +793,7 @@ class SystemController extends AdminController
             \zap\facades\Cache::delete('permalink.structure');
             \zap\facades\Cache::delete('permalink.catalog_prefix');
 
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '保存固定链接设置', "结构 {$structure}，栏目前缀 " . ($catalogPrefix ?: '（空）'));
             Response::json(['code' => 0, 'msg' => '固定链接设置已保存']);
         }
 
@@ -849,6 +854,7 @@ class SystemController extends AdminController
                 $catalogStrategy === 'hide' ? 'hide' : 'fallback'
             );
 
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '保存多语言设置', '语言：' . implode(',', $list) . '，默认 ' . Locale::defaultLocale());
             Response::json([
                 'code'    => 0,
                 'msg'     => '多语言设置已保存',

@@ -406,8 +406,10 @@ class MenuLocationController extends AdminController
             Response::json(['code' => 1, 'msg' => '参数错误']);
             return;
         }
+        $item = MenuItem::instance()->get($id);
         MenuItem::instance()->remove($id);
         MenuItem::instance()->clearMenuCache();
+        AdminLog::info(AdminLog::CATEGORY_SYSTEM, '删除菜单项', '菜单项：' . ($item['title'] ?? "ID {$id}") . "（ID {$id}，含子树）");
         Response::json(['code' => 0, 'msg' => '删除成功']);
     }
 
@@ -447,6 +449,7 @@ class MenuLocationController extends AdminController
 
         MenuItem::instance()->reorder($orderMap);
         MenuItem::instance()->clearMenuCache();
+        AdminLog::info(AdminLog::CATEGORY_SYSTEM, '菜单项排序', '批量保存 ' . count($orderMap) . ' 个菜单项的排序与层级');
         Response::json(['code' => 0, 'msg' => '排序已保存']);
     }
 }
