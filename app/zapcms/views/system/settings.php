@@ -7,7 +7,7 @@ Asset::library('jqueryvalidation');
 $this->layout('layouts/common');
 
 $this->view->page_title = '系统设置';
-$this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & 文件上传 & 服务器 & 缓存';
+$this->view->page_subtitle = '站点信息 & 统计与嵌入代码 & 邮件配置 & 文件上传 & 系统 & 缓存';
 /**
  * @var array $options
  * @var array $server
@@ -45,7 +45,7 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                             <button class="nav-link" id="third-party-tab" data-bs-toggle="tab"
                                     data-bs-target="#third-party-tab-pane" type="button" role="tab"
                                     aria-controls="third-party-tab-pane" aria-selected="false">
-                                <i class="fa fa-code me-1"></i>第三方代码
+                                <i class="fa fa-code me-1"></i>统计与嵌入代码
                             </button>
                         </li>
                         <li class="nav-item">
@@ -66,7 +66,7 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                             <button class="nav-link" id="server-tab" data-bs-toggle="tab"
                                     data-bs-target="#server-tab-pane" type="button" role="tab"
                                     aria-controls="server-tab-pane" aria-selected="false">
-                                <i class="fa fa-server me-1"></i>服务器
+                                <i class="fa fa-sliders me-1"></i>系统
                             </button>
                         </li>
                         <li class="nav-item">
@@ -245,6 +245,7 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                     <div class="tab-pane fade" id="upload-tab-pane" role="tabpanel" aria-labelledby="upload-tab"
                          tabindex="0">
                         <div class="row g-2">
+                            <div class="col-12"><h6 class="small fw-semibold mb-0">基础设置</h6></div>
                             <div class="col-12">
                                 <label for="upload.extensions" class="form-label small">允许上传的文件扩展名</label>
                                 <textarea rows="4" class="form-control form-control-sm" id="upload.extensions"
@@ -279,7 +280,7 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 <div class="form-text">「相对路径」返回 <code>/storage/xxx</code> 形式；「网站网址 + 路径」返回 <code>https://example.com/storage/xxx</code>，「网站网址」留空时自动使用当前访问域名。</div>
                             </div>
 
-                            <div class="col-12"><hr class="my-2"><h6 class="small fw-semibold mb-2">对象存储</h6></div>
+                            <div class="col-12"><hr class="my-2"><h6 class="small fw-semibold mb-2">存储方式</h6></div>
                             <div class="col-md-6">
                                 <label for="upload.storage_mode" class="form-label small">存储模式</label>
                                 <select class="form-select form-select-sm" id="upload.storage_mode"
@@ -292,7 +293,7 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 </select>
                                 <div class="form-text">「服务器 + 云存储」本地写成功即返回，云同步失败只记日志不影响上传；「仅云」本地不保留原图。</div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 js-both-only">
                                 <label for="upload.cloud_driver" class="form-label small">「服务器 + 云存储」使用的云厂商</label>
                                 <select class="form-select form-select-sm" id="upload.cloud_driver"
                                         name="options[upload.cloud_driver]">
@@ -301,7 +302,7 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                     <option value="r2" <?php if(($options['upload.cloud_driver'] ?? '') === 'r2') echo 'selected';?>>Cloudflare R2</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 js-both-only">
                                 <label for="upload.public_base" class="form-label small">双写模式前台使用的地址</label>
                                 <select class="form-select form-select-sm" id="upload.public_base"
                                         name="options[upload.public_base]">
@@ -310,7 +311,10 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 </select>
                             </div>
 
-                            <div class="col-12"><hr class="my-2"><h6 class="small fw-semibold mb-2 text-muted">阿里云 OSS</h6></div>
+                            <div class="col-12 js-provider-block" data-provider="oss" style="display:none;">
+                                <div class="border rounded p-2 bg-body-tertiary">
+                                <h6 class="small fw-semibold mb-2">阿里云 OSS</h6>
+                                <div class="row g-2">
                             <div class="col-md-6">
                                 <label for="upload.oss_bucket" class="form-label small">Bucket 名称</label>
                                 <input type="text" class="form-control form-control-sm" id="upload.oss_bucket"
@@ -332,8 +336,13 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 <input type="text" class="form-control form-control-sm" id="upload.oss_prefix"
                                        name="options[upload.oss_prefix]" value="<?php echo e($options['upload.oss_prefix'] ?? ''); ?>" placeholder="cms" />
                             </div>
+                                </div></div>
+                            </div>
 
-                            <div class="col-12"><hr class="my-2"><h6 class="small fw-semibold mb-2 text-muted">腾讯云 COS</h6></div>
+                            <div class="col-12 js-provider-block" data-provider="cos" style="display:none;">
+                                <div class="border rounded p-2 bg-body-tertiary">
+                                <h6 class="small fw-semibold mb-2">腾讯云 COS</h6>
+                                <div class="row g-2">
                             <div class="col-md-6">
                                 <label for="upload.cos_bucket" class="form-label small">Bucket 名称</label>
                                 <input type="text" class="form-control form-control-sm" id="upload.cos_bucket"
@@ -364,8 +373,13 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 </select>
                                 <div class="form-text">选「数据万象」需在 COS 控制台开启图片处理，缩略图由云端生成。</div>
                             </div>
+                                </div></div>
+                            </div>
 
-                            <div class="col-12"><hr class="my-2"><h6 class="small fw-semibold mb-2 text-muted">Cloudflare R2</h6></div>
+                            <div class="col-12 js-provider-block" data-provider="r2" style="display:none;">
+                                <div class="border rounded p-2 bg-body-tertiary">
+                                <h6 class="small fw-semibold mb-2">Cloudflare R2</h6>
+                                <div class="row g-2">
                             <div class="col-md-6">
                                 <label for="upload.r2_account_id" class="form-label small">Account ID</label>
                                 <input type="text" class="form-control form-control-sm" id="upload.r2_account_id"
@@ -396,8 +410,10 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 </select>
                                 <div class="form-text">选「Image Resizing」需公开地址为经 Cloudflare 代理的域名，并开通 Image Resizing。</div>
                             </div>
+                                </div></div>
+                            </div>
 
-                            <div class="col-12">
+                            <div class="col-12 js-cloud-only">
                                 <div class="alert alert-light border py-2 small mb-2">
                                     各厂商均自签鉴权、无需安装 SDK。密钥不在此处保存，请配置
                                     <code>config/storage.php</code> 或环境变量：OSS 用
@@ -414,6 +430,25 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                         </div>
                         <script>
                             $(function () {
+                                // 按存储模式显示对应配置：仅当前云厂商的面板可见
+                                function updateUploadPanels() {
+                                    // 注意：控件 id 含点号（upload.storage_mode），
+                                    // jQuery 选择器里会被当成 class，必须用 getElementById 取
+                                    var mode = document.getElementById('upload.storage_mode').value;
+                                    var driver = document.getElementById('upload.cloud_driver').value || 'oss';
+                                    var isBoth = mode === 'both';
+                                    var isCloud = isBoth || mode === 'oss' || mode === 'cos' || mode === 'r2';
+                                    $('#upload-tab-pane .js-both-only').toggle(isBoth);
+                                    $('#upload-tab-pane .js-cloud-only').toggle(isCloud);
+                                    $('#upload-tab-pane .js-provider-block').each(function () {
+                                        var p = $(this).data('provider');
+                                        $(this).toggle(isCloud && (isBoth ? driver === p : mode === p));
+                                    });
+                                }
+                                $(document.getElementById('upload.storage_mode')).on('change', updateUploadPanels);
+                                $(document.getElementById('upload.cloud_driver')).on('change', updateUploadPanels);
+                                updateUploadPanels();
+
                                 $('#storageTestBtn').on('click', function () {
                                     var $btn = $(this), $out = $('#storageTestResult');
                                     $btn.prop('disabled', true);
