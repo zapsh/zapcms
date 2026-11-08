@@ -51,7 +51,8 @@ class SearchController extends Controller
         // limit
         $query->limit($page->getLimit(),$page->getOffset());
         view('search',[
-            'data_list'=> \zapcms\services\Translator::applyBatch(
+            // 多语言：按当前语言套用译文；「无译文不显示」策略时自动剔除未翻译条目
+            'data_list'=> \zapcms\services\Translator::applyList(
                 $query->get(FETCH_ASSOC),
                 null,
                 \zapcms\services\Translator::TYPE_NODE,

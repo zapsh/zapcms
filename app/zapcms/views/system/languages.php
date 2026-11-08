@@ -94,6 +94,48 @@ $this->layout('layouts/common');
                                    placeholder="如 pt-BR，留空则不添加">
                             <div class="form-text">支持 BCP-47 写法，如 <code>zh-TW</code>、<code>pt-BR</code></div>
                         </div>
+
+                        <hr>
+                        <?php
+                        $nodeStrategy    = $node_strategy ?? 'fallback';
+                        $catalogStrategy = $catalog_strategy ?? 'fallback';
+                        ?>
+                        <label class="form-label fw-semibold">内容无译文时的处理</label>
+                        <div class="form-check mb-1">
+                            <input class="form-check-input" type="radio" name="node_strategy" id="node_strategy_fallback"
+                                   value="fallback" <?php echo $nodeStrategy !== 'hide' ? 'checked' : ''; ?>>
+                            <label class="form-check-label" for="node_strategy_fallback">
+                                回退默认语言
+                                <small class="d-block text-muted">访问无译文的内容时显示默认语言原文（标题/摘要/正文逐字段回退）</small>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="node_strategy" id="node_strategy_hide"
+                                   value="hide" <?php echo $nodeStrategy === 'hide' ? 'checked' : ''; ?>>
+                            <label class="form-check-label" for="node_strategy_hide">
+                                不显示该内容
+                                <small class="d-block text-muted">发布新闻等内容尚未翻译时，前台列表不出现该条目，详情页按 404 处理；后台管理列表不受影响</small>
+                            </label>
+                        </div>
+
+                        <hr>
+                        <label class="form-label fw-semibold">栏目无译文时的处理</label>
+                        <div class="form-check mb-1">
+                            <input class="form-check-input" type="radio" name="catalog_strategy" id="catalog_strategy_fallback"
+                                   value="fallback" <?php echo $catalogStrategy !== 'hide' ? 'checked' : ''; ?>>
+                            <label class="form-check-label" for="catalog_strategy_fallback">
+                                回退默认语言
+                                <small class="d-block text-muted">栏目未翻译时显示默认语言名称，导航结构保持完整</small>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="catalog_strategy" id="catalog_strategy_hide"
+                                   value="hide" <?php echo $catalogStrategy === 'hide' ? 'checked' : ''; ?>>
+                            <label class="form-check-label" for="catalog_strategy_hide">
+                                不显示该栏目
+                                <small class="d-block text-muted">未翻译的栏目连同子栏目从导航菜单中隐藏，栏目页按 404 处理</small>
+                            </label>
+                        </div>
                     </form>
 
                     <button type="button" id="save-languages" class="btn btn-primary">
@@ -176,6 +218,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (checked) {
             payload.append('default_locale', checked.value);
         }
+
+        ['node_strategy', 'catalog_strategy'].forEach(function (name) {
+            var checked = document.querySelector('input[name="' + name + '"]:checked');
+            payload.append(name, checked ? checked.value : 'fallback');
+        });
 
         var custom = document.getElementById('custom_locale');
         if (custom && custom.value.trim() !== '') {

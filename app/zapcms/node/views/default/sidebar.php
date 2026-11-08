@@ -1,7 +1,9 @@
 <?php
 use zap\facades\Url;
 use zapcms\services\Catalog;
+use zapcms\services\Locale;
 use zapcms\services\MenuItem;
+use zapcms\services\Translator;
 use zapcms\models\Node;
 
 /**
@@ -17,6 +19,67 @@ $menu = $menu ?? Catalog::instance();
 $catalogId = intval($catalogId ?? 0);
 
 if (!function_exists('contentNavNodeFromCatalog')) {
+    /**
+     * 多语言：栏目树标题套用当前后台语言译文（一次批量查询，无 N+1）。
+     * 未开启多语言或当前为默认语言时原样返回，零额外查询。
+     * 栏目译文统一按 node 维度存放（object_id 与栏目 id 相同）。
+     */
+    function contentNavTranslateTree(array $rows): array
+    {
+        if ($rows === [] || !Locale::enabled()) {
+            return $rows;
+        }
+        $locale = Locale::current();
+        if ($locale === Locale::defaultLocale()) {
+            return $rows;
+        }
+
+        // 递归收集全部节点 id
+        $ids = [];
+        $collect = function (array $items) use (&$collect, &$ids): void {
+            foreach ($items as $item) {
+                $id = (int) ($item['id'] ?? 0);
+                if ($id > 0) {
+                    $ids[$id] = $id;
+                }
+                if (!empty($item['children']) && is_array($item['children'])) {
+                    $collect($item['children']);
+                }
+            }
+        };
+        $collect($rows);
+
+        $map = Translator::getMap(Translator::TYPE_NODE, array_values($ids), $locale);
+        if ($map === []) {
+            return $rows;
+        }
+
+        $apply = function (array $items) use (&$apply, $map, $locale): array {
+            foreach ($items as $k => $item) {
+                $t = $map[(int) ($item['id'] ?? 0)] ?? null;
+                if ($t !== null) {
+                    $items[$k] = Translator::applyWith($item, $t, $locale, ['title']);
+                }
+                if (!empty($item['children']) && is_array($item['children'])) {
+                    $items[$k]['children'] = $apply($item['children']);
+                }
+            }
+            return $items;
+        };
+        return $apply($rows);
+    }
+
+    /**
+     * 多语言：单行栏目/节点标题套用当前语言译文（菜单引用单条记录的场景）
+     */
+    function contentNavTranslateRow(array $row): array
+    {
+        if ($row === [] || !Locale::enabled()) {
+            return $row;
+        }
+        return Translator::apply($row, null, Translator::TYPE_NODE, ['title']);
+    }
+
     /**
      * 把栏目行归一化为导航节点（含 link-url 解析）
      */
@@ -73,7 +136,8 @@ if (!function_exists('contentNavNodeFromCatalog')) {
 
                 if ($type === 'catalog' && $ref > 0) {
                     if (!array_key_exists($ref, $catCache)) {
-                        $catCache[$ref] = $menu->get($ref);
+                        // 多语言：菜单引用的栏目标题按当前语言取译文（catCache 记忆化，每个栏目只查一次）
+                        $catCache[$ref] = contentNavTranslateRow((array) $menu->get($ref));
                     }
                     $cat = $catCache[$ref];
                     if (empty($cat)) {
@@ -85,8 +149,10 @@ if (!function_exists('contentNavNodeFromCatalog')) {
                     if (empty($targetNode)) {
                         continue;
                     }
+                    // 菜单项未自定义标题时取节点标题，并按当前语言取译文
+                    $fallbackTitle = contentNavTranslateRow(['id' => $ref, 'title' => $targetNode->title ?? ''])['title'] ?? '';
                     $node = [
-                        'title'    => $it['title'] ?: ($targetNode->title ?? ''),
+                        'title'    => $it['title'] ?: $fallbackTitle,
                         'url'      => Url::action("Node@{$targetNode->node_type}/edit/{$ref}"),
                         'icon'     => $icon ?: 'far fa-file-alt',
                         'active'   => false,
@@ -135,7 +201,8 @@ if (!function_exists('contentNavNodeFromCatalog')) {
             }
             return $out;
         };
-        return $build($menu->getTreeArray());
+        // 多语言：整棵树的标题先批量套用译文（getMap 一次查询，无 N+1）
+        return $build(contentNavTranslateTree($menu->getTreeArray()));
     }
 
     function contentNavHasActive(array $node): bool

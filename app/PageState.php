@@ -278,6 +278,7 @@ class PageState extends ArrayObject
      * 给栏目菜单树叠加当前语言的译文（递归 children）
      *
      * 先一次性取出整棵树用到的译文，避免逐条查询。
+     * 栏目策略为 hide 时，未翻译的栏目（连同子树）从树里剔除。
      *
      * @param mixed $rows
      * @return mixed
@@ -299,12 +300,14 @@ class PageState extends ArrayObject
             return $rows;
         }
 
+        $hide = Translator::hideMissing($locale, 'catalog');
+
         $map = Translator::getMap(Translator::TYPE_NODE, array_values($ids), $locale);
-        if ($map === []) {
+        if ($map === [] && !$hide) {
             return $rows;
         }
 
-        return $this->translateTreeRows($rows, $map, $locale);
+        return $this->translateTreeRows($rows, $map, $locale, $hide);
     }
 
     /**
@@ -328,24 +331,32 @@ class PageState extends ArrayObject
 
     /**
      * 按预取的译文映射递归改写树
+     *
+     * @param bool $hide 栏目策略为 hide 时，未翻译的栏目整支剔除（子孙随父级隐藏）
      */
-    protected function translateTreeRows(array $rows, array $map, string $locale): array
+    protected function translateTreeRows(array $rows, array $map, string $locale, bool $hide = false): array
     {
-        foreach ($rows as $key => $row) {
+        $result = [];
+        foreach ($rows as $row) {
             if (!is_array($row)) {
+                $result[] = $row;
                 continue;
             }
             $translation = $map[(int) ($row['id'] ?? 0)] ?? null;
             if ($translation !== null) {
                 $row = Translator::applyWith($row, $translation, $locale);
             }
-            if (!empty($row['children']) && is_array($row['children'])) {
-                $row['children'] = $this->translateTreeRows($row['children'], $map, $locale);
+            // 自定义链接（无节点 id）不参与剔除；未翻译的栏目在 hide 下整支丢弃
+            if ($hide && (int) ($row['id'] ?? 0) > 0 && empty($row['_translated'])) {
+                continue;
             }
-            $rows[$key] = $row;
+            if (!empty($row['children']) && is_array($row['children'])) {
+                $row['children'] = $this->translateTreeRows($row['children'], $map, $locale, $hide);
+            }
+            $result[] = $row;
         }
 
-        return $rows;
+        return $result;
     }
 
     /**

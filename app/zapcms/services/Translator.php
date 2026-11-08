@@ -195,7 +195,8 @@ class Translator
      */
     public static function apply(array $row, ?string $locale = null, string $objectType = self::TYPE_NODE, ?array $fields = null): array
     {
-        if ($row === []) {
+        if ($row === [] || !Locale::enabled()) {
+            // 未开启多语言：直接用主表（默认语言）数据，不查译文子表
             return $row;
         }
 
@@ -255,7 +256,7 @@ class Translator
     public static function getMap(string $objectType, array $objectIds, ?string $locale = null): array
     {
         $locale = static::resolveLocale($locale);
-        if ($objectIds === [] || $locale === Locale::defaultLocale()) {
+        if (!Locale::enabled() || $objectIds === [] || $locale === Locale::defaultLocale()) {
             return [];
         }
 
@@ -296,7 +297,8 @@ class Translator
      */
     public static function applyBatch(array $rows, ?string $locale = null, string $objectType = self::TYPE_NODE, ?array $fields = null): array
     {
-        if ($rows === []) {
+        if ($rows === [] || !Locale::enabled()) {
+            // 未开启多语言：直接用主表（默认语言）数据，不查译文子表
             return $rows;
         }
 
@@ -335,6 +337,63 @@ class Translator
     protected static function resolveLocale(?string $locale): string
     {
         return $locale !== null ? Locale::normalize($locale) : Locale::current();
+    }
+
+    /**
+     * 无译文处理是否为「不显示」：多语言开启 + 当前语言非默认 + 对应作用域策略为 hide。
+     *
+     * @param string $scope 'node' 内容 / 'catalog' 栏目
+     */
+    public static function hideMissing(?string $locale = null, string $scope = 'node'): bool
+    {
+        $strategy = $scope === 'catalog' ? Locale::catalogStrategy() : Locale::nodeStrategy();
+        return Locale::enabled()
+            && $strategy === 'hide'
+            && static::resolveLocale($locale) !== Locale::defaultLocale();
+    }
+
+    /**
+     * 前台列表专用：套用译文 + 按无译文策略处理。
+     *
+     * fallback（默认）：无译文行回退默认语言原文（原行为）；
+     * hide：无译文的行直接剔除，不出现在列表里。
+     * 后台管理列表请继续使用 applyBatch()（始终回退，管理员需要看到全部内容）。
+     *
+     * 注意：hide 的剔除发生在 SQL 分页之后，最后一页条数可能少于每页数量；
+     * 需要精确分页时可升级为查询层过滤（translations 子表 whereIn）。
+     *
+     * @param string $scope 无译文策略作用域：'node' 内容 / 'catalog' 栏目
+     */
+    public static function applyList(array $rows, ?string $locale = null, string $objectType = self::TYPE_NODE, ?array $fields = null, string $scope = 'node'): array
+    {
+        $rows = static::applyBatch($rows, $locale, $objectType, $fields);
+        if ($rows === [] || !static::hideMissing($locale, $scope)) {
+            return $rows;
+        }
+        return array_values(array_filter(
+            $rows,
+            static fn (array $row): bool => !empty($row['_translated'])
+        ));
+    }
+
+    /**
+     * 前台详情专用：套用译文 + 按无译文策略处理。
+     *
+     * hide 策略下无译文时返回 null，调用方按「未找到」处理（404）；
+     * 其余情况与 apply() 一致（无译文回退默认语言原文）。
+     *
+     * @param string $scope 无译文策略作用域：'node' 内容 / 'catalog' 栏目
+     */
+    public static function applyDetail(array $row, ?string $locale = null, string $objectType = self::TYPE_NODE, string $scope = 'node'): ?array
+    {
+        $row = static::apply($row, $locale, $objectType);
+        if ($row === []) {
+            return null;
+        }
+        if (static::hideMissing($locale, $scope) && empty($row['_translated'])) {
+            return null;
+        }
+        return $row;
     }
 
     /**

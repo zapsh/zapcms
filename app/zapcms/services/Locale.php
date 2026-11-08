@@ -22,6 +22,12 @@ class Locale
     const OPTION_AVAILABLE = 'languages.available';
     /** 默认语言存放的 option key */
     const OPTION_DEFAULT = 'languages.default';
+    /** 无译文处理策略存放的 option key（旧版统一策略，仅作兼容兜底） */
+    const OPTION_STRATEGY = 'languages.missing_strategy';
+    /** 内容（node）无译文策略存放的 option key */
+    const OPTION_NODE_STRATEGY = 'languages.node_strategy';
+    /** 栏目（catalog）无译文策略存放的 option key */
+    const OPTION_CATALOG_STRATEGY = 'languages.catalog_strategy';
 
     /** 未配置时使用的语言 */
     const FALLBACK_LOCALE = 'zh-CN';
@@ -195,6 +201,54 @@ class Locale
     public static function enabled(): bool
     {
         return count(static::available()) > 1;
+    }
+
+    /**
+     * 无译文处理策略（旧版统一 key）：fallback = 回退默认语言原文；hide = 该内容不显示。
+     *
+     * 现已拆分为 nodeStrategy() / catalogStrategy()，本方法仅在这两者
+     * 未单独配置时作为兼容兜底，保证升级后行为不变。
+     */
+    public static function missingStrategy(): string
+    {
+        try {
+            $value = trim(static::cachedOption(static::OPTION_STRATEGY, 'fallback'));
+        } catch (Throwable $e) {
+            return 'fallback';
+        }
+        return $value === 'hide' ? 'hide' : 'fallback';
+    }
+
+    /**
+     * 内容（node）无译文策略：fallback / hide
+     */
+    public static function nodeStrategy(): string
+    {
+        return static::scopeStrategy(static::OPTION_NODE_STRATEGY);
+    }
+
+    /**
+     * 栏目（catalog）无译文策略：fallback / hide
+     */
+    public static function catalogStrategy(): string
+    {
+        return static::scopeStrategy(static::OPTION_CATALOG_STRATEGY);
+    }
+
+    /**
+     * 读取作用域策略；未单独配置时沿用旧版统一策略
+     */
+    protected static function scopeStrategy(string $key): string
+    {
+        try {
+            $value = trim(static::cachedOption($key, ''));
+        } catch (Throwable $e) {
+            return 'fallback';
+        }
+        if ($value === '') {
+            return static::missingStrategy();
+        }
+        return $value === 'hide' ? 'hide' : 'fallback';
     }
 
     /**
@@ -448,9 +502,11 @@ class Locale
      *
      * @param string[]    $locales
      * @param string|null $default
+     * @param string|null $nodeStrategy    内容无译文策略（fallback / hide）；null = 保持不变
+     * @param string|null $catalogStrategy 栏目无译文策略（fallback / hide）；null = 保持不变
      * @return string[] 实际生效的可用语言
      */
-    public static function save(array $locales, ?string $default = null): array
+    public static function save(array $locales, ?string $default = null, ?string $nodeStrategy = null, ?string $catalogStrategy = null): array
     {
         $clean = [];
         foreach ($locales as $code) {
@@ -470,6 +526,14 @@ class Locale
 
         Option::replace(static::OPTION_AVAILABLE, json_encode($clean, JSON_UNESCAPED_UNICODE), 0, 1);
         Option::replace(static::OPTION_DEFAULT, $default, 0, 1);
+        foreach ([
+            static::OPTION_NODE_STRATEGY    => $nodeStrategy,
+            static::OPTION_CATALOG_STRATEGY => $catalogStrategy,
+        ] as $key => $value) {
+            if ($value !== null) {
+                Option::replace($key, $value === 'hide' ? 'hide' : 'fallback', 0, 1);
+            }
+        }
 
         static::forgetCache();
 
@@ -489,6 +553,9 @@ class Locale
             // cachedOption() 直接用 option 名作为 key，这里逐个失效
             Cache::delete(static::OPTION_AVAILABLE);
             Cache::delete(static::OPTION_DEFAULT);
+            Cache::delete(static::OPTION_STRATEGY);
+            Cache::delete(static::OPTION_NODE_STRATEGY);
+            Cache::delete(static::OPTION_CATALOG_STRATEGY);
             // option('languages.*') 走 get_options() 的分组缓存，也要失效
             Cache::delete(static::CACHE_GROUP_KEY);
 

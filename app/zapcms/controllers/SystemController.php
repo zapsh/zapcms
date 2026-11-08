@@ -838,7 +838,16 @@ class SystemController extends AdminController
                 return;
             }
 
-            Locale::save($list, $default !== '' ? $default : null);
+            // 无译文处理策略（内容 / 栏目独立配置）：fallback = 回退默认语言 / hide = 不显示
+            $nodeStrategy    = (string) Request::post('node_strategy', 'fallback');
+            $catalogStrategy = (string) Request::post('catalog_strategy', 'fallback');
+
+            Locale::save(
+                $list,
+                $default !== '' ? $default : null,
+                $nodeStrategy === 'hide' ? 'hide' : 'fallback',
+                $catalogStrategy === 'hide' ? 'hide' : 'fallback'
+            );
 
             Response::json([
                 'code'    => 0,
@@ -856,10 +865,12 @@ class SystemController extends AdminController
                 ['title' => '设置'],
                 ['title' => '多语言设置'],
             ],
-            'locales'        => Locale::all(),
-            'default_locale' => Locale::defaultLocale(),
-            'known_locales'  => Locale::knownCodes(),
-            'enabled'        => Locale::enabled(),
+            'locales'         => Locale::all(),
+            'default_locale'  => Locale::defaultLocale(),
+            'known_locales'   => Locale::knownCodes(),
+            'enabled'          => Locale::enabled(),
+            'node_strategy'    => Locale::nodeStrategy(),
+            'catalog_strategy' => Locale::catalogStrategy(),
         ];
 
         \view('system.languages', $data);

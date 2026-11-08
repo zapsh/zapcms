@@ -317,7 +317,8 @@ class Startup
                     ->where('status', Node::STATUS_PUBLISH)
                     ->fetch(FETCH_ASSOC);
                 if ($node) {
-                    return Translator::apply($node, $locale);
+                    // 「无译文不显示」策略下无译文返回 null → 路由按未找到处理（404）
+                    return Translator::applyDetail($node, $locale, Translator::TYPE_NODE, self::strategyScopeOf($node));
                 }
             }
         }
@@ -330,7 +331,15 @@ class Startup
             return null;
         }
 
-        return Translator::apply($node, $locale);
+        return Translator::applyDetail($node, $locale, Translator::TYPE_NODE, self::strategyScopeOf($node));
+    }
+
+    /**
+     * 节点的无译文策略作用域：栏目节点用栏目策略，其余用内容策略
+     */
+    private static function strategyScopeOf(array $node): string
+    {
+        return ($node['node_type'] ?? '') === 'catalog' ? 'catalog' : 'node';
     }
 
     /**
@@ -359,7 +368,7 @@ class Startup
         $node = Node::where('id', $id)
             ->where('status', Node::STATUS_PUBLISH)
             ->fetch(FETCH_ASSOC);
-        return $node ? Translator::apply($node, Locale::current()) : null;
+        return $node ? Translator::applyDetail($node, Locale::current(), Translator::TYPE_NODE, self::strategyScopeOf($node)) : null;
     }
 
     /**

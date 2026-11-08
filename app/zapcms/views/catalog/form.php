@@ -41,6 +41,13 @@ use zapcms\services\NodeType;
             <label for="catalog_node_type" class="form-label small">内容模型</label>
             <select class="form-select form-select-sm" id="catalog_node_type" name="catalog[node_type]" onchange="chNodeType(this)">
                 <?php foreach (NodeType::getNodeTypes() as $key => $row): ?>
+                    <?php
+                    // 虚拟类型（link-url）暂不提供新建；编辑已是该类型的栏目时仍显示，避免类型被悄悄改掉
+                    if (NodeType::isVirtual((string) $row['type_name'])
+                        && $row['type_name'] !== ($catalog['node_type'] ?? '')) {
+                        continue;
+                    }
+                    ?>
                     <option value="<?php echo e($row['type_name']); ?>" <?php echo $row['type_name'] == ($catalog['node_type'] ?? '') ? 'selected' : null; ?>>
                         <?php echo e($row['title']); ?>
                     </option>

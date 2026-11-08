@@ -137,8 +137,9 @@ class CatalogController extends Controller
                 $view->page = $page->setTotal($query->count('n.id'));
                 $query->limit($page->getLimit())->offset($page->getOffset());
                 $nodes = $query->get(FETCH_ASSOC);
-                // 列表节点套用当前语言译文（只需标题/别名/摘要，不取正文避免列表查询过重）
-                $nodes = \zapcms\services\Translator::applyBatch($nodes, null, \zapcms\services\Translator::TYPE_NODE, ['title', 'slug', 'excerpt']);
+                // 列表节点套用当前语言译文（只需标题/别名/摘要，不取正文避免列表查询过重）；
+                // 多语言设置为「无译文不显示」时自动剔除未翻译条目
+                $nodes = \zapcms\services\Translator::applyList($nodes, null, \zapcms\services\Translator::TYPE_NODE, ['title', 'slug', 'excerpt']);
                 $node_list_columns = \zapcms\services\NodeType::getConfig(pageState()->nodeMimeType,'list_columns',[]);
                 // 批量加载 node_meta（如产品价格 price）附加到列表节点，避免 N+1 查询
                 $view->nodes = NodeMeta::attachList($nodes, $node_list_columns);

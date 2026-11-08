@@ -72,6 +72,14 @@ class AbstractNodeType
         $conditions['limit'] = [$page->getLimit(),$page->getOffset()];
         $conditions = apply_filters('node_get_all_conditions',$conditions);
         $data['data'] = $this->getAll($conditions);
+        // 多语言开启时，列表按当前后台语言套用译文（仅标题/别名/摘要，未翻译字段
+        // 回退主表原文；未开启多语言或当前为默认语言时 applyBatch 原样返回、零额外查询）
+        $data['data'] = Translator::applyBatch(
+            $data['data'],
+            null,
+            Translator::TYPE_NODE,
+            ['title', 'slug', 'excerpt']
+        );
         // 列表默认展示的自定义字段列（node_meta 键，来自显示配置勾选）
         $data['list_columns'] = $this->getListColumns();
         if (!empty($data['list_columns'])) {
