@@ -13,8 +13,9 @@ use zap\DB;
  * 支持：
  *   - sitemap 索引（sitemap.xml）
  *   - 按内容类型分文件：catalog / page / article / product / faq
+ *   - 栏目跟随前台导航（menu_items）：只收录菜单可达的栏目
  *   - slug 优先 → 回退 ID → 回退 nodeObj 参数
- *   - 自动排除 link-url 栏目、草稿/软删除/回收站
+ *   - 自动排除草稿/软删除/回收站
  *   - 按 pub_time / update_time 输出 <lastmod>
  *   - 合理的 <changefreq> + <priority>
  */
@@ -263,11 +264,6 @@ class Sitemap
         $slug     = $entry['slug'] ?? '';
         $id       = (int) ($entry['id'] ?? 0);
 
-        // 链接型栏目（历史 link-url 数据已清理）不纳入 sitemap
-        if ($nodeType === 'link-url' || $slug === '--zap-link-url') {
-            return '';
-        }
-
         // 使用 build_permalink（支持固定链接结构）
         if (function_exists('build_permalink')) {
             return \build_permalink($entry);
@@ -352,12 +348,16 @@ class Sitemap
         $catalogTable = static::catalogTable();
     
         if ($nodeType === 'catalog') {
+            // 前台导航由 menu_items 驱动：只收录出现在任一菜单中的栏目（导航可达），
+            // 未挂菜单的栏目访问者无法发现，不纳入 sitemap。
             // catalog 表的 level 字段需要在节点表之外 JOIN 获取
             $sql = "SELECT n.id, n.slug, n.node_type, n.mime_type, c.level, n.add_time, n.pub_time, n.update_time"
                  . " FROM {{$table}} n"
+                 . " INNER JOIN {{menu_items}} mi ON mi.item_type = 'catalog' AND mi.ref_id = n.id"
                  . " LEFT JOIN {{$catalogTable}} c ON c.id = n.id"
                  . " WHERE n.node_type = ? AND n.status = ?"
                  . " AND n.slug IS NOT NULL AND n.slug != ''"
+                 . " GROUP BY n.id"
                  . " ORDER BY n.sort_order ASC, n.id ASC"
                  . " LIMIT " . (int) $limit;
         } else {
@@ -374,6 +374,16 @@ class Sitemap
     protected function countPublishedByType(string $nodeType): int
     {
         $table = static::nodeTable();
+        if ($nodeType === 'catalog') {
+            // 与 fetchPublishedByType 对齐：仅统计菜单可达的栏目
+            $row = DB::fetch(
+                "SELECT COUNT(DISTINCT n.id) AS c FROM {{$table}} n"
+                . " INNER JOIN {{menu_items}} mi ON mi.item_type = 'catalog' AND mi.ref_id = n.id"
+                . " WHERE n.node_type = ? AND n.status = ?",
+                [$nodeType, Node::STATUS_PUBLISH]
+            );
+            return (int) ($row['c'] ?? 0);
+        }
         $row = DB::fetch(
             "SELECT COUNT(*) AS c FROM {{$table}} WHERE node_type = ? AND status = ?",
             [$nodeType, Node::STATUS_PUBLISH]
