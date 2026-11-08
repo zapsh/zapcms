@@ -64,11 +64,27 @@ class AbstractNodeType
             ]
         ];
         $this->catalogId && $conditions['where']['nr.catalog_id']= $this->catalogId;
+
+        // ── 列表筛选：搜索（标题/别名模糊）+ 状态 ──────────────
+        $keyword = trim((string)Request::get('s', ''));
+        if ($keyword !== '') {
+            // 包一层数组：prepareConditions 用 where(...$value) 展开，闭包须作为单参传入
+            $conditions['where'][] = [function ($q) use ($keyword) {
+                $q->where('n.title', 'LIKE', "%{$keyword}%")
+                  ->orWhere('n.slug', 'LIKE', "%{$keyword}%");
+            }];
+        }
+        $statusFilter = (string)Request::get('status', '');
+        if (in_array($statusFilter, [Node::STATUS_PUBLISH, Node::STATUS_DRAFT, Node::STATUS_TRASH, Node::STATUS_SOFT_DELETE], true)) {
+            $conditions['where']['n.status'] = $statusFilter;
+        }
+
         $conditions = apply_filters('node_total_conditions',$conditions);
         // 后台列表分页数量与前台统一走模型显示配置 list_per_page
         $perPage = max(1, (int)NodeType::getConfig((string)$this->nodeType, 'list_per_page', 20));
         $page = $this->usePageHelper($this->getTotalRows($conditions), 'page', $perPage);
-        $conditions['orderBy'] = 'id desc';
+        // ── 排序：白名单校验 + n. 前缀（cid 时 join 两表都有 id 列，裸写会歧义）──
+        $conditions['orderBy'] = $this->resolveOrderBy((string)Request::get('sort', ''));
         $conditions['limit'] = [$page->getLimit(),$page->getOffset()];
         $conditions = apply_filters('node_get_all_conditions',$conditions);
         $data['data'] = $this->getAll($conditions);
@@ -342,6 +358,8 @@ class AbstractNodeType
             }
             // 删除多语言译文（translations）
             Translator::deleteAll(Translator::TYPE_NODE, $id);
+            // 清理栏目关联（node_relation），避免悬空行
+            NodeRelation::delete(['node_id' => $id]);
             $affId = Node::delete($id);
             if($affId){
                 session()->flash('success', $this->title . '删除成功');
@@ -420,6 +438,106 @@ class AbstractNodeType
                 ->select('catalog_id')->orderBy('catalog_id desc')->fetchColumn();
         }
         return Catalog::instance()->getCatalogPathById($this->catalogId);
+    }
+
+    /**
+     * 列表排序列白名单（列头排序），未匹配回退 ID 倒序
+     */
+    protected function resolveOrderBy(string $sort): string
+    {
+        $map = [
+            'id'          => 'n.id desc',
+            'id_asc'      => 'n.id asc',
+            'pub_time'    => 'n.pub_time desc',
+            'pub_time_asc'=> 'n.pub_time asc',
+        ];
+        return $map[$sort] ?? 'n.id desc';
+    }
+
+    /**
+     * 批量操作：发布 / 下架(转草稿) / 删除 / 移动到栏目
+     *
+     * POST: batch_action=publish|draft|delete|move, ids=[...], catalog_id(仅 move)
+     */
+    function batch(){
+        if (!Request::isPost()) {
+            Response::json(['code' => 1, 'msg' => '非法请求']);
+            return;
+        }
+        $action = (string)Request::post('batch_action', '');
+        $ids = array_values(array_filter(array_unique(array_map('intval', (array)Request::post('ids', [])))));
+        if ($ids === []) {
+            Response::json(['code' => 1, 'msg' => '请先勾选要操作的内容']);
+            return;
+        }
+
+        // 只允许操作当前模型的节点（防止跨模型误伤），一次查询完成过滤
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        $valid = array_map('intval', array_column(
+            DB::query("SELECT id FROM {node} WHERE id IN ({$ph}) AND node_type = ?", array_merge($ids, [$this->nodeType]))->fetchAll(),
+            'id'
+        ));
+        if ($valid === []) {
+            Response::json(['code' => 1, 'msg' => '所选内容不存在或类型不符']);
+            return;
+        }
+        $ph = implode(',', array_fill(0, count($valid), '?'));
+        $now = time();
+
+        switch ($action) {
+            case 'publish':
+            case 'draft':
+                $status = $action === 'publish' ? Node::STATUS_PUBLISH : Node::STATUS_DRAFT;
+                DB::query(
+                    "UPDATE {node} SET status = ?, update_time = ? WHERE id IN ({$ph})",
+                    array_merge([$status, $now], $valid)
+                );
+                AdminLog::info(
+                    AdminLog::CATEGORY_CONTENT,
+                    '批量' . ($action === 'publish' ? '发布' : '下架') . $this->title,
+                    'IDs: ' . implode(',', $valid)
+                );
+                Response::json(['code' => 0, 'msg' => '已批量' . ($action === 'publish' ? '发布' : '下架') . ' ' . count($valid) . ' 条']);
+                return;
+
+            case 'delete':
+                $delPh = implode(',', array_fill(0, count($valid), '?'));
+                DB::query("DELETE FROM {node_meta} WHERE object_id IN ({$delPh})", $valid);
+                foreach ($valid as $id) {
+                    Translator::deleteAll(Translator::TYPE_NODE, $id);
+                }
+                DB::query("DELETE FROM {node_relation} WHERE node_id IN ({$delPh})", $valid);
+                DB::query("DELETE FROM {node} WHERE id IN ({$delPh})", $valid);
+                AdminLog::warning(
+                    AdminLog::CATEGORY_CONTENT,
+                    '批量删除' . $this->title,
+                    'IDs: ' . implode(',', $valid)
+                );
+                Response::json(['code' => 0, 'msg' => '已批量删除 ' . count($valid) . ' 条']);
+                return;
+
+            case 'move':
+                $catalogId = intval(Request::post('catalog_id', 0));
+                $catalog = Catalog::instance()->get($catalogId);
+                if (empty($catalog)) {
+                    Response::json(['code' => 1, 'msg' => '目标栏目不存在']);
+                    return;
+                }
+                $level = (int)($catalog['level'] ?? 1);
+                DB::query("DELETE FROM {node_relation} WHERE node_id IN ({$ph})", $valid);
+                foreach ($valid as $id) {
+                    NodeRelation::create(['node_id' => $id, 'catalog_id' => $catalogId, 'level' => $level]);
+                }
+                AdminLog::info(
+                    AdminLog::CATEGORY_CONTENT,
+                    '批量移动' . $this->title,
+                    'IDs: ' . implode(',', $valid) . " → 栏目「{$catalog['title']}」(#{$catalogId})"
+                );
+                Response::json(['code' => 0, 'msg' => '已移动 ' . count($valid) . ' 条到「' . $catalog['title'] . '」']);
+                return;
+        }
+
+        Response::json(['code' => 1, 'msg' => '未知的批量操作']);
     }
 
     protected function usePageHelper($total,$pageKeyName = 'page',$limit = 20 , $query = null): Pagination

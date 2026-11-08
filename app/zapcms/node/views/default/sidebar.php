@@ -93,6 +93,7 @@ if (!function_exists('contentNavNodeFromCatalog')) {
             'url'         => $url,
             'icon'        => $icon,
             'active'      => intval($cat['id']) === $catalogId,
+            'cid'         => intval($cat['id'] ?? 0),
             'children'    => $children,
         ];
     }
@@ -216,7 +217,7 @@ if (!function_exists('contentNavNodeFromCatalog')) {
             $isExpanded  = $isActive || contentNavHasActive($node);
             $paddingLeft = $indentMap[$level] ?? (2.5 + ($level - 2) * 2);
     ?>
-    <div class="tree-node">
+    <div class="tree-node"<?php echo ($node['cid'] ?? 0) > 0 ? ' data-cid="' . e($node['cid']) . '"' : ''; ?>>
         <a href="<?php echo e($node['url']); ?>"
            class="list-group-item list-group-item-action border-0 d-flex align-items-center <?php echo $isActive ? 'active' : ''; ?>"
            style="padding-left: <?php echo e($paddingLeft); ?>rem;">
@@ -259,22 +260,50 @@ if (empty($navNodes)) {
 </div>
 
 <script>
-function toggleTreeNode(e, el) {
-    e.preventDefault();
-    e.stopPropagation();
-    var children = el.closest('.tree-node').querySelector('.tree-children');
-    var icon = el.querySelector('i');
-    if (children) {
-        children.classList.toggle('d-none');
+(function () {
+    // 展开状态记忆（localStorage，按栏目 id）
+    var KEY = 'zapcms.contentNav.state';
+    function loadState() {
+        try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; }
+    }
+    function saveState(s) {
+        try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
+    }
+    function applyCollapsed(nodeEl, collapsed) {
+        var children = nodeEl.querySelector('.tree-children');
+        var icon = nodeEl.querySelector('.tree-toggle i');
+        if (!children) { return; }
+        children.classList.toggle('d-none', collapsed);
         if (icon) {
-            if (icon.classList.contains('d-none')) {
-                icon.classList.remove('fa-caret-down');
-                icon.classList.add('fa-caret-right');
-            } else {
-                icon.classList.remove('fa-caret-right');
-                icon.classList.add('fa-caret-down');
-            }
+            icon.classList.toggle('fa-caret-down', !collapsed);
+            icon.classList.toggle('fa-caret-right', collapsed);
         }
     }
-}
+
+    window.toggleTreeNode = function (e, el) {
+        e.preventDefault();
+        e.stopPropagation();
+        var nodeEl = el.closest('.tree-node');
+        var children = nodeEl && nodeEl.querySelector('.tree-children');
+        if (!children) { return; }
+        children.classList.toggle('d-none');
+        var collapsed = children.classList.contains('d-none');
+        applyCollapsed(nodeEl, collapsed);
+        var cid = nodeEl.getAttribute('data-cid');
+        if (cid) {
+            var s = loadState();
+            s[cid] = collapsed ? 'closed' : 'open';
+            saveState(s);
+        }
+    };
+
+    // 页面加载：应用记忆的展开/折叠（覆盖服务端默认——默认只展开当前选中路径）
+    var state = loadState();
+    document.querySelectorAll('.tree-node[data-cid]').forEach(function (nodeEl) {
+        var st = state[nodeEl.getAttribute('data-cid')];
+        if (st === 'open' || st === 'closed') {
+            applyCollapsed(nodeEl, st === 'closed');
+        }
+    });
+})();
 </script>

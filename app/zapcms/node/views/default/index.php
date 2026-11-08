@@ -19,6 +19,35 @@ if (!empty($catalogPaths)) {
     $last = array_pop($catalogPaths);
     $page_title = $last['title'] . ' - ' . $page_title;
 }
+
+// ── 列头排序：保留现有筛选参数，切换排序方向 ──
+$sortParams = $_GET;
+unset($sortParams['page'], $sortParams['sort']);
+$currentSort = (string)($_GET['sort'] ?? '');
+$sortUrl = function (string $sort) use ($sortParams): string {
+    $sortParams['sort'] = $sort;
+    return '?' . http_build_query($sortParams);
+};
+
+// ── 批量移动：仅同模型栏目（树序 DFS，与发布表单一致） ──
+$moveCatalogOptions = [];
+if (isset($menu) && $menu instanceof \zapcms\services\Catalog) {
+    $flat = [];
+    $walkMove = function (array $items) use (&$walkMove, &$flat) {
+        foreach ($items as $it) {
+            $flat[] = $it;
+            if (!empty($it['children']) && is_array($it['children'])) {
+                $walkMove($it['children']);
+            }
+        }
+    };
+    $walkMove($menu->getTreeArray([], ['columns' => ['id', 'title', 'level', 'node_type']]));
+    foreach ($flat as $it) {
+        if (($it['node_type'] ?? '') === ($node_type ?? '')) {
+            $moveCatalogOptions[] = $it;
+        }
+    }
+}
 ?>
 
 <div class="container-fluid p-0">
@@ -69,18 +98,25 @@ if (!empty($catalogPaths)) {
                             <?php endif; ?>
                         </div>
 
-                        <!-- 搜索框 -->
-                        <form method="get" class="d-flex me-1" style="max-width:220px">
+                        <!-- 搜索 + 状态筛选 -->
+                        <form method="get" class="d-flex align-items-center gap-1 me-1">
                             <?php if ($catalogId): ?>
                             <input type="hidden" name="cid" value="<?php echo e($catalogId); ?>">
                             <?php endif; ?>
-                            <div class="input-group input-group-sm">
-                                <input type="search" name="s" class="form-control" placeholder="搜索标题..."
+                            <div class="input-group input-group-sm" style="max-width:200px">
+                                <input type="search" name="s" class="form-control" placeholder="搜索标题/别名..."
                                        value="<?php echo htmlspecialchars($_GET['s'] ?? ''); ?>">
                                 <button class="btn btn-outline-secondary" type="submit">
                                     <i class="fa fa-search"></i>
                                 </button>
                             </div>
+                            <select name="status" class="form-select form-select-sm" style="width:auto"
+                                    onchange="this.form.submit()">
+                                <option value="">全部状态</option>
+                                <?php $curStatus = (string)($_GET['status'] ?? ''); ?>
+                                <option value="publish" <?php echo $curStatus === 'publish' ? 'selected' : ''; ?>>已发布</option>
+                                <option value="draft" <?php echo $curStatus === 'draft' ? 'selected' : ''; ?>>草稿</option>
+                            </select>
                         </form>
 
                         <!-- 添加按钮 -->
@@ -88,6 +124,31 @@ if (!empty($catalogPaths)) {
                            class="btn btn-primary btn-sm">
                             <i class="fa fa-plus me-1"></i>添加
                         </a>
+                    </div>
+
+                    <!-- 批量操作栏（勾选后显示） -->
+                    <div id="nodeBatchBar" class="d-flex flex-wrap align-items-center gap-2 pt-2 border-top" style="display:none">
+                        <span class="badge bg-primary"><span id="nodeBatchCount">0</span> 项已选</span>
+                        <button type="button" class="btn btn-success btn-sm" onclick="nodeBatch('publish')">
+                            <i class="fa fa-check me-1"></i>发布
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="nodeBatch('draft')">
+                            <i class="fa fa-cloud-download me-1"></i>下架
+                        </button>
+                        <div class="input-group input-group-sm" style="max-width:240px">
+                            <select id="nodeBatchCatalog" class="form-select form-select-sm">
+                                <option value="0">移动到栏目…</option>
+                                <?php foreach (($moveCatalogOptions ?? []) as $mc): ?>
+                                <option value="<?php echo e($mc['id']); ?>">
+                                    <?php echo str_repeat('— ', max(0, (int)$mc['level'] - 1)) . htmlspecialchars($mc['title']); ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button type="button" class="btn btn-outline-primary" onclick="nodeBatchMove()">移动</button>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="nodeBatch('delete')">
+                            <i class="fa fa-trash me-1"></i>删除
+                        </button>
                     </div>
                 </div>
                 <!-- /工具栏 -->
@@ -99,11 +160,28 @@ if (!empty($catalogPaths)) {
                         <table class="table table-hover table-striped mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width:60px">ID</th>
+                                    <th style="width:32px">
+                                        <input type="checkbox" id="nodeCheckAll" title="全选/反选">
+                                    </th>
+                                    <th style="width:60px">
+                                        <a href="<?php echo e($sortUrl($currentSort === 'id_asc' ? 'id' : 'id_asc')); ?>"
+                                           class="text-decoration-none">ID
+                                            <i class="fa fa-sort<?php
+                                                echo $currentSort === 'id' ? '-desc' : ($currentSort === 'id_asc' ? '-asc' : '');
+                                            ?>"></i>
+                                        </a>
+                                    </th>
                                     <th>标题</th>
                                     <th style="width:120px">类型</th>
                                     <th style="width:100px">状态</th>
-                                    <th style="width:140px">发布时间</th>
+                                    <th style="width:140px">
+                                        <a href="<?php echo e($sortUrl($currentSort === 'pub_time_asc' ? 'pub_time' : 'pub_time_asc')); ?>"
+                                           class="text-decoration-none">发布时间
+                                            <i class="fa fa-sort<?php
+                                                echo $currentSort === 'pub_time' ? '-desc' : ($currentSort === 'pub_time_asc' ? '-asc' : '');
+                                            ?>"></i>
+                                        </a>
+                                    </th>
                                     <?php foreach (($list_columns ?? []) as $lc): ?>
                                     <th><?php echo htmlspecialchars($lc['field_label']); ?></th>
                                     <?php endforeach; ?>
@@ -113,6 +191,10 @@ if (!empty($catalogPaths)) {
                             <tbody>
                                 <?php foreach ($data as $row): ?>
                                 <tr>
+                                    <td>
+                                        <input type="checkbox" class="node-row-check" value="<?php echo e($row['id']); ?>"
+                                               onchange="nodeBatchUpdateBar()">
+                                    </td>
                                     <td class="text-muted small"><?php echo e($row['id']); ?></td>
                                     <td>
                                         <a href="<?php echo Url::action("Node@{$row['node_type']}/edit/{$row['id']}", ['cid' => $catalogId]); ?>"
@@ -201,6 +283,83 @@ if (!empty($catalogPaths)) {
 </div>
 
 <script>
+// ============ 批量操作 ============
+function nodeBatchCheckedIds() {
+    return Array.from(document.querySelectorAll('.node-row-check:checked')).map(function (c) { return c.value; });
+}
+
+function nodeBatchUpdateBar() {
+    var ids = nodeBatchCheckedIds();
+    var bar = document.getElementById('nodeBatchBar');
+    if (bar) { bar.style.display = ids.length ? 'flex' : 'none'; }
+    var count = document.getElementById('nodeBatchCount');
+    if (count) { count.textContent = ids.length; }
+    var all = document.getElementById('nodeCheckAll');
+    var boxes = document.querySelectorAll('.node-row-check');
+    if (all) { all.checked = boxes.length > 0 && ids.length === boxes.length; }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    var all = document.getElementById('nodeCheckAll');
+    if (all) {
+        all.addEventListener('change', function () {
+            document.querySelectorAll('.node-row-check').forEach(function (c) { c.checked = all.checked; });
+            nodeBatchUpdateBar();
+        });
+    }
+});
+
+function nodeBatchPost(payload, successMsg) {
+    var load = Zap.loading('正在处理...');
+    $.ajax({
+        url: '<?php echo Url::action("Node@{$_controller}/batch"); ?>',
+        method: 'post',
+        data: payload,
+        traditional: true,
+        dataType: 'json',
+        success: function (res) {
+            if (res.code === 0) {
+                Swal.fire({title: '操作成功', text: res.msg || successMsg, icon: 'success', timer: 1500, showConfirmButton: false})
+                    .then(function () { location.reload(); });
+            } else {
+                Swal.fire({title: '操作失败', text: res.msg || '操作失败', icon: 'error'});
+            }
+        },
+        error: function () {
+            Swal.fire({title: '操作失败', text: '网络异常，请稍后重试', icon: 'error'});
+        }
+    }).always(function () { load.dispose(); });
+}
+
+function nodeBatch(action) {
+    var ids = nodeBatchCheckedIds();
+    if (!ids.length) { ZapToast.warning('请先勾选要操作的内容'); return; }
+    var doIt = function () { nodeBatchPost({batch_action: action, ids: ids}); };
+
+    if (action === 'delete') {
+        Swal.fire({
+            title: '确认批量删除',
+            html: '确定要删除选中的 <strong>' + ids.length + '</strong> 条内容吗？<br><span class="text-danger small">此操作不可恢复！</span>',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fa fa-trash me-1"></i>确认删除',
+            cancelButtonText: '取消',
+            confirmButtonColor: '#dc3545',
+            reverseButtons: true
+        }).then(function (r) { if (r.isConfirmed) { doIt(); } });
+        return;
+    }
+    doIt();
+}
+
+function nodeBatchMove() {
+    var ids = nodeBatchCheckedIds();
+    if (!ids.length) { ZapToast.warning('请先勾选要移动的内容'); return; }
+    var cid = parseInt(document.getElementById('nodeBatchCatalog').value, 10);
+    if (!cid) { ZapToast.warning('请选择目标栏目'); return; }
+    nodeBatchPost({batch_action: 'move', ids: ids, catalog_id: cid});
+}
+
 function deleteNode(id, title) {
     Swal.fire({
         title: '确认删除',
