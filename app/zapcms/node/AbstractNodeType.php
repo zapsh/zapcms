@@ -65,7 +65,9 @@ class AbstractNodeType
         ];
         $this->catalogId && $conditions['where']['nr.catalog_id']= $this->catalogId;
         $conditions = apply_filters('node_total_conditions',$conditions);
-        $page = $this->usePageHelper($this->getTotalRows($conditions));
+        // 后台列表分页数量与前台统一走模型显示配置 list_per_page
+        $perPage = max(1, (int)NodeType::getConfig((string)$this->nodeType, 'list_per_page', 20));
+        $page = $this->usePageHelper($this->getTotalRows($conditions), 'page', $perPage);
         $conditions['orderBy'] = 'id desc';
         $conditions['limit'] = [$page->getLimit(),$page->getOffset()];
         $conditions = apply_filters('node_get_all_conditions',$conditions);

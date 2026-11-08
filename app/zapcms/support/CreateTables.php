@@ -150,6 +150,10 @@ class CreateTables
             $table->addPrimaryKey('id');
             // 栏目树懒加载 WHERE pid ORDER BY sort_order，对应 migration 2026_11_06_180000
             $table->addIndex('idx_catalog_pid',['pid', 'sort_order']);
+            // 大规模分类 / 子树 / 按模型过滤，对应 migration 2026_11_07_120000
+            $table->addIndex('idx_catalog_path',['path']);
+            $table->addIndex('idx_catalog_slug',['slug']);
+            $table->addIndex('idx_catalog_node_type',['node_type','pid','sort_order']);
 
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });
@@ -204,6 +208,7 @@ class CreateTables
             $table->addIndex('idx_node_type',['node_type']);
             $table->addIndex('idx_status',['status']);
             $table->addIndex('idx_author_id',['author_id']);
+            $table->addIndex('idx_node_slug',['slug']);
 
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });
@@ -216,6 +221,7 @@ class CreateTables
             $table->text('meta_value');
 
             $table->addPrimaryKey('meta_id');
+            $table->addIndex('idx_node_meta_object',['object_id']);
 
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });
@@ -246,6 +252,7 @@ class CreateTables
             $table->integer('level')->nullable()->default('0');
 
             $table->addPrimaryKey(['catalog_id', 'node_id']);
+            $table->addIndex('idx_node_relation_node',['node_id']);
 
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });

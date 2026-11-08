@@ -22,6 +22,27 @@ class NodeType
 {
     protected static ?array $nodeTypes = null;
 
+    /** 请求级缓存：字段、字段分组（按 type_name） */
+    protected static array $fieldsCache = [];
+    protected static array $groupsCache = [];
+
+    /**
+     * 清空全部请求级缓存（模型增删改后调用）
+     */
+    public static function flush(): void
+    {
+        static::$nodeTypes   = null;
+        static::$fieldsCache = [];
+        static::$groupsCache = [];
+        static::$configCache = [];
+    }
+
+    /** 只清某个模型的字段/分组缓存 */
+    protected static function flushFields(string $type_name): void
+    {
+        unset(static::$fieldsCache[$type_name], static::$groupsCache[$type_name]);
+    }
+
     /**
      * 虚拟内容类型：不产生真实内容，仅作为内部机制（如栏目链接）的占位类型。
      * 不在「内容模型」等面向内容管理的列表中展示。
@@ -65,7 +86,10 @@ class NodeType
         if(!isset(static::$nodeTypes[$type_name])){
             return null;
         }
-        return is_null($key) ? self::$nodeTypes[$type_name] : self::$nodeTypes[$type_name][$key];
+        if (is_null($key)) {
+            return self::$nodeTypes[$type_name];
+        }
+        return self::$nodeTypes[$type_name][$key] ?? null;
     }
 
 
@@ -90,13 +114,17 @@ class NodeType
      */
     public static function getFields(string $type_name): array
     {
+        if (array_key_exists($type_name, static::$fieldsCache)) {
+            return static::$fieldsCache[$type_name];
+        }
         $typeId = static::getID($type_name);
         if (empty($typeId)) {
-            return [];
+            return static::$fieldsCache[$type_name] = [];
         }
-        return DB::table('node_type_field')->where('node_type_id', (int)$typeId)
+        return static::$fieldsCache[$type_name] = DB::table('node_type_field')
+            ->where('node_type_id', (int)$typeId)
             ->orderBy('sort_order', 'ASC')->orderBy('field_id', 'ASC')
-            ->get(FETCH_ASSOC);
+            ->get(FETCH_ASSOC) ?: [];
     }
 
     /**
@@ -120,6 +148,9 @@ class NodeType
      */
     public static function getFieldGroups(string $type_name): array
     {
+        if (array_key_exists($type_name, static::$groupsCache)) {
+            return static::$groupsCache[$type_name];
+        }
         $row = DB::table('options')->where('option_name', static::GROUP_OPTION_PREFIX . $type_name)->first();
         $groups = [];
         if (!empty($row['option_value'])) {
@@ -138,7 +169,7 @@ class NodeType
             }
         }
         usort($groups, fn($a, $b) => $a['sort_order'] <=> $b['sort_order']);
-        return $groups;
+        return static::$groupsCache[$type_name] = $groups;
     }
 
     /**
@@ -172,6 +203,7 @@ class NodeType
                 'autoload'     => 0,
             ]);
         }
+        static::flushFields($type_name);
     }
 
     /**
@@ -180,6 +212,7 @@ class NodeType
     public static function removeFieldGroups(string $type_name): void
     {
         DB::table('options')->where('option_name', static::GROUP_OPTION_PREFIX . $type_name)->delete();
+        static::flushFields($type_name);
     }
 
     /**

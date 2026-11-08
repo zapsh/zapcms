@@ -33,6 +33,15 @@ $meta_show_header   = $meta_show_header ?? true;
     $metaName = 'meta[' . $nfName . ']';
     $metaId   = 'meta_' . $nfName;
 
+    // 非选项类型：field_value 作为节点表单的默认值（选项类型里它是「值:标签」列表）
+    $optionTypes = ['select', 'radio', 'checkbox'];
+    if (($nfValue === '' || $nfValue === null) && !in_array($nfType, $optionTypes, true)) {
+        $defaultValue = trim((string)($nf['field_value'] ?? ''));
+        if ($defaultValue !== '') {
+            $nfValue = $defaultValue;
+        }
+    }
+
     // 选项列表：每行一个 「值:标签」
     $options = [];
     foreach (preg_split('/\r\n|\r|\n/', (string)($nf['field_value'] ?? '')) as $opt) {
@@ -58,7 +67,7 @@ $meta_show_header   = $meta_show_header ?? true;
     ?>
     <div class="mb-2">
         <label class="form-label"<?php echo in_array($nfType, ['radio', 'checkbox', 'switch'], true) ? '' : ' for="' . $metaId . '"'; ?>>
-            <?php echo e($nfLabel); ?><?php echo e($star); ?>
+            <?php echo e($nfLabel); ?><?php echo $star; ?>
         </label>
 
         <?php if ($nfType === 'textarea'): ?>
@@ -111,7 +120,7 @@ $meta_show_header   = $meta_show_header ?? true;
             <div class="form-check form-switch pt-1">
                 <input class="form-check-input" type="checkbox" role="switch" name="<?php echo e($metaName); ?>" id="<?php echo e($metaId); ?>"
                        value="1" <?php echo (string)$nfValue === '1' ? 'checked' : ''; ?><?php echo e($reqAttr); ?>>
-                <label class="form-check-label small" for="<?php echo e($metaId); ?>"><?php echo $nfHelp ?: '开 / 关'; ?></label>
+                <label class="form-check-label small" for="<?php echo e($metaId); ?>"><?php echo e($nfHelp ?: '开 / 关'); ?></label>
             </div>
 
         <?php elseif ($nfType === 'image'): ?>

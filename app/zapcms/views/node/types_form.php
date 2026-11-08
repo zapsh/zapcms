@@ -487,5 +487,3 @@ $fieldGroups  = array_column($groups, 'name');
     });
 })();
 </script>
-</content>
-</invoke>

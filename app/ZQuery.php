@@ -55,6 +55,12 @@ class ZQuery
     /** @var Query 底层 Query 构建器 */
     protected ?Query $query_builder = null;
 
+    /** @var array<int, array<string, string>> 当前页节点的 meta 批量缓存（object_id => meta_name => value） */
+    protected array $metaByObject = [];
+
+    /** @var bool 当前结果集的 meta 是否已批量预取 */
+    protected bool $metaPrefetched = false;
+
     // ═══════════════════════════════════════════════════════════
     //  默认参数
     // ═══════════════════════════════════════════════════════════
@@ -456,6 +462,9 @@ class ZQuery
         }
 
         $this->node_count = count($this->nodes);
+        // 新结果集，meta 缓存重新预取
+        $this->metaByObject  = [];
+        $this->metaPrefetched = false;
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -491,7 +500,10 @@ class ZQuery
     }
 
     /**
-     * 为当前节点加载 node_meta（仅首次）
+     * 为当前节点加载 node_meta
+     *
+     * 首次进入循环时一次性预取当前结果集所有节点的 meta（一次 whereIn），
+     * 后续节点直接命中缓存，避免 the_node() 每推进一个节点就查一次库。
      */
     protected function load_node_meta(): void
     {
@@ -499,12 +511,31 @@ class ZQuery
             return;
         }
 
-        $metaRows = DB::table('node_meta')
-            ->where('object_id', '=', (int)$this->node['id'])
-            ->get(FETCH_ASSOC);
+        if (!$this->metaPrefetched) {
+            $this->metaPrefetched = true;
+            $ids = [];
+            foreach ($this->nodes as $row) {
+                $nid = is_array($row) ? (int)($row['id'] ?? 0) : (int)$row;
+                if ($nid > 0) {
+                    $ids[$nid] = $nid;
+                }
+            }
+            if ($ids !== []) {
+                $metaRows = DB::table('node_meta')
+                    ->whereIn('object_id', array_values($ids))
+                    ->get(FETCH_ASSOC) ?: [];
+                foreach ($metaRows as $row) {
+                    $this->metaByObject[(int)$row['object_id']][$row['meta_name']] = $row['meta_value'];
+                }
+            }
+        }
 
-        foreach ($metaRows as $row) {
-            $this->node['meta'][$row['meta_name']] = $row['meta_value'];
+        $id = (int)($this->node['id'] ?? 0);
+        if (!isset($this->node['meta']) || !is_array($this->node['meta'])) {
+            $this->node['meta'] = [];
+        }
+        foreach (($this->metaByObject[$id] ?? []) as $name => $value) {
+            $this->node['meta'][$name] = $value;
         }
         $this->node['_meta_loaded'] = true;
     }

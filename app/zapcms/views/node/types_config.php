@@ -32,7 +32,7 @@ $inputTypes = [
     <div class="col-md-3">
         <div class="list-group list-group-flush nav nav-pills flex-column" id="types-nav" role="tablist">
             <?php $navIdx = 0; foreach ($types as $i => $type): 
-                if($type['type_name'] === 'link-url') continue; // link-url 类型不需要配置
+                if(\zapcms\services\NodeType::isVirtual((string)$type['type_name'])) continue; // 虚拟模型不需要配置
                 $navIdx++;
                 ?>
             <?php $typeName = (string)$type['type_name']; ?>
@@ -57,7 +57,7 @@ $inputTypes = [
         <form id="configForm" method="post" action="<?= Url::action('Node/typesConfigSave')?>">
             <div class="tab-content">
                 <?php $tabIdx = 0; foreach ($types as $i => $type): 
-                    if($type['type_name'] === 'link-url') continue; // link-url 类型不需要配置
+                    if(\zapcms\services\NodeType::isVirtual((string)$type['type_name'])) continue; // 虚拟模型不需要配置
                     $tabIdx++;
                     ?>
                 <?php
