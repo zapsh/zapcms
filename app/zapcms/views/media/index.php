@@ -11,6 +11,11 @@ if ($uploadExts === '') {
 }
 $uploadExtList = '.' . preg_replace('/[\s,]+/', '|.', $uploadExts);
 $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
+
+// 存储切换：非 local 模式时提供「云端 / 本地」两个 tab
+$storageMode = \zapcms\services\storage\StorageManager::mode();
+$hasCloud    = $storageMode === 'both' || \zapcms\services\storage\StorageManager::isCloud();
+$defaultStorage = $hasCloud ? ($storageMode === 'both' ? 'local' : 'cloud') : '';
 ?>
 
 <style>
@@ -204,6 +209,20 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         <div class="card shadow-sm">
             <div class="card-header py-2 bg-white">
                 <div class="d-flex flex-wrap align-items-center gap-2">
+                    <?php if ($hasCloud): ?>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="存储切换">
+                        <input type="radio" class="btn-check" name="media-storage" id="storage-cloud"
+                               <?php echo $defaultStorage === 'cloud' ? 'checked' : ''; ?>>
+                        <label class="btn btn-outline-secondary" for="storage-cloud" title="管理云端存储">
+                            <i class="fa-solid fa-cloud me-1"></i>云端
+                        </label>
+                        <input type="radio" class="btn-check" name="media-storage" id="storage-local"
+                               <?php echo $defaultStorage === 'local' ? 'checked' : ''; ?>>
+                        <label class="btn btn-outline-secondary" for="storage-local" title="管理服务器本地存储">
+                            <i class="fa-solid fa-hard-drive me-1"></i>本地
+                        </label>
+                    </div>
+                    <?php endif; ?>
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0" id="media-crumbs"></ol>
                     </nav>
@@ -359,6 +378,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         path: '',
         search: '',
         view: 'grid',      // grid | list
+        storage: '<?php echo $defaultStorage; ?>', // '' | cloud | local（云端/本地 tab）
         dirs: [],
         files: [],
         selected: new Set(),
@@ -475,7 +495,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
     }
 
     function loadTree(after) {
-        $.get(MediaApi.tree, function (data) {
+        $.get(MediaApi.tree, {storage: media.storage}, function (data) {
             if (data && data.code === 0) {
                 renderTree(data.data, $('#media-tree'));
                 syncTreeActive();
@@ -724,7 +744,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
     function loadBrowse() {
         const $content = $('#mediaContent');
         $content.html('<div class="text-center text-muted py-5"><div class="spinner-border spinner-border-sm me-2"></div>加载中...</div>');
-        $.post(MediaApi.browse, {path: media.path, search: media.search}, function (data) {
+        $.post(MediaApi.browse, {path: media.path, search: media.search, storage: media.storage}, function (data) {
             if (data && data.code === 0) {
                 media.dirs = data.dirs;
                 media.files = data.files;
@@ -774,7 +794,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         }
         const $btn = $(this);
         $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>创建中...');
-        $.post(MediaApi.createDir, {path: targetPath, dir_name: name}, function (data) {
+        $.post(MediaApi.createDir, {path: targetPath, dir_name: name, storage: media.storage}, function (data) {
             const isOk = data && data.code === 0;
             ZapToast.alert(data && data.msg ? data.msg : (isOk ? '创建成功' : '创建失败'), {bgColor: isOk ? bgSuccess : bgDanger});
             if (isOk) {
@@ -811,7 +831,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         const targetPath = media.actionPath === null ? media.path : media.actionPath;
         const $btn = $(this);
         $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>保存中...');
-        $.post(MediaApi.rename, {path: targetPath, old_name: oldName, new_name: newName}, function (data) {
+        $.post(MediaApi.rename, {path: targetPath, old_name: oldName, new_name: newName, storage: media.storage}, function (data) {
             const isOk = data && data.code === 0;
             ZapToast.alert(data && data.msg ? data.msg : (isOk ? '重命名成功' : '重命名失败'), {bgColor: isOk ? bgSuccess : bgDanger});
             if (isOk) {
@@ -847,7 +867,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
                 {title: '删除', class: 'btn-danger'}
             ],
             btn2: function () {
-                $.post(MediaApi.delete, {path: media.path, names: names}, function (data) {
+                $.post(MediaApi.delete, {path: media.path, names: names, storage: media.storage}, function (data) {
                     const isOk = data && data.code === 0;
                     ZapToast.alert(data && data.msg ? data.msg : (isOk ? '删除成功' : '删除失败'), {bgColor: isOk ? bgSuccess : bgDanger});
                     if (isOk) {
@@ -877,7 +897,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
     }
     $('#btn-move').on('click', function () {
         if (media.selected.size === 0) return;
-        $.get(MediaApi.tree, function (data) {
+        $.get(MediaApi.tree, {storage: media.storage}, function (data) {
             if (data && data.code === 0) {
                 media.treeData = data.data;
                 loadMoveTargets();
@@ -894,7 +914,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
         }
         const $btn = $(this);
         $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>移动中...');
-        $.post(MediaApi.move, {path: media.path, target: target, names: names}, function (data) {
+        $.post(MediaApi.move, {path: media.path, target: target, names: names, storage: media.storage}, function (data) {
             const isOk = data && data.code === 0;
             ZapToast.alert(data && data.msg ? data.msg : (isOk ? '移动成功' : '移动失败'), {bgColor: isOk ? bgSuccess : bgDanger});
             if (isOk) {
@@ -914,7 +934,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
             ZapToast.alert('请选择单个文件下载', {bgColor: bgWarning});
             return;
         }
-        window.location.href = '<?php echo url_action('Media@download'); ?>?path=' + encodeURIComponent(Array.from(media.selected)[0]);
+        window.location.href = '<?php echo url_action('Media@download'); ?>?path=' + encodeURIComponent(Array.from(media.selected)[0]) + '&storage=' + encodeURIComponent(media.storage);
     });
 
     // ============ 预览 ============
@@ -950,6 +970,19 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
     $('input[name="media-view"]').on('change', function () {
         media.view = this.id === 'view-grid' ? 'grid' : 'list';
         renderContent();
+    });
+
+    // ============ 存储 tab 切换（云端 / 本地） ============
+    $('input[name="media-storage"]').on('change', function () {
+        const next = this.id === 'storage-cloud' ? 'cloud' : 'local';
+        if (next === media.storage) return;
+        media.storage = next;
+        media.path = '';
+        media.search = '';
+        media.selected.clear();
+        $('#media-search').val('');
+        loadTree();
+        loadBrowse();
     });
 
     // ============ 上传 ============
@@ -997,6 +1030,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
             const fd = new FormData();
             fd.append('file', item.file);
             fd.append('path', media.path);
+            fd.append('storage', media.storage);
             if (item.dir) {
                 fd.append('fullPath', '/' + item.dir + '/' + item.file.name);
             }
@@ -1214,7 +1248,7 @@ $uploadMaxSize = max(1, (int)option('upload.max_size', 20));
                 {title: '删除', class: 'btn-danger'}
             ],
             btn2: function () {
-                $.post(MediaApi.delete, {path: t.parent, names: [t.name]}, function (data) {
+                $.post(MediaApi.delete, {path: t.parent, names: [t.name], storage: media.storage}, function (data) {
                     const isOk = data && data.code === 0;
                     ZapToast.alert(data && data.msg ? data.msg : (isOk ? '删除成功' : '删除失败'), {bgColor: isOk ? bgSuccess : bgDanger});
                     if (!isOk) return;

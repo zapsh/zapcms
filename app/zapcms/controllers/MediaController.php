@@ -5,6 +5,7 @@ namespace zapcms\controllers;
 use zapcms\controllers\UploadController;
 use zapcms\helpers\ThumbHelper;
 use zapcms\models\AdminLog;
+use zapcms\services\storage\StorageInterface;
 use zapcms\services\storage\StorageManager;
 use zap\http\Request;
 use zap\http\Response;
@@ -37,7 +38,9 @@ class MediaController extends UploadController
     public function tree()
     {
         try {
-            Response::json(['code' => 0, 'data' => $this->buildTree(StorageManager::list(''), 0)]);
+            $driver  = $this->scopeDriver((string) Request::get('storage', ''));
+            $listing = $driver->list('');
+            Response::json(['code' => 0, 'data' => $this->buildTree($driver, $listing, 0)]);
         } catch (\Throwable $e) {
             Response::json(['code' => 1, 'msg' => '读取存储失败：' . $e->getMessage()]);
         }
@@ -50,13 +53,18 @@ class MediaController extends UploadController
     {
         $relPath = $this->cleanPath((string) Request::post('path', ''));
         $search  = trim((string) Request::post('search', ''));
+        $scope   = (string) Request::post('storage', '');
 
         try {
-            $listing = StorageManager::list($relPath);
+            $listing = $this->scopeDriver($scope)->list($relPath);
         } catch (\Throwable $e) {
             Response::json(['code' => 1, 'msg' => '读取存储失败：' . $e->getMessage()]);
             return;
         }
+
+        // 本地 tab（storage=local）时文件只存在于服务器磁盘，URL/缩略图必须走本地规则
+        $localScope = $scope === 'local';
+        $driver     = $this->scopeDriver($scope);
 
         $dirs = [];
         foreach ($listing['dirs'] as $dir) {
@@ -69,7 +77,7 @@ class MediaController extends UploadController
             $dirs[] = [
                 'name'  => $dir['name'],
                 'path'  => $dir['path'],
-                'count' => $this->countFilesIn($dir['path']),
+                'count' => $this->countFilesIn($dir['path'], $driver),
             ];
         }
 
@@ -88,8 +96,10 @@ class MediaController extends UploadController
                 'bytes'    => $f['size'],
                 'mtime'    => $f['mtime'],
                 'date'     => $f['mtime'] > 0 ? date('Y-m-d H:i', $f['mtime']) : '',
-                'url'      => storage_url($f['path']),
-                'thumb'    => $this->isImage($ext) ? ThumbHelper::thumb($f['path'], 300, 200) : '',
+                'url'      => $localScope ? StorageManager::localUrl($f['path']) : storage_url($f['path']),
+                'thumb'    => $this->isImage($ext)
+                    ? ($localScope ? ThumbHelper::localThumb($f['path'], 300, 200) : ThumbHelper::thumb($f['path'], 300, 200))
+                    : '',
             ];
         }
 
@@ -159,11 +169,14 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '系统缩略图缓存目录禁止操作']);
             return;
         }
-        if ($this->pathExists($relTarget)) {
+        $scope  = (string) Request::post('storage', '');
+        $driver = $this->scopeDriver($scope);
+        if ($this->pathExists($relTarget, $driver)) {
             Response::json(['code' => 1, 'msg' => '同名文件或文件夹已存在']);
             return;
         }
-        if (!StorageManager::makeDirectory($relTarget)) {
+        $ok = $scope === '' ? StorageManager::makeDirectory($relTarget) : $driver->makeDirectory($relTarget);
+        if (!$ok) {
             Response::json(['code' => 1, 'msg' => '创建失败，请检查目录权限']);
             return;
         }
@@ -196,17 +209,20 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '系统缩略图缓存目录禁止操作']);
             return;
         }
+        $scope  = (string) Request::post('storage', '');
+        $driver = $this->scopeDriver($scope);
         $oldRel = $path === '' ? $oldName : $path . '/' . $oldName;
         $newRel = $path === '' ? $newName : $path . '/' . $newName;
-        if (!$this->pathExists($oldRel)) {
+        if (!$this->pathExists($oldRel, $driver)) {
             Response::json(['code' => 1, 'msg' => '原文件或文件夹不存在']);
             return;
         }
-        if ($this->pathExists($newRel)) {
+        if ($this->pathExists($newRel, $driver)) {
             Response::json(['code' => 1, 'msg' => '同名文件或文件夹已存在']);
             return;
         }
-        if (!StorageManager::rename($oldRel, $newRel)) {
+        $ok = $scope === '' ? StorageManager::rename($oldRel, $newRel) : $driver->rename($oldRel, $newRel);
+        if (!$ok) {
             Response::json(['code' => 1, 'msg' => '重命名失败，请检查目录权限']);
             return;
         }
@@ -233,15 +249,21 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '请选择要删除的文件或文件夹']);
             return;
         }
+        $scope  = (string) Request::post('storage', '');
+        $driver = $this->scopeDriver($scope);
         foreach ($names as $name) {
             $name = basename(trim((string) $name));
             if ($name === '' || $name === self::THUMBS_DIR) {
                 continue;
             }
             $rel = $path === '' ? $name : $path . '/' . $name;
-            StorageManager::delete($rel);
+            if ($scope === '') {
+                StorageManager::delete($rel);
+            } else {
+                $driver->delete($rel);
+            }
         }
-        AdminLog::info(AdminLog::CATEGORY_CONTENT, '删除文件', '路径：' . ($path === '' ? '/' : $path) . '，共 ' . count($names) . ' 项');
+        AdminLog::info(AdminLog::CATEGORY_CONTENT, '删除文件', ($scope === 'local' ? '（本地）' : '') . '路径：' . ($path === '' ? '/' : $path) . '，共 ' . count($names) . ' 项');
         Response::json(['code' => 0, 'msg' => '删除成功']);
     }
 
@@ -270,7 +292,9 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '系统缩略图缓存目录禁止操作']);
             return;
         }
-        if (!$this->isDirectory($target)) {
+        $scope  = (string) Request::post('storage', '');
+        $driver = $this->scopeDriver($scope);
+        if (!$this->isDirectory($target, $driver)) {
             Response::json(['code' => 1, 'msg' => '目标目录不存在']);
             return;
         }
@@ -281,10 +305,14 @@ class MediaController extends UploadController
             }
             $src = $path === '' ? $name : $path . '/' . $name;
             $dst = $target === '' ? $name : $target . '/' . $name;
-            if ($this->pathExists($dst)) {
+            if ($this->pathExists($dst, $driver)) {
                 continue;
             }
-            StorageManager::move($src, $dst);
+            if ($scope === '') {
+                StorageManager::move($src, $dst);
+            } else {
+                $driver->rename($src, $dst);
+            }
         }
         AdminLog::info(AdminLog::CATEGORY_CONTENT, '移动文件', ($path === '' ? '/' : $path) . ' → ' . ($target === '' ? '/' : $target) . '，共 ' . count($names) . ' 项');
         Response::json(['code' => 0, 'msg' => '移动成功']);
@@ -300,7 +328,8 @@ class MediaController extends UploadController
             http_response_code(403);
             exit('Forbidden');
         }
-        $tmp = StorageManager::download($path);
+        $scope = (string) Request::get('storage', '');
+        $tmp   = $scope === '' ? StorageManager::download($path) : $this->scopeDriver($scope)->download($path);
         if ($tmp === null) {
             http_response_code(404);
             exit('Not Found');
@@ -309,9 +338,27 @@ class MediaController extends UploadController
     }
 
     /**
+     * 按前端 tab（storage 参数）选择操作驱动：
+     *  - local：本地存储（纯云模式下也可管理服务器磁盘上的文件）
+     *  - cloud：当前生效的云驱动（未配置/未启用时回落本地）
+     *  - 其他：维持原行为 —— local/both 模式管理本地，纯云模式管理云
+     */
+    private function scopeDriver(string $scope): StorageInterface
+    {
+        if ($scope === 'local') {
+            return StorageManager::local();
+        }
+        if ($scope === 'cloud') {
+            return StorageManager::activeCloud() ?? StorageManager::local();
+        }
+        $mode = StorageManager::mode();
+        return ($mode === 'local' || $mode === 'both') ? StorageManager::local() : StorageManager::driver($mode);
+    }
+
+    /**
      * 递归构建目录树（排除 thumbs），每个目录只列举一次
      */
-    private function buildTree(array $listing, int $depth): array
+    private function buildTree(StorageInterface $driver, array $listing, int $depth): array
     {
         if ($depth >= 10) {
             return [];
@@ -322,12 +369,12 @@ class MediaController extends UploadController
             if ($dir['name'] === self::THUMBS_DIR && $depth === 0) {
                 continue;
             }
-            $sub = StorageManager::list($dir['path']);
+            $sub = $driver->list($dir['path']);
             $nodes[] = [
                 'name'     => $dir['name'],
                 'path'     => $dir['path'],
                 'count'    => count($sub['files']),
-                'children' => $this->buildTree($sub, $depth + 1),
+                'children' => $this->buildTree($driver, $sub, $depth + 1),
             ];
         }
         return $nodes;
@@ -336,10 +383,11 @@ class MediaController extends UploadController
     /**
      * 统计目录内直属文件数（不含子目录与 thumbs）
      */
-    private function countFilesIn(string $path): int
+    private function countFilesIn(string $path, ?StorageInterface $driver = null): int
     {
         try {
-            return count(StorageManager::list($path)['files']);
+            $listing = $driver !== null ? $driver->list($path) : StorageManager::list($path);
+            return count($listing['files']);
         } catch (\Throwable) {
             return 0;
         }
@@ -348,7 +396,7 @@ class MediaController extends UploadController
     /**
      * 判断相对 key 对应的文件或目录是否存在（比较父目录下的同名条目）
      */
-    private function pathExists(string $key): bool
+    private function pathExists(string $key, ?StorageInterface $driver = null): bool
     {
         $key = ltrim($key, '/');
         if ($key === '') {
@@ -356,7 +404,9 @@ class MediaController extends UploadController
         }
         $parent = dirname($key);
         $name   = basename($key);
-        $listing = ($parent === '.' || $parent === '') ? StorageManager::list('') : StorageManager::list($parent);
+        $listing = $driver !== null
+            ? $driver->list($parent === '.' || $parent === '' ? '' : $parent)
+            : (($parent === '.' || $parent === '') ? StorageManager::list('') : StorageManager::list($parent));
         foreach (array_merge($listing['dirs'], $listing['files']) as $item) {
             if ($item['name'] === $name) {
                 return true;
@@ -368,7 +418,7 @@ class MediaController extends UploadController
     /**
      * 判断相对 key 是否为目录
      */
-    private function isDirectory(string $key): bool
+    private function isDirectory(string $key, ?StorageInterface $driver = null): bool
     {
         $key = ltrim($key, '/');
         if ($key === '') {
@@ -376,7 +426,9 @@ class MediaController extends UploadController
         }
         $parent = dirname($key);
         $name   = basename($key);
-        $listing = ($parent === '.' || $parent === '') ? StorageManager::list('') : StorageManager::list($parent);
+        $listing = $driver !== null
+            ? $driver->list($parent === '.' || $parent === '' ? '' : $parent)
+            : (($parent === '.' || $parent === '') ? StorageManager::list('') : StorageManager::list($parent));
         foreach ($listing['dirs'] as $dir) {
             if ($dir['name'] === $name) {
                 return true;

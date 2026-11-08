@@ -37,6 +37,21 @@ class ThumbHelper
             return StorageManager::thumbUrl($key, (int) $width, (int) $height);
         }
 
+        return self::localThumb($key, $width, $height);
+    }
+
+    /**
+     * 强制走本地 GD 缩略图（媒体库「本地存储」tab 专用）：
+     * 云存储模式下本地文件不存在云端对应对象，
+     * 不能走 StorageManager::thumbUrl（会生成指向云端的无效 URL）。
+     * $key 为 storage 相对 key。
+     */
+    public static function localThumb(string $key, $width, $height): string
+    {
+        if ($key === '') {
+            return self::placeholderThumb($width, $height);
+        }
+
         $thumbRel  = LocalStorage::thumbKey($key, (int) $width, (int) $height);
         $thumbPath = storage_path("thumbs/{$thumbRel}");
         if (is_file($thumbPath)) {

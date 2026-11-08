@@ -7,6 +7,7 @@ use zapcms\controllers\AdminController;
 use zapcms\models\AdminLog;
 use zapcms\services\storage\StorageException;
 use zapcms\services\storage\StorageManager;
+use zapcms\services\storage\StorageResult;
 use zap\http\Request;
 use zap\http\Response;
 
@@ -52,7 +53,9 @@ class UploadController extends AdminController
     {
         if (Request::isPost()) {
             // fullPath：拖拽上传目录时由前端传入（形如 /dir/sub/file.txt），用于保留目录结构
-            $this->saveUpload('', (string)Request::post('path'), (string)Request::post('fullPath', ''));
+            // storage=local：媒体库「本地存储」tab 上传，强制写入服务器磁盘（不走云同步）
+            $storage = (string)Request::post('storage', '');
+            $this->saveUpload('', (string)Request::post('path'), (string)Request::post('fullPath', ''), false, $storage === 'local');
         }
     }
 
@@ -62,8 +65,9 @@ class UploadController extends AdminController
      * @param string $path   文件管理器指定目录
      * @param string $fullPath 目录上传时的相对完整路径（仅用于提取子目录结构）
      * @param bool   $imageOnly 是否强制要求上传内容为真实图片
+     * @param bool   $forceLocal 强制写入本地存储（媒体库本地 tab）
      */
-    private function saveUpload(string $subDir, string $path = '', string $fullPath = '', bool $imageOnly = false)
+    private function saveUpload(string $subDir, string $path = '', string $fullPath = '', bool $imageOnly = false, bool $forceLocal = false)
     {
         $file = Request::file('file');
         if (!isset($file['error']) || $file['error'] != UPLOAD_ERR_OK) {
@@ -118,13 +122,19 @@ class UploadController extends AdminController
         $key = $relPath === '' ? $filename : $relPath . '/' . $filename;
 
         try {
-            $result = StorageManager::put($key, $file['tmp_name'], ['size' => (int)$file['size']]);
+            if ($forceLocal) {
+                $local = StorageManager::local();
+                $local->put($key, $file['tmp_name'], ['size' => (int)$file['size']]);
+                $result = new StorageResult($key, StorageManager::localUrl($key), 'local', (int)$file['size']);
+            } else {
+                $result = StorageManager::put($key, $file['tmp_name'], ['size' => (int)$file['size']]);
+            }
         } catch (StorageException $e) {
             Response::json(['code' => 1, 'msg' => '文件保存失败：' . $e->getMessage()]);
             return;
         }
 
-        AdminLog::info(AdminLog::CATEGORY_CONTENT, '上传文件', '文件名：' . $filename . '（.' . $ext . '），路径：' . ($relPath === '' ? '/' : $relPath));
+        AdminLog::info(AdminLog::CATEGORY_CONTENT, '上传文件', '文件名：' . $filename . '（.' . $ext . '），路径：' . ($relPath === '' ? '/' : $relPath) . ($forceLocal ? '（本地）' : ''));
         $resp = ['code' => 0, 'url' => $result->url];
         if (!$result->synced && $result->warning !== '') {
             $resp['warning'] = $result->warning;
