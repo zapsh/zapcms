@@ -279,25 +279,38 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 <div class="form-text">「相对路径」返回 <code>/storage/xxx</code> 形式；「网站网址 + 路径」返回 <code>https://example.com/storage/xxx</code>，「网站网址」留空时自动使用当前访问域名。</div>
                             </div>
 
-                            <div class="col-12"><hr class="my-2"><h6 class="small fw-semibold mb-2">对象存储（OSS）</h6></div>
+                            <div class="col-12"><hr class="my-2"><h6 class="small fw-semibold mb-2">对象存储</h6></div>
                             <div class="col-md-6">
                                 <label for="upload.storage_mode" class="form-label small">存储模式</label>
                                 <select class="form-select form-select-sm" id="upload.storage_mode"
                                         name="options[upload.storage_mode]">
                                     <option value="local" <?php if(($options['upload.storage_mode'] ?? 'local') === 'local') echo 'selected';?>>仅服务器（默认）</option>
-                                    <option value="both" <?php if(($options['upload.storage_mode'] ?? '') === 'both') echo 'selected';?>>服务器 + OSS</option>
-                                    <option value="oss" <?php if(($options['upload.storage_mode'] ?? '') === 'oss') echo 'selected';?>>仅 OSS</option>
+                                    <option value="both" <?php if(($options['upload.storage_mode'] ?? '') === 'both') echo 'selected';?>>服务器 + 云存储</option>
+                                    <option value="oss" <?php if(($options['upload.storage_mode'] ?? '') === 'oss') echo 'selected';?>>仅 OSS（阿里云）</option>
+                                    <option value="cos" <?php if(($options['upload.storage_mode'] ?? '') === 'cos') echo 'selected';?>>仅 COS（腾讯云）</option>
+                                    <option value="r2" <?php if(($options['upload.storage_mode'] ?? '') === 'r2') echo 'selected';?>>仅 R2（Cloudflare）</option>
                                 </select>
-                                <div class="form-text">「服务器 + OSS」本地写成功即返回，OSS 同步失败只记日志不影响上传；「仅 OSS」本地不保留原图，缩略图走 OSS 图片处理。</div>
+                                <div class="form-text">「服务器 + 云存储」本地写成功即返回，云同步失败只记日志不影响上传；「仅云」本地不保留原图。</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="upload.cloud_driver" class="form-label small">「服务器 + 云存储」使用的云厂商</label>
+                                <select class="form-select form-select-sm" id="upload.cloud_driver"
+                                        name="options[upload.cloud_driver]">
+                                    <option value="oss" <?php if(($options['upload.cloud_driver'] ?? 'oss') === 'oss') echo 'selected';?>>阿里云 OSS（默认）</option>
+                                    <option value="cos" <?php if(($options['upload.cloud_driver'] ?? '') === 'cos') echo 'selected';?>>腾讯云 COS</option>
+                                    <option value="r2" <?php if(($options['upload.cloud_driver'] ?? '') === 'r2') echo 'selected';?>>Cloudflare R2</option>
+                                </select>
                             </div>
                             <div class="col-md-6">
                                 <label for="upload.public_base" class="form-label small">双写模式前台使用的地址</label>
                                 <select class="form-select form-select-sm" id="upload.public_base"
                                         name="options[upload.public_base]">
-                                    <option value="oss" <?php if(($options['upload.public_base'] ?? 'oss') === 'oss') echo 'selected';?>>OSS / CDN 地址（默认）</option>
+                                    <option value="cloud" <?php if(in_array(($options['upload.public_base'] ?? 'cloud'), ['cloud','oss'], true)) echo 'selected';?>>云 / CDN 地址（默认）</option>
                                     <option value="local" <?php if(($options['upload.public_base'] ?? '') === 'local') echo 'selected';?>>服务器本地地址</option>
                                 </select>
                             </div>
+
+                            <div class="col-12"><hr class="my-2"><h6 class="small fw-semibold mb-2 text-muted">阿里云 OSS</h6></div>
                             <div class="col-md-6">
                                 <label for="upload.oss_bucket" class="form-label small">Bucket 名称</label>
                                 <input type="text" class="form-control form-control-sm" id="upload.oss_bucket"
@@ -319,12 +332,61 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 <input type="text" class="form-control form-control-sm" id="upload.oss_prefix"
                                        name="options[upload.oss_prefix]" value="<?php echo e($options['upload.oss_prefix'] ?? ''); ?>" placeholder="cms" />
                             </div>
+
+                            <div class="col-12"><hr class="my-2"><h6 class="small fw-semibold mb-2 text-muted">腾讯云 COS</h6></div>
+                            <div class="col-md-6">
+                                <label for="upload.cos_bucket" class="form-label small">Bucket 名称</label>
+                                <input type="text" class="form-control form-control-sm" id="upload.cos_bucket"
+                                       name="options[upload.cos_bucket]" value="<?php echo e($options['upload.cos_bucket'] ?? ''); ?>" placeholder="example-1250000000" />
+                                <div class="form-text">含 APPID 的完整桶名，如 <code>example-1250000000</code>。</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="upload.cos_region" class="form-label small">地域（Region）</label>
+                                <input type="text" class="form-control form-control-sm" id="upload.cos_region"
+                                       name="options[upload.cos_region]" value="<?php echo e($options['upload.cos_region'] ?? ''); ?>" placeholder="ap-guangzhou" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="upload.cos_base_url" class="form-label small">CDN / 自定义域名（可选）</label>
+                                <input type="text" class="form-control form-control-sm" id="upload.cos_base_url"
+                                       name="options[upload.cos_base_url]" value="<?php echo e($options['upload.cos_base_url'] ?? ''); ?>" placeholder="https://cdn.example.com" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="upload.cos_prefix" class="form-label small">对象 Key 前缀（可选）</label>
+                                <input type="text" class="form-control form-control-sm" id="upload.cos_prefix"
+                                       name="options[upload.cos_prefix]" value="<?php echo e($options['upload.cos_prefix'] ?? ''); ?>" placeholder="cms" />
+                            </div>
+
+                            <div class="col-12"><hr class="my-2"><h6 class="small fw-semibold mb-2 text-muted">Cloudflare R2</h6></div>
+                            <div class="col-md-6">
+                                <label for="upload.r2_account_id" class="form-label small">Account ID</label>
+                                <input type="text" class="form-control form-control-sm" id="upload.r2_account_id"
+                                       name="options[upload.r2_account_id]" value="<?php echo e($options['upload.r2_account_id'] ?? ''); ?>" placeholder="your-cloudflare-account-id" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="upload.r2_bucket" class="form-label small">Bucket 名称</label>
+                                <input type="text" class="form-control form-control-sm" id="upload.r2_bucket"
+                                       name="options[upload.r2_bucket]" value="<?php echo e($options['upload.r2_bucket'] ?? ''); ?>" placeholder="my-bucket" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="upload.r2_base_url" class="form-label small">公开访问地址（必填）</label>
+                                <input type="text" class="form-control form-control-sm" id="upload.r2_base_url"
+                                       name="options[upload.r2_base_url]" value="<?php echo e($options['upload.r2_base_url'] ?? ''); ?>" placeholder="https://pub-xxxx.r2.dev" />
+                                <div class="form-text">自定义域名或 <code>https://pub-xxx.r2.dev</code>，用于前台展示。</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="upload.r2_prefix" class="form-label small">对象 Key 前缀（可选）</label>
+                                <input type="text" class="form-control form-control-sm" id="upload.r2_prefix"
+                                       name="options[upload.r2_prefix]" value="<?php echo e($options['upload.r2_prefix'] ?? ''); ?>" placeholder="cms" />
+                            </div>
+
                             <div class="col-12">
                                 <div class="alert alert-light border py-2 small mb-2">
-                                    使用阿里云 OSS Signature V1 自签，无需安装 SDK。密钥不在此处保存，请配置
-                                    <code>config/storage.php</code> 或环境变量
-                                    <code>OSS_ACCESS_KEY_ID</code> / <code>OSS_ACCESS_KEY_SECRET</code>
-                                    （STS 临时凭证另设 <code>OSS_SECURITY_TOKEN</code>）。一期要求 Bucket 公共读。
+                                    各厂商均自签鉴权、无需安装 SDK。密钥不在此处保存，请配置
+                                    <code>config/storage.php</code> 或环境变量：OSS 用
+                                    <code>OSS_ACCESS_KEY_ID</code> / <code>OSS_ACCESS_KEY_SECRET</code>（STS 另设 <code>OSS_SECURITY_TOKEN</code>）；
+                                    COS 用 <code>COS_SECRET_ID</code> / <code>COS_SECRET_KEY</code>；
+                                    R2 用 <code>R2_ACCESS_KEY_ID</code> / <code>R2_SECRET_ACCESS_KEY</code>。
+                                    均要求 Bucket 公共读。
                                 </div>
                                 <button type="button" class="btn btn-outline-primary btn-sm" id="storageTestBtn">
                                     <i class="fa fa-plug me-1"></i>测试存储连接

@@ -5,13 +5,14 @@ namespace zapcms\controllers;
 use zapcms\controllers\UploadController;
 use zapcms\helpers\ThumbHelper;
 use zapcms\models\AdminLog;
+use zapcms\services\storage\StorageManager;
 use zap\http\Request;
 use zap\http\Response;
 
 /**
  * 媒体库控制器
  *
- * 管理 storage 目录下的图片与文件，提供：
+ * 通过统一存储抽象层（StorageManager）管理本地 / OSS / COS / R2 上的文件：
  *  - 目录树、文件网格/列表浏览
  *  - 新建文件夹、重命名、删除、移动、批量操作
  *  - 图片缩略图、预览、下载
@@ -35,8 +36,7 @@ class MediaController extends UploadController
      */
     public function tree()
     {
-        $tree = $this->buildDirTree('');
-        Response::json(['code' => 0, 'data' => $tree]);
+        Response::json(['code' => 0, 'data' => $this->buildTree(StorageManager::list(''), 0)]);
     }
 
     /**
@@ -44,61 +44,44 @@ class MediaController extends UploadController
      */
     public function browse()
     {
-        $relPath = $this->cleanPath((string)Request::post('path', ''));
-        $search  = trim((string)Request::post('search', ''));
+        $relPath = $this->cleanPath((string) Request::post('path', ''));
+        $search  = trim((string) Request::post('search', ''));
 
-        $absDir = $relPath === '' ? storage_path() : storage_path($relPath);
-        if (!is_dir($absDir)) {
-            Response::json(['code' => 1, 'msg' => '目录不存在']);
-            return;
-        }
+        $listing = StorageManager::list($relPath);
 
-        $dirs  = [];
-        $files = [];
-        $items = @scandir($absDir);
-        if ($items === false) {
-            Response::json(['code' => 1, 'msg' => '无法读取目录']);
-            return;
-        }
-
-        foreach ($items as $name) {
-            if ($name === '.' || $name === '..') {
-                continue;
-            }
-            if ($name === self::THUMBS_DIR) {
+        $dirs = [];
+        foreach ($listing['dirs'] as $dir) {
+            if ($dir['name'] === self::THUMBS_DIR && $relPath === '') {
                 continue; // 缩略图缓存目录不展示
             }
-            $itemRel = $relPath === '' ? $name : $relPath . '/' . $name;
-            $full    = $absDir . '/' . $name;
-
-            // 搜索过滤（仅匹配文件名）
-            if ($search !== '' && stripos($name, $search) === false) {
+            if ($search !== '' && stripos($dir['name'], $search) === false) {
                 continue;
             }
+            $dirs[] = [
+                'name'  => $dir['name'],
+                'path'  => $dir['path'],
+                'count' => $this->countFilesIn($dir['path']),
+            ];
+        }
 
-            if (is_dir($full)) {
-                $dirs[] = [
-                    'name'  => $name,
-                    'path'  => $itemRel,
-                    'count' => $this->countFiles($full),
-                ];
-            } else {
-                $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-                $files[] = [
-                    'name'     => $name,
-                    'path'     => $itemRel,
-                    'ext'      => $ext,
-                    'is_image' => $this->isImage($ext),
-                    'size'     => $this->formatSize((int)@filesize($full)),
-                    'bytes'    => (int)@filesize($full),
-                    'mtime'    => (int)@filemtime($full),
-                    'date'     => date('Y-m-d H:i', (int)@filemtime($full)),
-                    'url'      => storage_url($itemRel),
-                    'thumb'    => $this->isImage($ext)
-                        ? ThumbHelper::thumb($itemRel, 300, 200)
-                        : '',
-                ];
+        $files = [];
+        foreach ($listing['files'] as $f) {
+            if ($search !== '' && stripos($f['name'], $search) === false) {
+                continue;
             }
+            $ext = $f['ext'];
+            $files[] = [
+                'name'     => $f['name'],
+                'path'     => $f['path'],
+                'ext'      => $ext,
+                'is_image' => $this->isImage($ext),
+                'size'     => $this->formatSize($f['size']),
+                'bytes'    => $f['size'],
+                'mtime'    => $f['mtime'],
+                'date'     => $f['mtime'] > 0 ? date('Y-m-d H:i', $f['mtime']) : '',
+                'url'      => storage_url($f['path']),
+                'thumb'    => $this->isImage($ext) ? ThumbHelper::thumb($f['path'], 300, 200) : '',
+            ];
         }
 
         // 目录在前，各自按名称排序
@@ -134,11 +117,11 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '请求方式错误']);
             return;
         }
-        $path = $this->cleanPath((string)Request::post('path', ''));
+        $path = $this->cleanPath((string) Request::post('path', ''));
 
         // 允许用 / 分隔层级；反斜杠统一转换，去掉首尾与重复斜杠
-        $dirName = str_replace('\\', '/', (string)Request::post('dir_name', ''));
-        $dirName = (string)preg_replace('#/+#', '/', $dirName);
+        $dirName = str_replace('\\', '/', (string) Request::post('dir_name', ''));
+        $dirName = (string) preg_replace('#/+#', '/', $dirName);
         $dirName = trim($dirName, "/ \t\n\r\0\x0B");
 
         if ($dirName === '') {
@@ -167,13 +150,11 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '系统缩略图缓存目录禁止操作']);
             return;
         }
-
-        $target = storage_path($relTarget);
-        if (file_exists($target)) {
+        if ($this->pathExists($relTarget)) {
             Response::json(['code' => 1, 'msg' => '同名文件或文件夹已存在']);
             return;
         }
-        if (!@mkdir($target, 0777, true)) {
+        if (!StorageManager::makeDirectory($relTarget)) {
             Response::json(['code' => 1, 'msg' => '创建失败，请检查目录权限']);
             return;
         }
@@ -190,9 +171,9 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '请求方式错误']);
             return;
         }
-        $path    = $this->cleanPath((string)Request::post('path', ''));
-        $oldName = trim((string)Request::post('old_name', ''));
-        $newName = trim((string)Request::post('new_name', ''));
+        $path    = $this->cleanPath((string) Request::post('path', ''));
+        $oldName = trim((string) Request::post('old_name', ''));
+        $newName = trim((string) Request::post('new_name', ''));
 
         if ($oldName === '' || $newName === '') {
             Response::json(['code' => 1, 'msg' => '名称不能为空']);
@@ -206,17 +187,17 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '系统缩略图缓存目录禁止操作']);
             return;
         }
-        $oldPath = $path === '' ? storage_path($oldName) : storage_path($path . '/' . $oldName);
-        $newPath = $path === '' ? storage_path($newName) : storage_path($path . '/' . $newName);
-        if (!file_exists($oldPath)) {
+        $oldRel = $path === '' ? $oldName : $path . '/' . $oldName;
+        $newRel = $path === '' ? $newName : $path . '/' . $newName;
+        if (!$this->pathExists($oldRel)) {
             Response::json(['code' => 1, 'msg' => '原文件或文件夹不存在']);
             return;
         }
-        if (file_exists($newPath)) {
+        if ($this->pathExists($newRel)) {
             Response::json(['code' => 1, 'msg' => '同名文件或文件夹已存在']);
             return;
         }
-        if (!@rename($oldPath, $newPath)) {
+        if (!StorageManager::rename($oldRel, $newRel)) {
             Response::json(['code' => 1, 'msg' => '重命名失败，请检查目录权限']);
             return;
         }
@@ -233,23 +214,23 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '请求方式错误']);
             return;
         }
-        $path = $this->cleanPath((string)Request::post('path', ''));
+        $path = $this->cleanPath((string) Request::post('path', ''));
         if ($this->isForbiddenPath($path)) {
             Response::json(['code' => 1, 'msg' => '系统缩略图缓存目录禁止操作']);
             return;
         }
-        $names = (array)Request::post('names', []);
+        $names = (array) Request::post('names', []);
         if (empty($names)) {
             Response::json(['code' => 1, 'msg' => '请选择要删除的文件或文件夹']);
             return;
         }
-        $base = $path === '' ? storage_path() : storage_path($path);
         foreach ($names as $name) {
-            $name = basename(trim((string)$name));
+            $name = basename(trim((string) $name));
             if ($name === '' || $name === self::THUMBS_DIR) {
                 continue;
             }
-            $this->removePath($base . '/' . $name);
+            $rel = $path === '' ? $name : $path . '/' . $name;
+            StorageManager::delete($rel);
         }
         AdminLog::info(AdminLog::CATEGORY_CONTENT, '删除文件', '路径：' . ($path === '' ? '/' : $path) . '，共 ' . count($names) . ' 项');
         Response::json(['code' => 0, 'msg' => '删除成功']);
@@ -264,9 +245,9 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '请求方式错误']);
             return;
         }
-        $path   = $this->cleanPath((string)Request::post('path', ''));
-        $target = $this->cleanPath((string)Request::post('target', ''));
-        $names  = (array)Request::post('names', []);
+        $path   = $this->cleanPath((string) Request::post('path', ''));
+        $target = $this->cleanPath((string) Request::post('target', ''));
+        $names  = (array) Request::post('names', []);
 
         if (empty($names)) {
             Response::json(['code' => 1, 'msg' => '请选择要移动的文件或文件夹']);
@@ -280,22 +261,21 @@ class MediaController extends UploadController
             Response::json(['code' => 1, 'msg' => '系统缩略图缓存目录禁止操作']);
             return;
         }
-        $targetAbs = $target === '' ? storage_path() : storage_path($target);
-        if (!is_dir($targetAbs)) {
+        if (!$this->isDirectory($target)) {
             Response::json(['code' => 1, 'msg' => '目标目录不存在']);
             return;
         }
-        $base = $path === '' ? storage_path() : storage_path($path);
         foreach ($names as $name) {
-            $name = basename(trim((string)$name));
+            $name = basename(trim((string) $name));
             if ($name === '' || $name === self::THUMBS_DIR) {
                 continue;
             }
-            $src = $base . '/' . $name;
-            $dst = $targetAbs . '/' . $name;
-            if (file_exists($src) && !file_exists($dst)) {
-                @rename($src, $dst);
+            $src = $path === '' ? $name : $path . '/' . $name;
+            $dst = $target === '' ? $name : $target . '/' . $name;
+            if ($this->pathExists($dst)) {
+                continue;
             }
+            StorageManager::move($src, $dst);
         }
         AdminLog::info(AdminLog::CATEGORY_CONTENT, '移动文件', ($path === '' ? '/' : $path) . ' → ' . ($target === '' ? '/' : $target) . '，共 ' . count($names) . ' 项');
         Response::json(['code' => 0, 'msg' => '移动成功']);
@@ -306,94 +286,90 @@ class MediaController extends UploadController
      */
     public function download()
     {
-        $path = $this->cleanPath((string)Request::get('path', ''));
+        $path = $this->cleanPath((string) Request::get('path', ''));
         if ($path === '' || $this->isForbiddenPath($path)) {
             http_response_code(403);
             exit('Forbidden');
         }
-        $full = storage_path($path);
-        if (!is_file($full)) {
+        $tmp = StorageManager::download($path);
+        if ($tmp === null) {
             http_response_code(404);
             exit('Not Found');
         }
-        Response::download($full, basename($full));
+        Response::download($tmp, basename($path));
     }
 
     /**
-     * 递归构建目录树（排除 thumbs）
+     * 递归构建目录树（排除 thumbs），每个目录只列举一次
      */
-    private function buildDirTree(string $relPath): array
+    private function buildTree(array $listing, int $depth): array
     {
-        $abs = $relPath === '' ? storage_path() : storage_path($relPath);
-        $tree = [];
-        $items = @scandir($abs);
-        if ($items === false) {
-            return $tree;
+        if ($depth >= 10) {
+            return [];
         }
-        $dirs = [];
-        foreach ($items as $name) {
-            if ($name === '.' || $name === '..' || $name === self::THUMBS_DIR) {
+        $nodes = [];
+        usort($listing['dirs'], static fn($a, $b) => strnatcasecmp($a['name'], $b['name']));
+        foreach ($listing['dirs'] as $dir) {
+            if ($dir['name'] === self::THUMBS_DIR && $depth === 0) {
                 continue;
             }
-            $full = $abs . '/' . $name;
-            if (is_dir($full)) {
-                $dirs[] = $name;
-            }
-        }
-        sort($dirs, SORT_NATURAL | SORT_FLAG_CASE);
-        foreach ($dirs as $name) {
-            $childRel = $relPath === '' ? $name : $relPath . '/' . $name;
-            $children = $this->buildDirTree($childRel);
-            $tree[] = [
-                'name'     => $name,
-                'path'     => $childRel,
-                'count'    => $this->countFiles(storage_path($childRel)),
-                'children' => $children,
+            $sub = StorageManager::list($dir['path']);
+            $nodes[] = [
+                'name'     => $dir['name'],
+                'path'     => $dir['path'],
+                'count'    => count($sub['files']),
+                'children' => $this->buildTree($sub, $depth + 1),
             ];
         }
-        return $tree;
+        return $nodes;
     }
 
     /**
-     * 统计目录内文件数（不含子目录与 thumbs）
+     * 统计目录内直属文件数（不含子目录与 thumbs）
      */
-    private function countFiles(string $dir): int
+    private function countFilesIn(string $path): int
     {
-        $count = 0;
-        $items = @scandir($dir);
-        if ($items === false) {
-            return 0;
-        }
-        foreach ($items as $name) {
-            if ($name === '.' || $name === '..' || $name === self::THUMBS_DIR) {
-                continue;
-            }
-            if (is_file($dir . '/' . $name)) {
-                $count++;
-            }
-        }
-        return $count;
+        return count(StorageManager::list($path)['files']);
     }
 
     /**
-     * 递归删除文件/目录
+     * 判断相对 key 对应的文件或目录是否存在（比较父目录下的同名条目）
      */
-    private function removePath(string $path): void
+    private function pathExists(string $key): bool
     {
-        if (is_dir($path) && !is_link($path)) {
-            $items = @scandir($path);
-            if ($items !== false) {
-                foreach ($items as $name) {
-                    if ($name === '.' || $name === '..') {
-                        continue;
-                    }
-                    $this->removePath($path . '/' . $name);
-                }
-            }
-            @rmdir($path);
-        } else {
-            @unlink($path);
+        $key = ltrim($key, '/');
+        if ($key === '') {
+            return true;
         }
+        $parent = dirname($key);
+        $name   = basename($key);
+        $listing = ($parent === '.' || $parent === '') ? StorageManager::list('') : StorageManager::list($parent);
+        foreach (array_merge($listing['dirs'], $listing['files']) as $item) {
+            if ($item['name'] === $name) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 判断相对 key 是否为目录
+     */
+    private function isDirectory(string $key): bool
+    {
+        $key = ltrim($key, '/');
+        if ($key === '') {
+            return true; // 根目录
+        }
+        $parent = dirname($key);
+        $name   = basename($key);
+        $listing = ($parent === '.' || $parent === '') ? StorageManager::list('') : StorageManager::list($parent);
+        foreach ($listing['dirs'] as $dir) {
+            if ($dir['name'] === $name) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -403,7 +379,7 @@ class MediaController extends UploadController
     {
         $path = str_replace(['..', '\\'], '/', $path);
         $path = preg_replace('#/+#', '/', $path);
-        return trim((string)$path, '/');
+        return trim((string) $path, '/');
     }
 
     /**

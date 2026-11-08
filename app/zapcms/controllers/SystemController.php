@@ -47,7 +47,7 @@ class SystemController extends AdminController
             \zap\facades\Cache::delete('_opts_website');
             \zap\facades\Cache::delete('_opts_upload');
             // 存储参数可能变化，丢弃已缓存的驱动实例
-            \zapcms\services\Storage\StorageManager::forget();
+            \zapcms\services\storage\StorageManager::forget();
             AdminLog::info(AdminLog::CATEGORY_SYSTEM, '保存系统设置', '站点信息 / 服务器 / 缓存设置已更新');
             Response::json(['code'=>0,'msg'=>'保存成功']);
         }

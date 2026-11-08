@@ -1,6 +1,6 @@
 <?php
 
-namespace zapcms\services\Storage;
+namespace zapcms\services\storage;
 
 class StorageException extends \RuntimeException
 {

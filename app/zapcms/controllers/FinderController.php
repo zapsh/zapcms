@@ -5,16 +5,18 @@ namespace zapcms\controllers;
 
 use zapcms\controllers\AdminController;
 use zapcms\helpers\ThumbHelper;
-use zapcms\support\SortingFilesystemIterator;
+use zapcms\services\storage\StorageManager;
 use zap\helpers\Pagination;
-use zap\util\FileUtils;
 use zap\util\Str;
 use zap\view\View;
 
 class FinderController extends AdminController
 {
-    /** 单次目录树请求最多返回的节点数，防止超大目录拖慢弹窗 */
-    private int $treeNodeBudget = 500;
+    /** 单层目录树请求最多返回的目录节点数，防止超大目录拖慢弹窗 */
+    private const TREE_LEVEL_BUDGET = 200;
+
+    /** 目录树最大递归深度 */
+    private const TREE_MAX_DEPTH = 8;
 
     function list(){
         // size 格式校验：仅允许 "宽x高" 或 original
@@ -26,26 +28,63 @@ class FinderController extends AdminController
             $width = 136;
             $height = 136;
         }
-        $path = trim(req()->get('path',''),'/');
-        $path =  str_replace(['..'],'',$path);
-        $realPath = realpath(app()->storagePath($path) );
-        if(!is_dir($realPath)){
-            \response("{$path} 不是目录无法访问")->setStatusCode(403)->send();
-        }
+        $path = trim((string)req()->get('path',''),'/');
+        $path = str_replace(['..'],'',$path);
         $search = (string)req()->get('search','');
-        $data = [];
-//        $fsIter = new FilesystemIterator($realPath,FilesystemIterator::KEY_AS_PATHNAME|FilesystemIterator::CURRENT_AS_FILEINFO|FilesystemIterator::SKIP_DOTS);
-        $fsIter = new SortingFilesystemIterator($realPath);
-        $fsIter->sortByType();
-        if($search !== ''){
-            $fsIter->match('/' . preg_quote($search, '/') . '/');
+
+        $listing = StorageManager::list($path);
+
+        $entries = [];
+        foreach ($listing['dirs'] as $dir) {
+            if ($search !== '' && stripos($dir['name'], $search) === false) {
+                continue;
+            }
+            $entries[] = [
+                'filename' => $dir['name'],
+                'type'     => 'dir',
+                'ext'      => '',
+                'is_image' => false,
+                'thumb_url'=> '',
+                'path'     => $path !== '' ? "{$path}/{$dir['name']}" : $dir['name'],
+                'perms'    => '0755',
+                'icon'     => 'fa fa-folder',
+            ];
+        }
+        foreach ($listing['files'] as $f) {
+            if ($search !== '' && stripos($f['name'], $search) === false) {
+                continue;
+            }
+            $isImage  = $this->isImage($f['ext']);
+            $filePath = $path !== '' ? "{$path}/{$f['name']}" : $f['name'];
+            $thumbUrl = '';
+            if ($isImage && !Str::startsWith($path, 'thumbs')) {
+                $thumbUrl = ThumbHelper::thumb($filePath, $width, $height);
+            } elseif ($isImage) {
+                $thumbUrl = storage_url($filePath);
+            }
+            $entries[] = [
+                'filename' => $f['name'],
+                'type'     => 'file',
+                'ext'      => $f['ext'],
+                'is_image' => $isImage,
+                'thumb_url'=> $thumbUrl,
+                'path'     => $filePath,
+                'perms'    => '0644',
+                'icon'     => $this->getFileIcon($f['ext']),
+            ];
         }
 
-        $total = $fsIter->count();
+        // 目录在前，各自按自然名称排序
+        usort($entries, static function (array $a, array $b): int {
+            if ($a['type'] !== $b['type']) {
+                return $a['type'] === 'dir' ? -1 : 1;
+            }
+            return strnatcasecmp($a['filename'], $b['filename']);
+        });
+
+        $total = count($entries);
 
         // 分页 URL：保留 path/search/target 等查询参数，剔除 page 与 initialize。
-        // initialize=true 会渲染整个 finder 框架（form+script），若被带入分页链接，
-        // 前端 .load() 会把整个框架嵌套进 #finderContent，导致表单嵌套、事件重复绑定。
         $query = req()->get();
         unset($query['page'], $query['initialize']);
 
@@ -53,33 +92,8 @@ class FinderController extends AdminController
         $pageHelper->withPath(url_action('Finder@list') . ($query ? '?' . http_build_query($query) : ''));
         $pageHelper->setTotal($total);
         $pageHelper->setClasses(['nav'=>'pagination pagination-sm justify-content-center mb-0']);
-        // 裁剪超出范围的页码，保证 getOffset() 与 currentPage() 一致
         $pageHelper->setCurrentPage($pageHelper->currentPage());
-        $fsIter->limit($pageHelper->getOffset(), $pageHelper->getLimit());
-        while($fsIter->valid()){
-            $isImage = $this->isImage($fsIter->current()->getExtension());
-            $isFile = $fsIter->current()->getType() === 'file';
-            $thumbUrl = '';
-            if($isFile && $isImage  && !Str::startsWith($path,'thumbs')){
-                $thumbUrl = ThumbHelper::thumb("{$path}/{$fsIter->current()->getFilename()}",$width,$height);
-            }else if($isFile && $isImage){
-                $thumbUrl = storage_url("{$path}/{$fsIter->current()->getFilename()}");
-            }
-            $data[] = [
-                'filename'=>$fsIter->current()->getFilename(),
-                'type'=>$fsIter->current()->getType(),
-                'ext'=>$fsIter->current()->getExtension(),
-                'is_image'=>$isImage,
-                'thumb_url'=>$thumbUrl,
-                'path'=> $path !== ''  ? "{$path}/{$fsIter->current()->getFilename()}" : $fsIter->current()->getFilename() ,
-                'perms'=> substr(sprintf('%o', $fsIter->current()->getPerms()), -4),
-                'icon'=> ($fsIter->current()->getType() === 'dir') ? 'fa fa-folder' : $this->getFileIcon($fsIter->current()->getExtension())
-            ];
-            $fsIter->next();
-        }
-//        $fileNames = array_column($data,'filename');
-//        $fileTypes = array_column($data,'type');
-//        array_multisort($fileTypes,SORT_ASC,$fileNames,SORT_ASC ,$data);
+        $data = array_slice($entries, $pageHelper->getOffset(), $pageHelper->getLimit());
 
         $parent_path = dirname($path);
 
@@ -117,48 +131,30 @@ class FinderController extends AdminController
      */
     public function tree()
     {
-        $root = realpath(storage_path());
-        if ($root === false || !is_dir($root)) {
-            \response(['code' => 1, 'msg' => '存储目录不可用'])->withJson();
-            return;
-        }
-        \response(['code' => 0, 'data' => $this->buildFinderTree($root, '', 0)])->withJson();
+        \response(['code' => 0, 'data' => $this->buildFinderTree(StorageManager::list(''), '', 0)])->withJson();
     }
 
     /**
-     * 递归构建目录树。限制深度与单层节点数，避免超大目录拖慢弹窗。
-     * 跳过符号链接目录，防止越出 storage 或形成遍历环。
+     * 递归构建目录树。每个目录只列举一次，限制深度与单层节点数，避免超大目录拖慢弹窗。
      */
-    private function buildFinderTree(string $absDir, string $relPath, int $depth): array
+    private function buildFinderTree(array $listing, string $relPath, int $depth): array
     {
-        if ($depth >= 8 || $this->treeNodeBudget <= 0) {
-            return [];
-        }
-        $items = @scandir($absDir);
-        if ($items === false) {
+        if ($depth >= self::TREE_MAX_DEPTH) {
             return [];
         }
         $nodes = [];
-        foreach ($items as $name) {
-            if (count($nodes) >= 200 || $this->treeNodeBudget <= 0) {
+        foreach ($listing['dirs'] as $dir) {
+            if (count($nodes) >= self::TREE_LEVEL_BUDGET) {
                 break;
             }
-            if ($name === '.' || $name === '..') {
-                continue;
-            }
-            $full = $absDir . '/' . $name;
-            if (!is_dir($full) || is_link($full)) {
-                continue;
-            }
-            $this->treeNodeBudget--;
-            $childRel = $relPath === '' ? $name : $relPath . '/' . $name;
             // thumbs 为系统缩略图缓存：保留节点便于浏览，但不递归遍历、禁止改名/删除
-            $isSystem = $relPath === '' && $name === 'thumbs';
+            $isSystem = $relPath === '' && $dir['name'] === 'thumbs';
+            $sub = $isSystem ? ['dirs' => [], 'files' => []] : StorageManager::list($dir['path']);
             $nodes[] = [
-                'name'     => $name,
-                'path'     => $childRel,
-                'count'    => $this->countFinderFiles($full),
-                'children' => $isSystem ? [] : $this->buildFinderTree($full, $childRel, $depth + 1),
+                'name'     => $dir['name'],
+                'path'     => $dir['path'],
+                'count'    => count($sub['files']),
+                'children' => $isSystem ? [] : $this->buildFinderTree($sub, $dir['path'], $depth + 1),
                 'system'   => $isSystem,
             ];
         }
@@ -166,31 +162,13 @@ class FinderController extends AdminController
         return $nodes;
     }
 
-    /**
-     * 统计目录直属文件数（不含子目录），用于树节点角标
-     */
-    private function countFinderFiles(string $absDir): int
-    {
-        $items = @scandir($absDir);
-        if ($items === false) {
-            return 0;
-        }
-        $count = 0;
-        foreach ($items as $name) {
-            if ($name !== '.' && $name !== '..' && is_file($absDir . '/' . $name)) {
-                $count++;
-            }
-        }
-        return $count;
-    }
-
     public function createDir()
     {
         if(req()->isPost()){
             $dirName = trim((string)req()->post('dir_name'));
             $path = trim((string)req()->post('path'),' \\/');
-            $dirName =  str_replace(['..'],'',$dirName);
-            $path =  str_replace(['..'],'',$path);
+            $dirName = str_replace(['..'],'',$dirName);
+            $path = str_replace(['..'],'',$path);
 
             if($dirName === ''){
                 \response(['code'=>1,'msg'=>'目录名称不能为空'])->withJson();
@@ -207,12 +185,12 @@ class FinderController extends AdminController
                 return;
             }
 
-            $target = storage_path(($path !== '' ? $path . '/' : '') . $dirName);
-            if(is_dir($target)){
+            $target = ($path !== '' ? $path . '/' : '') . $dirName;
+            if($this->pathExists($target)){
                 \response(['code'=>1,'msg'=>'创建失败，目录已存在'])->withJson();
                 return;
             }
-            if(mkdir($target,0777,true) === true){
+            if(StorageManager::makeDirectory($target)){
                 \response(['code'=>0,'msg'=>'目录创建成功'])->withJson();
                 return;
             }
@@ -230,7 +208,7 @@ class FinderController extends AdminController
                 return;
             }
             $path = trim((string)req()->post('path'),' \\/');
-            $path =  str_replace(['..'],'',$path);
+            $path = str_replace(['..'],'',$path);
 
             $success = 0;
             foreach ($finderItem as $item){
@@ -239,15 +217,12 @@ class FinderController extends AdminController
                 if($name === '' || $name === '.' || $name === '..'){
                     continue;
                 }
-                $itemPath = storage_path(($path !== '' ? $path . '/' : '') . $name);
-                if(is_file($itemPath)){
-                    if(FileUtils::delete($itemPath)){
-                        $success++;
-                    }
-                }else if(is_dir($itemPath)){
-                    if(FileUtils::deleteDir($itemPath)){
-                        $success++;
-                    }
+                if($name === 'thumbs' && $path === ''){
+                    continue; // 系统缩略图缓存目录禁止删除
+                }
+                $rel = ($path !== '' ? $path . '/' : '') . $name;
+                if(StorageManager::delete($rel)){
+                    $success++;
                 }
             }
 
@@ -270,8 +245,8 @@ class FinderController extends AdminController
         $oldName = basename(str_replace('\\','/',trim((string)req()->post('old_name'),' /')));
         $newName = trim((string)req()->post('new_name'));
         $path = trim((string)req()->post('path'),' \\/');
-        $newName =  str_replace(['..'],'',$newName);
-        $path =  str_replace(['..'],'',$path);
+        $newName = str_replace(['..'],'',$newName);
+        $path = str_replace(['..'],'',$path);
 
         if($oldName === '' || $oldName === '.' || $oldName === '..'){
             \response(['code'=>1,'msg'=>'请选择要重命名的文件'])->withJson();
@@ -296,19 +271,18 @@ class FinderController extends AdminController
             return;
         }
 
-        $baseDir = $path !== '' ? storage_path($path) : storage_path();
-        $oldPath = $baseDir . '/' . $oldName;
-        $newPath = $baseDir . '/' . $newName;
+        $oldRel = ($path !== '' ? $path . '/' : '') . $oldName;
+        $newRel = ($path !== '' ? $path . '/' : '') . $newName;
 
-        if(!file_exists($oldPath)){
+        if(!$this->pathExists($oldRel)){
             \response(['code'=>1,'msg'=>'原文件不存在或已被移动'])->withJson();
             return;
         }
-        if(file_exists($newPath)){
+        if($this->pathExists($newRel)){
             \response(['code'=>1,'msg'=>'重命名失败，已存在同名文件或目录'])->withJson();
             return;
         }
-        if(@rename($oldPath, $newPath)){
+        if(StorageManager::rename($oldRel, $newRel)){
             \response(['code'=>0,'msg'=>'重命名成功'])->withJson();
             return;
         }
@@ -344,6 +318,26 @@ class FinderController extends AdminController
     {
         // 仅包含 Image 库（GD）支持的格式，避免缩略图生成异常
         return in_array(strtolower((string)$ext), ['png','jpg','jpeg','gif','webp'], true);
+    }
+
+    /**
+     * 判断相对 key 对应的文件或目录是否存在（比较父目录下的同名条目）
+     */
+    private function pathExists(string $key): bool
+    {
+        $key = ltrim($key, '/');
+        if ($key === '') {
+            return true;
+        }
+        $parent = dirname($key);
+        $name   = basename($key);
+        $listing = ($parent === '.' || $parent === '') ? StorageManager::list('') : StorageManager::list($parent);
+        foreach (array_merge($listing['dirs'], $listing['files']) as $item) {
+            if ($item['name'] === $name) {
+                return true;
+            }
+        }
+        return false;
     }
 
 

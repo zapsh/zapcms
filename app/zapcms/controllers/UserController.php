@@ -352,7 +352,7 @@ class UserController extends AdminController
 
         // 统一走存储门面，落 storage/avatar（local/both/oss 由系统设置决定）
         try {
-            $result = \zapcms\services\Storage\StorageManager::put(
+            $result = \zapcms\services\storage\StorageManager::put(
                 'avatar/' . $filename,
                 $uploads['tmp_name'],
                 ['size' => (int)$uploads['size'], 'mime' => $mime]

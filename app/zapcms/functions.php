@@ -555,7 +555,7 @@ function storage_url(string $path = ''): string
 {
     $path = '/' . ltrim($path, '/');
     try {
-        return \zapcms\services\Storage\StorageManager::url(ltrim($path, '/'));
+        return \zapcms\services\storage\StorageManager::url(ltrim($path, '/'));
     } catch (\Throwable $e) {
         // 存储层异常时降级为原行为，避免整站附件 URL 不可用
     }
@@ -574,7 +574,7 @@ function storage_url(string $path = ''): string
 function storage_key($url): ?string
 {
     try {
-        return \zapcms\services\Storage\StorageManager::keyFromUrl($url);
+        return \zapcms\services\storage\StorageManager::keyFromUrl($url);
     } catch (\Throwable $e) {
         return null;
     }
@@ -584,7 +584,7 @@ function storage_key($url): ?string
 function storage_mode(): string
 {
     try {
-        return \zapcms\services\Storage\StorageManager::mode();
+        return \zapcms\services\storage\StorageManager::mode();
     } catch (\Throwable $e) {
         return 'local';
     }

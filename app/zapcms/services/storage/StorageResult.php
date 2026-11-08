@@ -1,6 +1,6 @@
 <?php
 
-namespace zapcms\services\Storage;
+namespace zapcms\services\storage;
 
 /** 一次写入的结果 */
 final class StorageResult

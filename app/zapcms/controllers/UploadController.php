@@ -5,8 +5,8 @@ namespace zapcms\controllers;
 
 use zapcms\controllers\AdminController;
 use zapcms\models\AdminLog;
-use zapcms\services\Storage\StorageException;
-use zapcms\services\Storage\StorageManager;
+use zapcms\services\storage\StorageException;
+use zapcms\services\storage\StorageManager;
 use zap\http\Request;
 use zap\http\Response;
 

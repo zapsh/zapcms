@@ -11,8 +11,8 @@
 namespace zapcms\helpers;
 
 use zap\image\Image;
-use zapcms\services\Storage\Drivers\LocalStorage;
-use zapcms\services\Storage\StorageManager;
+use zapcms\services\storage\drivers\LocalStorage;
+use zapcms\services\storage\StorageManager;
 
 class ThumbHelper
 {
@@ -33,7 +33,7 @@ class ThumbHelper
             return self::placeholderThumb($width, $height);
         }
 
-        if (storage_mode() === 'oss') {
+        if (StorageManager::isCloud()) {
             return StorageManager::thumbUrl($key, (int) $width, (int) $height);
         }
 
