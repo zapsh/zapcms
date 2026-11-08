@@ -3,6 +3,7 @@
 namespace zapcms\services\storage\drivers;
 
 use zap\net\Requests;
+use zapcms\services\storage\Secret;
 use zapcms\services\storage\StorageException;
 use zapcms\services\storage\StorageInterface;
 use zapcms\services\storage\StorageResult;
@@ -40,8 +41,8 @@ class CosStorage implements StorageInterface
         $this->thumbMode = (string) option('upload.cos_thumb', 'none');
 
         $conf = (array) config('storage.cos', []);
-        $this->secretId  = (string) ($conf['secret_id'] ?? '');
-        $this->secretKey = (string) ($conf['secret_key'] ?? '');
+        $this->secretId  = (string) (Secret::get('storage.cos.secret_id') ?: ($conf['secret_id'] ?? ''));
+        $this->secretKey = (string) (Secret::get('storage.cos.secret_key') ?: ($conf['secret_key'] ?? ''));
         $this->timeout   = max(5, (int) ($conf['timeout'] ?? 60));
     }
 

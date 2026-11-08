@@ -200,11 +200,18 @@ $this->view->page_subtitle = '站点信息 & 统计与嵌入代码 & 邮件配�
                                        value="<?php echo e($options['website.smtp_user'] ?? ''); ?>" />
                             </div>
                             <div class="col-md-6">
-                                <label for="website.smtp_pass" class="form-label small">邮箱密码 / 授权码</label>
-                                <input type="password" class="form-control form-control-sm" id="website.smtp_pass"
-                                       name="options[website.smtp_pass]"
-                                       placeholder="SMTP 授权码（非邮箱登录密码）"
-                                       value="<?php echo e($options['website.smtp_pass'] ?? ''); ?>" />
+                                <label for="mail.smtp_pass" class="form-label small">邮箱密码 / 授权码</label>
+                                <input type="password" autocomplete="new-password" class="form-control form-control-sm" id="mail.smtp_pass"
+                                       name="secrets[mail.smtp_pass]"
+                                       placeholder="<?php echo !empty($secrets_configured['mail.smtp_pass']) ? '已配置，留空保持不变' : 'SMTP 授权码（非邮箱登录密码）'; ?>" />
+                                <?php if ($crypto_available && !empty($secrets_configured['mail.smtp_pass'])): ?>
+                                <label class="form-check form-check-inline small mb-0 mt-1">
+                                    <input type="checkbox" class="form-check-input" name="secrets_clear[]" value="mail">
+                                    <span class="form-check-label text-danger">清除已保存的密码</span>
+                                </label>
+                                <?php elseif (!$crypto_available): ?>
+                                <div class="form-text text-warning mt-1">未配置 <code>app_key</code>，密码无法加密保存，请先设置 <code>config/app_key</code>。</div>
+                                <?php endif; ?>
                             </div>
                             <div class="col-md-6">
                                 <label for="website.smtp_from" class="form-label small">发件人地址</label>
@@ -336,6 +343,32 @@ $this->view->page_subtitle = '站点信息 & 统计与嵌入代码 & 邮件配�
                                 <input type="text" class="form-control form-control-sm" id="upload.oss_prefix"
                                        name="options[upload.oss_prefix]" value="<?php echo e($options['upload.oss_prefix'] ?? ''); ?>" placeholder="cms" />
                             </div>
+                            <?php if ($crypto_available): ?>
+                            <div class="col-md-6">
+                                <label for="secret.oss.access_key_id" class="form-label small">AccessKey ID</label>
+                                <input type="password" autocomplete="new-password" class="form-control form-control-sm" id="secret.oss.access_key_id"
+                                       name="secrets[storage.oss.access_key_id]"
+                                       placeholder="<?php echo !empty($secrets_configured['storage.oss.access_key_id']) ? '已配置，留空保持不变' : 'AccessKey ID'; ?>" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="secret.oss.access_key_secret" class="form-label small">AccessKey Secret</label>
+                                <input type="password" autocomplete="new-password" class="form-control form-control-sm" id="secret.oss.access_key_secret"
+                                       name="secrets[storage.oss.access_key_secret]"
+                                       placeholder="<?php echo !empty($secrets_configured['storage.oss.access_key_secret']) ? '已配置，留空保持不变' : 'AccessKey Secret'; ?>" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="secret.oss.security_token" class="form-label small">Security Token（STS 可选）</label>
+                                <input type="password" autocomplete="new-password" class="form-control form-control-sm" id="secret.oss.security_token"
+                                       name="secrets[storage.oss.security_token]"
+                                       placeholder="<?php echo !empty($secrets_configured['storage.oss.security_token']) ? '已配置，留空保持不变' : 'Security Token'; ?>" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-check form-check-inline small mb-0">
+                                    <input type="checkbox" class="form-check-input" name="secrets_clear[]" value="oss">
+                                    <span class="form-check-label text-danger">清除已保存的 OSS 密钥</span>
+                                </label>
+                            </div>
+                            <?php endif; ?>
                                 </div></div>
                             </div>
 
@@ -373,6 +406,26 @@ $this->view->page_subtitle = '站点信息 & 统计与嵌入代码 & 邮件配�
                                 </select>
                                 <div class="form-text">选「数据万象」需在 COS 控制台开启图片处理，缩略图由云端生成。</div>
                             </div>
+                            <?php if ($crypto_available): ?>
+                            <div class="col-md-6">
+                                <label for="secret.cos.secret_id" class="form-label small">SecretId</label>
+                                <input type="password" autocomplete="new-password" class="form-control form-control-sm" id="secret.cos.secret_id"
+                                       name="secrets[storage.cos.secret_id]"
+                                       placeholder="<?php echo !empty($secrets_configured['storage.cos.secret_id']) ? '已配置，留空保持不变' : 'SecretId'; ?>" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="secret.cos.secret_key" class="form-label small">SecretKey</label>
+                                <input type="password" autocomplete="new-password" class="form-control form-control-sm" id="secret.cos.secret_key"
+                                       name="secrets[storage.cos.secret_key]"
+                                       placeholder="<?php echo !empty($secrets_configured['storage.cos.secret_key']) ? '已配置，留空保持不变' : 'SecretKey'; ?>" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-check form-check-inline small mb-0">
+                                    <input type="checkbox" class="form-check-input" name="secrets_clear[]" value="cos">
+                                    <span class="form-check-label text-danger">清除已保存的 COS 密钥</span>
+                                </label>
+                            </div>
+                            <?php endif; ?>
                                 </div></div>
                             </div>
 
@@ -410,17 +463,37 @@ $this->view->page_subtitle = '站点信息 & 统计与嵌入代码 & 邮件配�
                                 </select>
                                 <div class="form-text">选「Image Resizing」需公开地址为经 Cloudflare 代理的域名，并开通 Image Resizing。</div>
                             </div>
+                            <?php if ($crypto_available): ?>
+                            <div class="col-md-6">
+                                <label for="secret.r2.access_key_id" class="form-label small">Access Key ID</label>
+                                <input type="password" autocomplete="new-password" class="form-control form-control-sm" id="secret.r2.access_key_id"
+                                       name="secrets[storage.r2.access_key_id]"
+                                       placeholder="<?php echo !empty($secrets_configured['storage.r2.access_key_id']) ? '已配置，留空保持不变' : 'Access Key ID'; ?>" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="secret.r2.secret_access_key" class="form-label small">Secret Access Key</label>
+                                <input type="password" autocomplete="new-password" class="form-control form-control-sm" id="secret.r2.secret_access_key"
+                                       name="secrets[storage.r2.secret_access_key]"
+                                       placeholder="<?php echo !empty($secrets_configured['storage.r2.secret_access_key']) ? '已配置，留空保持不变' : 'Secret Access Key'; ?>" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-check form-check-inline small mb-0">
+                                    <input type="checkbox" class="form-check-input" name="secrets_clear[]" value="r2">
+                                    <span class="form-check-label text-danger">清除已保存的 R2 密钥</span>
+                                </label>
+                            </div>
+                            <?php endif; ?>
                                 </div></div>
                             </div>
 
                             <div class="col-12 js-cloud-only">
                                 <div class="alert alert-light border py-2 small mb-2">
-                                    各厂商均自签鉴权、无需安装 SDK。密钥不在此处保存，请配置
-                                    <code>config/storage.php</code> 或环境变量：OSS 用
-                                    <code>OSS_ACCESS_KEY_ID</code> / <code>OSS_ACCESS_KEY_SECRET</code>（STS 另设 <code>OSS_SECURITY_TOKEN</code>）；
-                                    COS 用 <code>COS_SECRET_ID</code> / <code>COS_SECRET_KEY</code>；
-                                    R2 用 <code>R2_ACCESS_KEY_ID</code> / <code>R2_SECRET_ACCESS_KEY</code>。
-                                    均要求 Bucket 公共读。
+                                    <?php if ($crypto_available): ?>
+                                    密钥可直接在上方各厂商面板填写，会用 <code>config/app_key</code> 派生密钥加密后存入数据库（<code>secret.*</code>，不参与自动加载），读取时解密，绝不回显明文；留空表示保留原值。
+                                    <?php else: ?>
+                                    <strong>尚未配置加密密钥。</strong>请在 <code>config/config.php</code> 中设置 <code>'app_key' => '随机字符串'</code>（或环境变量 <code>ZAP_APP_KEY</code>），才能在此页面填写并加密存储密钥；在此之前请改用 <code>config/storage.php</code> 或环境变量配置密钥。
+                                    <?php endif; ?>
+                                    <div class="mt-1 text-muted">各厂商均自签鉴权、无需安装 SDK，且要求 Bucket 公共读。环境变量兜底：OSS 用 <code>OSS_ACCESS_KEY_ID</code>/<code>OSS_ACCESS_KEY_SECRET</code>，COS 用 <code>COS_SECRET_ID</code>/<code>COS_SECRET_KEY</code>，R2 用 <code>R2_ACCESS_KEY_ID</code>/<code>R2_SECRET_ACCESS_KEY</code>。</div>
                                 </div>
                                 <button type="button" class="btn btn-outline-primary btn-sm" id="storageTestBtn">
                                     <i class="fa fa-plug me-1"></i>测试存储连接
@@ -587,9 +660,17 @@ $this->view->page_subtitle = '站点信息 & 统计与嵌入代码 & 邮件配�
                             </div>
                             <div class="col-md-6">
                                 <label for="cache.redis_password" class="form-label small">密码</label>
-                                <input type="password" class="form-control form-control-sm" id="cache.redis_password"
-                                       name="cache[redis_password]" placeholder="留空表示无需密码"
-                                       value="<?php echo htmlspecialchars($cache['redis_password'], ENT_QUOTES);?>" />
+                                <input type="password" autocomplete="new-password" class="form-control form-control-sm" id="cache.redis_password"
+                                       name="secrets[cache.redis_password]"
+                                       placeholder="<?php echo !empty($secrets_configured['cache.redis_password']) ? '已配置，留空保持不变' : '留空表示无需密码'; ?>" />
+                                <?php if ($crypto_available && !empty($secrets_configured['cache.redis_password'])): ?>
+                                <label class="form-check form-check-inline small mb-0 mt-1">
+                                    <input type="checkbox" class="form-check-input" name="secrets_clear[]" value="cache">
+                                    <span class="form-check-label text-danger">清除已保存的密码</span>
+                                </label>
+                                <?php elseif (!$crypto_available): ?>
+                                <div class="form-text text-warning mt-1">未配置 <code>app_key</code>，密码无法加密保存，请先设置 <code>config/app_key</code>。</div>
+                                <?php endif; ?>
                             </div>
                             <div class="col-12">
                                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearCache()">

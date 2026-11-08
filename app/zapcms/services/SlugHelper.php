@@ -13,6 +13,7 @@ namespace zapcms\services;
 
 use zap\util\Str;
 use Overtrue\Pinyin\Pinyin;
+use zapcms\services\storage\Secret;
 
 class SlugHelper
 {
@@ -86,7 +87,7 @@ class SlugHelper
     private static function toTranslate(string $text): string
     {
         $appid = option('slug.baidu_appid', '');
-        $key   = option('slug.baidu_key', '');
+        $key   = (string) (Secret::get('slug.baidu_key') ?: option('slug.baidu_key', ''));
 
         if (empty($appid) || empty($key)) {
             return $text;

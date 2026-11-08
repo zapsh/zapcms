@@ -3,6 +3,7 @@
 namespace zapcms\services\storage\drivers;
 
 use zap\net\Requests;
+use zapcms\services\storage\Secret;
 use zapcms\services\storage\StorageException;
 use zapcms\services\storage\StorageInterface;
 use zapcms\services\storage\StorageResult;
@@ -40,9 +41,9 @@ class OssStorage implements StorageInterface
         $this->prefix   = trim((string) option('upload.oss_prefix', ''), '/');
 
         $conf = (array) config('storage.oss', []);
-        $this->accessKeyId     = (string) ($conf['access_key_id'] ?? '');
-        $this->accessKeySecret = (string) ($conf['access_key_secret'] ?? '');
-        $this->securityToken   = (string) ($conf['security_token'] ?? '');
+        $this->accessKeyId     = (string) (Secret::get('storage.oss.access_key_id') ?: ($conf['access_key_id'] ?? ''));
+        $this->accessKeySecret = (string) (Secret::get('storage.oss.access_key_secret') ?: ($conf['access_key_secret'] ?? ''));
+        $this->securityToken   = (string) (Secret::get('storage.oss.security_token') ?: ($conf['security_token'] ?? ''));
         $this->timeout         = max(5, (int) ($conf['timeout'] ?? 60));
     }
 

@@ -245,6 +245,9 @@ function importBaseDataAction()
         }
         \zapcms\support\ZapConfig::createConfig(config('database'), config_path('database.php'));
 
+        // 生成 config/config.php 并写入随机 app_key（用于敏感信息加密存储）
+        writeAppConfig();
+
         \zapcms\services\Option::update('website.title', $websiteTitle);
         \zapcms\services\Option::update('website.slogan', $websiteSlogan);
         \zapcms\services\Option::update('website.email', $websiteEmail);
@@ -352,6 +355,49 @@ function installHtaccessAction()
 // ───────────────────────────────────────────────────────────
 //  辅助函数
 // ───────────────────────────────────────────────────────────
+
+/**
+ * 生成 config/config.php 并写入随机 app_key。
+ *
+ * - config.php 不存在时，优先从 config/config.sample.php 复制；
+ * - 仅当 app_key 为空时才生成并回填，避免重复安装覆盖已有密钥。
+ */
+function writeAppConfig(): void
+{
+    $configFile = base_path('config/config.php');
+    $sampleFile = base_path('config/config.sample.php');
+
+    if (!is_file($configFile) && is_file($sampleFile)) {
+        @copy($sampleFile, $configFile);
+    }
+
+    if (!is_file($configFile)) {
+        return; // 无法生成，后续依赖该配置时会自行报错
+    }
+
+    $content = (string) file_get_contents($configFile);
+    if ($content === '') {
+        return;
+    }
+
+    // 已配置过密钥则跳过
+    if (preg_match('/["\']app_key["\']\s*=>\s*["\'](.+?)["\']/s', $content, $m) && trim($m[1]) !== '') {
+        return;
+    }
+
+    $key = bin2hex(random_bytes(32));
+    $replaced = preg_replace(
+        '/(["\']app_key["\']\s*=>\s*)["\'][^"\']*["\']/',
+        '${1}"' . $key . '"',
+        $content,
+        1,
+        $count
+    );
+
+    if ($count > 0) {
+        @file_put_contents($configFile, $replaced);
+    }
+}
 
 /**
  * 写入临时数据库配置，供建表 / 导入数据使用。

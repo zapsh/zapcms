@@ -7,6 +7,7 @@ namespace zapcms\services;
 
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
+use zapcms\services\storage\Secret;
 
 class Mailer
 {
@@ -27,7 +28,7 @@ class Mailer
         $mail->Port       = intval(option('website.smtp_port', 587));
         $mail->SMTPAuth   = true;
         $mail->Username   = option('website.smtp_user', '');
-        $mail->Password   = option('website.smtp_pass', '');
+        $mail->Password   = (string) (Secret::get('mail.smtp_pass') ?: option('website.smtp_pass', ''));
 
         $encryption = option('website.smtp_encryption', 'tls');
         if (!empty($encryption) && $encryption !== 'none') {

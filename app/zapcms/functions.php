@@ -55,10 +55,16 @@ function app_cache_config(): array
     ];
 
     $file = app_cache_config_file();
+    $fromSnapshot = false;
+
     if (is_file($file)) {
         $cached = @include $file;
         if (is_array($cached)) {
-            return array_merge($defaults, $cached);
+            $fromSnapshot = true;
+            // 快照命中：密码仍需每次解密（快照里没有明文），仅 Redis 驱动需要
+            $cached = array_merge($defaults, $cached);
+            $cached['redis_password'] = ($cached['default'] === 'redis') ? app_redis_password('') : '';
+            return $cached;
         }
     }
 
@@ -81,19 +87,41 @@ function app_cache_config(): array
     $config['default'] = in_array($config['default'], ['file', 'redis'], true) ? $config['default'] : 'file';
     $config['ttl']     = (string)max(0, (int)$config['ttl']);
 
-    // 原子写快照；写失败不影响本次请求，只退化为每次查库
+    // Redis 密码以密文存储，解密后使用；快照里不落明文密码
+    $config['redis_password'] = app_redis_password($config['redis_password'] ?? '');
+
+    // 原子写快照（密码已脱敏）；写失败不影响本次请求，只退化为每次查库
     $dir = dirname($file);
     if (!is_dir($dir)) {
         @mkdir($dir, 0755, true);
     }
+    $snapshot = $config;
+    $snapshot['redis_password'] = '';
     $tmp = $file . '.tmp.' . getmypid();
-    if (@file_put_contents($tmp, "<?php\nreturn " . var_export($config, true) . ";\n", LOCK_EX) !== false) {
+    if (@file_put_contents($tmp, "<?php\nreturn " . var_export($snapshot, true) . ";\n", LOCK_EX) !== false) {
         if (!@rename($tmp, $file)) {
             @unlink($tmp);
         }
     }
 
     return $config;
+}
+
+/**
+ * 解析 Redis 密码：优先取加密存储（secret.cache.redis_password），
+ * 解密失败/未配置时回退到传入的明文值（旧数据兼容）。
+ */
+function app_redis_password(string $fallback): string
+{
+    try {
+        $secret = \zapcms\services\storage\Secret::get('cache.redis_password');
+        if ($secret !== null && $secret !== '') {
+            return $secret;
+        }
+    } catch (\Throwable $e) {
+        // app_key 未配置或解密异常：回退明文
+    }
+    return $fallback;
 }
 
 /**

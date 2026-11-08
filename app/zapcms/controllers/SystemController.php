@@ -5,10 +5,12 @@ namespace zapcms\controllers;
 use zapcms\helpers\Database;
 use zapcms\controllers\AdminController;
 use zapcms\models\AdminLog;
+use zapcms\services\Crypto;
 use zapcms\services\Locale;
 use zapcms\services\Mailer;
 use zapcms\services\Option;
 use zapcms\services\SlugHelper;
+use zapcms\services\storage\Secret;
 use zap\http\Request;
 use zap\http\Response;
 use zap\view\View;
@@ -32,6 +34,10 @@ class SystemController extends AdminController
             }
             $optionKeys = Option::getKeys($keyPrefix,'REGEXP');
             foreach ($options as $key=>$value){
+                // SMTP 密码改走加密存储（secret.mail.smtp_pass），不落明文 options
+                if ($key === 'website.smtp_pass') {
+                    continue;
+                }
                 if(in_array($key,$optionKeys)){
                     Option::update($key,$value,null,1);
                 }else{
@@ -41,6 +47,8 @@ class SystemController extends AdminController
             // 服务器设置（server.*）与缓存设置（cache.*）保存到 options 表
             $this->saveServerOptions((array)Request::post('server', []));
             $this->saveCacheOptions((array)Request::post('cache', []));
+            // 敏感值（云密钥 / SMTP 密码 / Redis 密码等）用 app_key 加密后写入 options 表
+            $this->saveSecrets((array)Request::post('secrets', []), (array)Request::post('secrets_clear', []));
             // 清除相关配置缓存，使新设置立即生效
             \zap\facades\Cache::delete('_opts_server');
             \zap\facades\Cache::delete('_opts_cache');
@@ -52,6 +60,8 @@ class SystemController extends AdminController
             Response::json(['code'=>0,'msg'=>'保存成功']);
         }
         $data = [
+            'crypto_available' => Crypto::available(),
+            'secrets_configured' => self::secretsConfigured(),
             'options'=> Option::getArray($keyPrefix,'REGEXP'),
             // 服务器设置当前值（保存在 options 表 server.*）
             'server' => [
@@ -72,6 +82,65 @@ class SystemController extends AdminController
             ],
         ];
         View::render("system.settings",$data);
+    }
+
+    /**
+     * 各敏感字段分组（group => 字段列表，键名即 Secret 存储名）。
+     * group 用于后台「清除」勾选；字段名统一加命名空间前缀。
+     */
+    private static function secretGroups(): array
+    {
+        return [
+            'oss'   => ['storage.oss.access_key_id', 'storage.oss.access_key_secret', 'storage.oss.security_token'],
+            'cos'   => ['storage.cos.secret_id', 'storage.cos.secret_key'],
+            'r2'    => ['storage.r2.access_key_id', 'storage.r2.secret_access_key'],
+            'mail'  => ['mail.smtp_pass'],
+            'cache' => ['cache.redis_password'],
+            'slug'  => ['slug.baidu_key'],
+        ];
+    }
+
+    /**
+     * 保存敏感值：非空值加密后写入 options（secret.*，autoload=0）；
+     * 留空表示保留原值；secrets_clear 指定的分组清空其已存密钥。
+     */
+    private function saveSecrets(array $secrets, array $clear): void
+    {
+        if (!Crypto::available()) {
+            return;
+        }
+
+        $groups = self::secretGroups();
+        foreach ($clear as $group) {
+            foreach ($groups[$group] ?? [] as $field) {
+                Secret::remove($field);
+            }
+        }
+
+        foreach ($groups as $list) {
+            foreach ($list as $field) {
+                $value = trim((string) ($secrets[$field] ?? ''));
+                if ($value === '') {
+                    continue; // 留空 = 保留原值
+                }
+                Secret::set($field, $value);
+            }
+        }
+
+        // 存储密钥变化，丢弃已缓存的驱动实例
+        \zapcms\services\storage\StorageManager::forget();
+    }
+
+    /** 后台显示用的「是否已配置」标记（平铺 field => bool） */
+    private static function secretsConfigured(): array
+    {
+        $result = [];
+        foreach (self::secretGroups() as $list) {
+            foreach ($list as $field) {
+                $result[$field] = Secret::configured($field);
+            }
+        }
+        return $result;
     }
 
     /**
@@ -121,7 +190,7 @@ class SystemController extends AdminController
             'ttl'            => ['int'],
             'redis_host'     => ['string'],
             'redis_port'     => ['int'],
-            'redis_password' => ['string'],
+            // redis_password 改走加密存储（secret.cache.redis_password），不在 cache.* 落明文
             'redis_database' => ['int'],
         ];
         foreach ($map as $key => $rule) {
@@ -614,7 +683,7 @@ class SystemController extends AdminController
         if (Request::isPost()) {
             $options = Request::post('options', []);
 
-            $allowedKeys = ['slug.separator', 'slug.style', 'slug.max_length', 'slug.baidu_appid', 'slug.baidu_key'];
+            $allowedKeys = ['slug.separator', 'slug.style', 'slug.max_length', 'slug.baidu_appid'];
 
             foreach ($options as $key => $value) {
                 if (!in_array($key, $allowedKeys, true)) {
@@ -630,7 +699,7 @@ class SystemController extends AdminController
                 if ($key === 'slug.max_length') {
                     $value = max(0, (int) $value);
                 }
-                if ($key === 'slug.baidu_appid' || $key === 'slug.baidu_key') {
+                if ($key === 'slug.baidu_appid') {
                     $value = trim($value);
                 }
 
@@ -641,6 +710,9 @@ class SystemController extends AdminController
                     Option::add($key, (string) $value, 0, 1);
                 }
             }
+
+            // 百度翻译密钥改走加密存储（secret.slug.baidu_key）
+            $this->saveSecrets((array) Request::post('secrets', []), (array) Request::post('secrets_clear', []));
 
             Response::json(['code' => 0, 'msg' => 'Slug 设置已保存']);
         }
@@ -657,7 +729,8 @@ class SystemController extends AdminController
             'slug_style'        => option('slug.style', 'default'),
             'slug_max_length'   => option('slug.max_length', '0'),
             'slug_baidu_appid'  => option('slug.baidu_appid', ''),
-            'slug_baidu_key'    => option('slug.baidu_key', ''),
+            'crypto_available'  => Crypto::available(),
+            'slug_baidu_key_configured' => Secret::configured('slug.baidu_key'),
         ];
 
         View::render('system.slug-settings', $data);

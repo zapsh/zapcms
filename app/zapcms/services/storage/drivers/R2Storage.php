@@ -3,6 +3,7 @@
 namespace zapcms\services\storage\drivers;
 
 use zap\net\Requests;
+use zapcms\services\storage\Secret;
 use zapcms\services\storage\StorageException;
 use zapcms\services\storage\StorageInterface;
 use zapcms\services\storage\StorageResult;
@@ -43,8 +44,8 @@ class R2Storage implements StorageInterface
         $this->region   = 'auto';
 
         $conf = (array) config('storage.r2', []);
-        $this->accessKeyId     = (string) ($conf['access_key_id'] ?? '');
-        $this->secretAccessKey = (string) ($conf['secret_access_key'] ?? '');
+        $this->accessKeyId     = (string) (Secret::get('storage.r2.access_key_id') ?: ($conf['access_key_id'] ?? ''));
+        $this->secretAccessKey = (string) (Secret::get('storage.r2.secret_access_key') ?: ($conf['secret_access_key'] ?? ''));
         $this->timeout         = max(5, (int) ($conf['timeout'] ?? 60));
     }
 

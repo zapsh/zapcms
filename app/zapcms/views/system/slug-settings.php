@@ -116,12 +116,18 @@ $this->view->page_subtitle = '配置 URL 别名（Slug）的生成规则';
                             </div>
                             <div class="col-md-6">
                                 <label for="slug.baidu_key" class="form-label small">百度翻译密钥（Key）</label>
-                                <input type="password" class="form-control form-control-sm font-monospace" id="slug.baidu_key"
-                                       name="options[slug.baidu_key]"
-                                       placeholder="请输入百度翻译平台的密钥"
-                                       value="<?php echo htmlspecialchars($slug_baidu_key ?? ''); ?>" />
+                                <input type="password" autocomplete="new-password" class="form-control form-control-sm font-monospace" id="slug.baidu_key"
+                                       name="secrets[slug.baidu_key]"
+                                       placeholder="<?php echo !empty($slug_baidu_key_configured) ? '已配置，留空保持不变' : '请输入百度翻译平台的密钥'; ?>" />
+                                <?php if (!empty($crypto_available) && !empty($slug_baidu_key_configured)): ?>
+                                <label class="form-check form-check-inline small mb-0 mt-1">
+                                    <input type="checkbox" class="form-check-input" name="secrets_clear[]" value="slug">
+                                    <span class="form-check-label text-danger">清除已保存的密钥</span>
+                                </label>
+                                <?php endif; ?>
                                 <div class="form-text">
                                     <a href="https://api.fanyi.baidu.com/api/trans/product/desktop" target="_blank">如何获取 APP ID 和密钥？</a>
+                                    <?php if (empty($crypto_available)): ?><br>提示：未配置 <code>app_key</code>，密钥将以留空处理，请先设置再保存。<?php endif; ?>
                                 </div>
                             </div>
                             <div class="col-12">
