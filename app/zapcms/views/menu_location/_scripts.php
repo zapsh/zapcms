@@ -23,7 +23,6 @@ use zap\facades\Url;
 
     // ───────────────────── 栏目目录树勾选（WordPress「分类目录」式） ─────────────────────
     function mlmCatalogNodeHtml(n, depth) {
-        var isLink = (n.node_type === 'link-url');
         var toggle = n.has_children
             ? '<a href="javascript:;" class="text-muted me-1 mlm-tree-toggle flex-shrink-0" data-id="' + n.id + '" style="text-decoration:none;width:14px;text-align:center;">' +
               '<i class="fa fa-chevron-right"></i></a>'
@@ -35,8 +34,6 @@ use zap\facades\Url;
                '<label class="d-flex align-items-center flex-grow-1 mb-0 text-truncate" style="cursor:pointer;min-width:0">' +
                '<input class="form-check-input me-2 mlm-chk flex-shrink-0" type="checkbox" data-type="catalog" data-id="' + n.id + '">' +
                '<span class="text-truncate">' + escapeHtml(n.title) + '</span>' +
-               (isLink ? ' <span class="badge text-bg-light ms-1 flex-shrink-0">链接</span>' : '') +
-               (isLink ? '<i class="fa fa-link text-muted ms-1 flex-shrink-0"></i>' : '') +
                '</label></div>';
     }
 

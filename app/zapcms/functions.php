@@ -686,7 +686,7 @@ function build_permalink(array $node, ?string $locale = null): string
     $structure = get_permalink_structure();
     $slug = $node['slug'] ?? '';
     $id   = (int)($node['id'] ?? 0);
-    $hasSlug = !empty($slug) && $slug !== '--zap-link-url';
+    $hasSlug = !empty($slug);
 
     // 基础型：/?n={id}（路径部分为根，不能追加 URL 后缀）
     if (str_contains($structure, '?')) {
@@ -772,86 +772,13 @@ function node_url(int $nodeId, string $type = 'default', ?string $locale = null)
     $structure = get_permalink_structure();
 
     // 文章名称型且有 slug：直接用 slug
-    if ($structure === '/%node_slug%/' && !empty($slug) && $slug !== '--zap-link-url') {
+    if ($structure === '/%node_slug%/' && !empty($slug)) {
         return append_url_suffix(locale_site_url($slug, $locale));
     }
 
     // 使用固定链接结构生成
     $node['node_type'] = $node['node_type'] ?: $type;
     return build_permalink($node, $locale);
-}
-
-/**
- * 解析链接：根据 link_type、link_to、link_object 智能判定并返回完整 URL
- *
- * link_type 判定规则：
- *   - catalog  → link_to 存的是 slug，生成 /{slug}
- *   - node     → link_to 存的是 slug，node 的 slug 全局唯一
- *   - custom_link → link_to 是完整 URL 或路径
- *
- * @param array       $linkRow { link_type, link_to, link_object }
- * @param string|null $locale  指定语言，默认取当前语言
- * @return string 完整 URL
- */
-function resolve_link_url(array $linkRow, ?string $locale = null): string
-{
-    $linkType   = $linkRow['link_type']   ?? '';
-    $linkTo     = $linkRow['link_to']     ?? '';
-    $linkObject = (int) ($linkRow['link_object'] ?? 0);
-
-    switch ($linkType) {
-        case 'catalog':
-            // link_to 存的是 slug
-            $catalogPrefix = get_catalog_prefix();
-            if (!empty($linkTo) && $linkTo !== '--zap-link-url') {
-                return append_url_suffix(locale_site_url($catalogPrefix . '/' . $linkTo, $locale));
-            }
-            if ($linkObject > 0) {
-                $catalog = Node::createQuery()->select('id', 'slug')->where('id', $linkObject)->first();
-                if ($catalog && !empty($catalog['slug']) && $catalog['slug'] !== '--zap-link-url') {
-                    return append_url_suffix(locale_site_url($catalogPrefix . '/' . $catalog['slug'], $locale));
-                }
-                return append_url_suffix(locale_site_url($catalogPrefix . '/' . $linkObject, $locale));
-            }
-            return home_url($locale);
-
-        case 'node':
-            // link_to 存的是节点的 slug
-            if ($linkObject > 0) {
-                $node = Node::createQuery()
-                    ->select('id', 'slug', 'node_type', 'add_time', 'pub_time')
-                    ->where('id', $linkObject)
-                    ->first();
-                if ($node) {
-                    return build_permalink($node);
-                }
-            }
-            if (!empty($linkTo) && $linkTo !== '--zap-link-url') {
-                $structure = get_permalink_structure();
-                if ($structure === '/%node_slug%/') {
-                    return append_url_suffix(locale_site_url($linkTo, $locale));
-                }
-                // 自定义结构：按 slug 反查节点，用完整结构生成链接
-                $node = Node::createQuery()
-                    ->select('id', 'slug', 'node_type', 'add_time', 'pub_time')
-                    ->where('slug', $linkTo)
-                    ->first();
-                if ($node) {
-                    return build_permalink($node, $locale);
-                }
-                // 反查不到（如多语言 slug）：退回 slug 末段形式，路由仍可解析
-                return append_url_suffix(locale_site_url($linkTo, $locale));
-            }
-            return home_url($locale);
-
-        case 'custom_link':
-        default:
-            // 外部链接或绝对路径
-            if (preg_match('#^(https?://|//|mailto:|tel:)#i', $linkTo)) {
-                return $linkTo;
-            }
-            return append_url_suffix(locale_site_url($linkTo, $locale));
-    }
 }
 
 /**
@@ -889,12 +816,11 @@ function catalog_link(string $url, string $title, array $attrs = []): string
 /**
  * 从栏目/节点行数据中提取链接地址（兼容前端模板）
  *
- * 根据 link_type / node_type 自动判定：
- *   - link-url 类型栏目 → 调用 resolve_link_url 解析
- *   - 普通节点         → 调用 node_url
- *   - 普通栏目         → site_url(slug)
+ * 根据 node_type 自动判定：
+ *   - 普通栏目 → /{catalog_prefix}/{slug}
+ *   - 普通节点 → 调用 build_permalink
  *
- * @param array       $row    { id, node_type, slug, link_type, link_to, link_object }
+ * @param array       $row    { id, node_type, slug }
  * @param string|null $locale 指定语言，默认取当前语言
  * @return string 完整 URL
  */
@@ -902,20 +828,11 @@ function smart_node_url(array $row, ?string $locale = null): string
 {
     $nodeType = $row['node_type'] ?? '';
 
-    // link-url 类型：用 resolve_link_url 解析
-    if ($nodeType === 'link-url') {
-        return resolve_link_url([
-            'link_type'   => $row['link_type']   ?? '',
-            'link_to'     => $row['link_to']     ?? '',
-            'link_object' => $row['link_object'] ?? 0,
-        ], $locale);
-    }
-
     // 普通栏目
-    if ($nodeType === 'catalog' || ( isset($row['link_type']) && $row['link_type'] === 'catalog') ) {
+    if ($nodeType === 'catalog') {
         $slug = $row['slug'] ?? '';
         $catalogPrefix = get_catalog_prefix();
-        if (!empty($slug) && $slug !== '--zap-link-url') {
+        if (!empty($slug)) {
             return append_url_suffix(locale_site_url($catalogPrefix . '/' . $slug, $locale));
         }
         return append_url_suffix(locale_site_url($catalogPrefix . '/' . ((int) ($row['id'] ?? 0)), $locale));
@@ -1167,8 +1084,8 @@ function themeSettings(): \zapcms\services\ThemeSettings
 /**
  * 获取栏目/节点菜单项的前端链接地址
  *
- * - link_type = custom_link → 直接使用 link_to（外部链接 / 站内路径）；
- * - 其余（link-url / 普通栏目 / 普通节点）统一走 smart_node_url 解析。
+ * 普通栏目 / 普通节点统一走 smart_node_url 解析；
+ * 外部链接场景由 menu_items 的 custom_link 类型承担（url 直接存于菜单项）。
  *
  * @param array       $item   栏目/节点行数据
  * @param string|null $locale 指定语言
@@ -1176,9 +1093,6 @@ function themeSettings(): \zapcms\services\ThemeSettings
  */
 function catalog_item_url(array $item, ?string $locale = null): string
 {
-    if (($item['link_type'] ?? '') === 'custom_link') {
-        return url_link($item['link_to'] ?? '#', $locale);
-    }
     return smart_node_url($item, $locale);
 }
 

@@ -11,6 +11,7 @@ return [
     'content'                => 'Content',
     'content_nodes'          => 'Entries',
     'content_catalog'        => 'Categories',
+    'content_types'          => 'Content models',
     'settings_node_types'    => 'Content models',
 
     // 外观

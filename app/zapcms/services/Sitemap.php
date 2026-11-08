@@ -263,7 +263,7 @@ class Sitemap
         $slug     = $entry['slug'] ?? '';
         $id       = (int) ($entry['id'] ?? 0);
 
-        // link-url 栏目不纳入 sitemap
+        // 链接型栏目（历史 link-url 数据已清理）不纳入 sitemap
         if ($nodeType === 'link-url' || $slug === '--zap-link-url') {
             return '';
         }

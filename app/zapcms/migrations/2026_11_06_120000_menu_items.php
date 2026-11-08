@@ -50,9 +50,15 @@ return new class extends Migration {
         }
 
         // 所有栏目一次性取出，按 path 深度升序，保证父级先处理
-        $catalogs = DB::table('catalog')
-            ->where('show_position', '<>', '')
-            ->get(FETCH_ASSOC) ?: [];
+        // 全新安装时 catalog 已无 show_position 列（见 2026_11_08_130000 清理死字段），
+        // 查询报错即说明菜单种入由 CreateBaseData 的 seedPositions 完成，直接跳过
+        try {
+            $catalogs = DB::table('catalog')
+                ->where('show_position', '<>', '')
+                ->get(FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            return;
+        }
         usort($catalogs, function ($a, $b) {
             return substr_count((string) ($a['path'] ?? ''), ',')
                  - substr_count((string) ($b['path'] ?? ''), ',');

@@ -4,6 +4,7 @@ namespace zapcms\controllers;
 
 use zapcms\controllers\AdminController;
 use zapcms\models\AdminLog;
+use zapcms\models\Node;
 use zapcms\services\Catalog;
 use zapcms\services\Locale;
 use zapcms\services\MenuItem;
@@ -38,8 +39,19 @@ class CatalogController extends AdminController
     public function save()
     {
         $catalog = Request::post('catalog',[]);
+        $titleChanged = false;
         foreach ($catalog as $id=>$row){
             DB::update('catalog',$row,['id'=>$id]);
+            // 栏目与 node 双表同 id：标题变更须同步 node 表（前台 SEO/标题读 node），
+            // 否则会出现“菜单回退标题已改、前台栏目标题未改”的双表漂移
+            if (isset($row['title'])) {
+                Node::updateAll(['title' => $row['title'], 'update_time' => time()], ['id' => (int) $id]);
+                $titleChanged = true;
+            }
+        }
+        if ($titleChanged) {
+            // 栏目标题变化影响菜单回退显示，清菜单缓存（与 saveCatalog 保持一致）
+            MenuItem::instance()->clearMenuCache();
         }
         Response::json(['code'=>0,'msg'=>'保存成功']);
     }
@@ -47,11 +59,7 @@ class CatalogController extends AdminController
     public function saveCatalog(){
         $catalog = Request::post('catalog',[]);
         $catalogId = intval(Request::post('catalog_id',0));
-        if($catalog['node_type'] == 'link-url'){
-            $catalog['slug'] = '--zap-link-url';
-        }else{
-            $catalog['slug'] = SlugHelper::generate(empty($catalog['slug']) ? $catalog['title'] : $catalog['slug']);
-        }
+        $catalog['slug'] = SlugHelper::generate(empty($catalog['slug']) ? $catalog['title'] : $catalog['slug']);
 
         $menu = Catalog::instance();
         $cid = 0;
@@ -217,59 +225,6 @@ class CatalogController extends AdminController
     }
 
     /**
-     * 搜索可链接的内容（栏目 + 节点）
-     *
-     * @return void JSON
-     */
-    public function searchLinkTarget()
-    {
-        $keyword  = trim((string) Request::get('keyword', ''));
-        $limit    = min(50, max(1, intval(Request::get('limit', 30))));
-        $nodeType = trim((string) Request::get('node_type', '')); // 按内容模型类型过滤栏目
-
-        // 搜索栏目：条件下推 SQL + LIMIT，避免上万分类时全表拉取再在 PHP 里过滤
-        $conditions = $nodeType !== '' ? ['node_type' => $nodeType] : [];
-        $catalogs   = [];
-        foreach (Catalog::instance()->search($keyword, $limit, $conditions, '', ['slug', 'node_type']) as $row) {
-            $catalogs[] = [
-                'id'         => (int) $row['id'],
-                'title'      => $row['title'],
-                'slug'       => $row['slug'] ?? '',
-                'node_type'  => $row['node_type'] ?? 'catalog',
-                'mime_type'  => $row['mime_type'] ?? '',
-                'kind'       => 'catalog',
-                'path_label' => str_repeat('— ', max(0, (int) ($row['level'] ?? 1) - 1)) . $row['title'],
-            ];
-        }
-
-        // 搜索节点（排除 catalog 类型，因为 catalog 已在上方列出）
-        $nodeQuery = \zapcms\models\Node::createQuery()
-            ->whereNotIn('node_type', ['catalog'])
-            ->select('id', 'title', 'slug', 'node_type', 'mime_type', 'status');
-        if ($keyword !== '') {
-            $nodeQuery->where('title', 'LIKE', "%{$keyword}%");
-        }
-        // 按节点类型过滤（如菜单「单页」面板传 node_type=page）
-        if ($nodeType !== '') {
-            $nodeQuery->where('node_type', '=', $nodeType);
-        }
-        $nodes = $nodeQuery->orderBy('id DESC')->limit($limit)->get(FETCH_ASSOC);
-        $nodes = $nodes ?: [];
-        foreach ($nodes as &$node) {
-            $node['kind']       = 'node';
-            $node['path_label'] = $node['title'];
-        }
-        unset($node);
-
-        Response::json([
-            'code'      => 0,
-            'catalogs'  => $catalogs,
-            'nodes'     => $nodes,
-            'total'     => count($catalogs) + count($nodes),
-        ]);
-    }
-
-    /**
      * 父级下拉的分类搜索（AJAX）：后台栏目表单在分类上万时按需搜索，不再渲染整棵树
      *
      * @return void JSON {options:[{id,title,level,path}]}
@@ -312,7 +267,6 @@ class CatalogController extends AdminController
                 'title'          => $row['title'] ?? '',
                 'icon'           => $row['icon'] ?? '',
                 'slug'           => $row['slug'] ?? '',
-                'link_to'        => $row['link_to'] ?? '',
                 'node_type'      => $row['node_type'] ?: 'catalog',
                 'node_type_title'=> NodeType::getTitle($row['node_type'] ?: 'catalog'),
                 'sort_order'     => (int) ($row['sort_order'] ?? 0),

@@ -52,10 +52,10 @@ class CategoriesWidget extends Widget
 
         $html = '<ul class="widget-list list-unstyled mb-0">';
         foreach ($rows as $row) {
-            $url = resolve_link_url([
-                'link_type'   => 'catalog',
-                'link_to'     => $row['slug'] ?? '',
-                'link_object' => 0,
+            $url = smart_node_url([
+                'node_type' => 'catalog',
+                'id'        => $row['id'] ?? 0,
+                'slug'      => $row['slug'] ?? '',
             ]);
             $html .= '<li><a href="' . e($url) . '">' . e($row['title']) . '</a></li>';
         }

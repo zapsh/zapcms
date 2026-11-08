@@ -81,32 +81,18 @@ if (!function_exists('contentNavNodeFromCatalog')) {
     }
 
     /**
-     * 把栏目行归一化为导航节点（含 link-url 解析）
+     * 把栏目行归一化为导航节点
      */
     function contentNavNodeFromCatalog($menu, array $cat, int $catalogId, array $children = []): array
     {
         $nodeType = $cat['node_type'] ?? 'page';
-        if ($nodeType === 'link-url') {
-            $linkObject = intval($cat['link_object'] ?? 0);
-            if ($linkObject > 0) {
-                $target = $menu->get($linkObject);
-                $url = $target ? Url::action("Node@{$target['node_type']}", ['cid' => $linkObject]) : ($cat['link_to'] ?: '#');
-                $activeCatalogId = $linkObject;
-            } else {
-                $url = $cat['link_to'] ?: '#';
-                $activeCatalogId = 0;
-            }
-            $icon = 'fa fa-link';
-        } else {
-            $url = Url::action("Node@{$nodeType}", ['cid' => intval($cat['id'])]);
-            $activeCatalogId = intval($cat['id']);
-            $icon = $nodeType === 'page' ? 'far fa-file' : 'far fa-folder';
-        }
+        $url = Url::action("Node@{$nodeType}", ['cid' => intval($cat['id'])]);
+        $icon = $nodeType === 'page' ? 'far fa-file' : 'far fa-folder';
         return [
             'title'       => $cat['title'] ?? '',
             'url'         => $url,
             'icon'        => $icon,
-            'active'      => $activeCatalogId > 0 && $activeCatalogId === $catalogId,
+            'active'      => intval($cat['id']) === $catalogId,
             'children'    => $children,
         ];
     }

@@ -217,13 +217,13 @@ IS_AJAX !== true && $this->layout('layouts/common');
     function renderRow(node, depth) {
         var paddingLeft = (depth * 1.5).toFixed(2);
         var toggle = node.has_children
-            ? '<button type="button" class="btn btn-sm btn-link text-secondary py-0 px-1 tree-toggle" data-id="' + node.id + '">' +
+            ? '<button type="button" class="btn btn-sm btn-link text-secondary py-0 px-1 tree-toggle" data-id="' + node.id + '" ' +
+              'style="width:26px;padding:0;text-align:center;">' +
               '<i class="fa fa-chevron-right"></i></button>'
             : '<span class="tree-toggle-spacer d-inline-block" style="width:26px"></span>';
         var icon = node.icon ? '<i class="' + escapeHtml(node.icon) + ' menu-icon"></i>' : '';
-        var ext = node.node_type === 'link-url'
-            ? '<i class="fa fa-external-link-alt text-muted" title="快捷链接"></i>' : '';
-        var seo = node.slug === '--zap-link-url' ? (node.link_to || '') : (node.slug || '');
+        var ext = '';
+        var seo = node.slug || '';
         return '' +
             '<tr class="catalog-row" data-id="' + node.id + '" data-pid="' + node.pid + '" data-depth="' + depth + '">' +
                 '<td class="text-center">' +
