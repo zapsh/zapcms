@@ -27,6 +27,7 @@ class R2Storage implements StorageInterface
     private string $accessKeyId;
     private string $secretAccessKey;
     private int $timeout;
+    private string $thumbMode; // none | resizing（Cloudflare Image Resizing）
 
     public function __construct()
     {
@@ -36,9 +37,10 @@ class R2Storage implements StorageInterface
         $this->host      = $endpoint !== ''
             ? rtrim(preg_replace('#^https?://#i', '', $endpoint), '/')
             : ($this->accountId !== '' ? $this->accountId . '.r2.cloudflarestorage.com' : '');
-        $this->baseUrl = rtrim(trim((string) option('upload.r2_base_url', '')), '/');
-        $this->prefix  = trim((string) option('upload.r2_prefix', ''), '/');
-        $this->region  = 'auto';
+        $this->baseUrl  = rtrim(trim((string) option('upload.r2_base_url', '')), '/');
+        $this->prefix   = trim((string) option('upload.r2_prefix', ''), '/');
+        $this->thumbMode = (string) option('upload.r2_thumb', 'none');
+        $this->region   = 'auto';
 
         $conf = (array) config('storage.r2', []);
         $this->accessKeyId     = (string) ($conf['access_key_id'] ?? '');
@@ -139,10 +141,17 @@ class R2Storage implements StorageInterface
         return null;
     }
 
-    /** R2 无内置图片处理，缩略图直接返回原图地址 */
+    /**
+     * 缩略图：默认返回原图；后台开启「Image Resizing」后走 Cloudflare 代理域名
+     * 的 /cdn-cgi/image/ 参数（需自定义域名经过 Cloudflare 代理并开通 Image Resizing）。
+     */
     public function thumbUrl(string $key, int $width, int $height): string
     {
-        return $this->url($key);
+        if ($this->thumbMode !== 'resizing' || $this->baseUrl === '') {
+            return $this->url($key);
+        }
+        return $this->baseUrl . '/cdn-cgi/image/width=' . max(1, $width)
+            . ',height=' . max(1, $height) . ',fit=scale-down/' . $this->encodeKey($this->objectKey($key));
     }
 
     public function list(string $prefix = ''): array

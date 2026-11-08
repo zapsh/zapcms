@@ -355,6 +355,15 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 <input type="text" class="form-control form-control-sm" id="upload.cos_prefix"
                                        name="options[upload.cos_prefix]" value="<?php echo e($options['upload.cos_prefix'] ?? ''); ?>" placeholder="cms" />
                             </div>
+                            <div class="col-md-6">
+                                <label for="upload.cos_thumb" class="form-label small">缩略图处理</label>
+                                <select class="form-select form-select-sm" id="upload.cos_thumb"
+                                        name="options[upload.cos_thumb]">
+                                    <option value="none" <?php if(($options['upload.cos_thumb'] ?? 'none') === 'none') echo 'selected';?>>原图（默认）</option>
+                                    <option value="ci" <?php if(($options['upload.cos_thumb'] ?? '') === 'ci') echo 'selected';?>>数据万象（CI）</option>
+                                </select>
+                                <div class="form-text">选「数据万象」需在 COS 控制台开启图片处理，缩略图由云端生成。</div>
+                            </div>
 
                             <div class="col-12"><hr class="my-2"><h6 class="small fw-semibold mb-2 text-muted">Cloudflare R2</h6></div>
                             <div class="col-md-6">
@@ -377,6 +386,15 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 <label for="upload.r2_prefix" class="form-label small">对象 Key 前缀（可选）</label>
                                 <input type="text" class="form-control form-control-sm" id="upload.r2_prefix"
                                        name="options[upload.r2_prefix]" value="<?php echo e($options['upload.r2_prefix'] ?? ''); ?>" placeholder="cms" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="upload.r2_thumb" class="form-label small">缩略图处理</label>
+                                <select class="form-select form-select-sm" id="upload.r2_thumb"
+                                        name="options[upload.r2_thumb]">
+                                    <option value="none" <?php if(($options['upload.r2_thumb'] ?? 'none') === 'none') echo 'selected';?>>原图（默认）</option>
+                                    <option value="resizing" <?php if(($options['upload.r2_thumb'] ?? '') === 'resizing') echo 'selected';?>>Image Resizing</option>
+                                </select>
+                                <div class="form-text">选「Image Resizing」需公开地址为经 Cloudflare 代理的域名，并开通 Image Resizing。</div>
                             </div>
 
                             <div class="col-12">

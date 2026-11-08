@@ -26,6 +26,7 @@ class CosStorage implements StorageInterface
     private string $secretId;
     private string $secretKey;
     private int $timeout;
+    private string $thumbMode; // none | ci（数据万象图片处理）
 
     public function __construct()
     {
@@ -35,7 +36,8 @@ class CosStorage implements StorageInterface
             ? $this->bucket . '.cos.' . $this->region . '.myqcloud.com'
             : '';
         $this->baseUrl = rtrim(trim((string) option('upload.cos_base_url', '')), '/');
-        $this->prefix  = trim((string) option('upload.cos_prefix', ''), '/');
+        $this->prefix    = trim((string) option('upload.cos_prefix', ''), '/');
+        $this->thumbMode = (string) option('upload.cos_thumb', 'none');
 
         $conf = (array) config('storage.cos', []);
         $this->secretId  = (string) ($conf['secret_id'] ?? '');
@@ -137,12 +139,18 @@ class CosStorage implements StorageInterface
     }
 
     /**
-     * 缩略图：依赖 COS 数据万象（CI）图片处理，未开通时该 URL 会被当作普通对象访问。
-     * 为保证未开通 CI 时不中断展示，这里直接返回原图地址。
+     * 缩略图：默认返回原图；后台开启「数据万象（CI）」后走 COS 图片处理参数，
+     * 无需本地 GD、不消耗服务器带宽。
      */
     public function thumbUrl(string $key, int $width, int $height): string
     {
-        return $this->url($key);
+        $url = $this->url($key);
+        if ($this->thumbMode !== 'ci') {
+            return $url;
+        }
+        // 数据万象：等比缩放、宽高不超限、不放大（! 前缀 + r 后缀）
+        return $url . (str_contains($url, '?') ? '&' : '?')
+            . 'imageMogr2/thumbnail/!' . max(1, $width) . 'x' . max(1, $height) . 'r';
     }
 
     public function list(string $prefix = ''): array
