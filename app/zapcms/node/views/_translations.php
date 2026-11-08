@@ -40,9 +40,11 @@ $locales      = array_values(array_filter(Locale::all(), static function ($item)
     </div>
     <div class="card-body p-3">
         <?php if ($nodeId <= 0): ?>
-            <p class="text-muted mb-0">保存内容后即可填写其它语言的翻译。</p>
-        <?php else: ?>
-            <div class="row g-3">
+            <p class="text-muted small mb-2">
+                <i class="fa fa-info-circle me-1"></i>当前为新建模式：可直接同时填写其它语言的翻译，与内容一起保存。
+            </p>
+        <?php endif; ?>
+        <div class="row g-3">
                 <div class="col-md-3">
                     <div class="nav flex-column nav-pills" id="zap-translation-nav" role="tablist" aria-orientation="vertical">
                         <?php foreach ($locales as $index => $item):
@@ -133,7 +135,6 @@ $locales      = array_values(array_filter(Locale::all(), static function ($item)
                     </div>
                 </div>
             </div>
-        <?php endif; ?>
     </div>
 </div>
 <?php endif; ?>
