@@ -341,27 +341,29 @@ class UserController extends AdminController
             Response::redirect(Url::action('User@profile', ['tab' => 'account']))->with('error', '头像文件不能超过 2MB');
         }
 
-        $uploadDir = var_path('storage/avatar');
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-
         $extMap = [
             'image/jpeg' => 'jpg',
             'image/png'  => 'png',
             'image/gif'  => 'gif',
             'image/webp' => 'webp',
         ];
-        $ext = isset($extMap[$mime]) ? $extMap[$mime] : 'jpg';
+        $ext      = isset($extMap[$mime]) ? $extMap[$mime] : 'jpg';
         $filename = 'avatar_' . $userId . '_' . time() . '.' . $ext;
-        $dest     = $uploadDir . '/' . $filename;
 
-        if (!move_uploaded_file($uploads['tmp_name'], $dest)) {
-            Response::redirect(Url::action('User@profile', ['tab' => 'account']))->with('error', '头像保存失败，请重试');
+        // 统一走存储门面，落 storage/avatar（local/both/oss 由系统设置决定）
+        try {
+            $result = \zapcms\services\Storage\StorageManager::put(
+                'avatar/' . $filename,
+                $uploads['tmp_name'],
+                ['size' => (int)$uploads['size'], 'mime' => $mime]
+            );
+        } catch (\Throwable $e) {
+            Response::redirect(Url::action('User@profile', ['tab' => 'account']))
+                ->with('error', '头像保存失败：' . $e->getMessage());
+            return;
         }
 
-        $avatarUrl = base_url('/var/storage/avatar/' . $filename);
-
+        $avatarUrl = $result->url;
         DB::update('admin', ['avatar_url' => $avatarUrl, 'updated_at' => time()], ['id' => $userId]);
 
         $session = session()->get('zapAdmin');

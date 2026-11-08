@@ -554,10 +554,40 @@ function append_url_suffix(string $url): string
 function storage_url(string $path = ''): string
 {
     $path = '/' . ltrim($path, '/');
+    try {
+        return \zapcms\services\Storage\StorageManager::url(ltrim($path, '/'));
+    } catch (\Throwable $e) {
+        // 存储层异常时降级为原行为，避免整站附件 URL 不可用
+    }
     if ((string)option('upload.url_mode', 'relative') === 'absolute') {
         return get_site_base_url() . '/storage' . $path;
     }
     return base_url('/storage' . $path);
+}
+
+/**
+ * 把附件 URL 反解成 storage 相对 key（images/a.jpg）
+ *
+ * 兼容 /storage/x.jpg、https://站点/storage/x.jpg、OSS/CDN 绝对 URL、
+ * 以及纯相对 key；外链与主题资源返回 null。
+ */
+function storage_key($url): ?string
+{
+    try {
+        return \zapcms\services\Storage\StorageManager::keyFromUrl($url);
+    } catch (\Throwable $e) {
+        return null;
+    }
+}
+
+/** 当前存储模式：local / both / oss */
+function storage_mode(): string
+{
+    try {
+        return \zapcms\services\Storage\StorageManager::mode();
+    } catch (\Throwable $e) {
+        return 'local';
+    }
 }
 
 /**

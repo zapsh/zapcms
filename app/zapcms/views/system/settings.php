@@ -278,7 +278,78 @@ $this->view->page_subtitle = '站点信息 & 第三方代码 & 邮件配置 & �
                                 </select>
                                 <div class="form-text">「相对路径」返回 <code>/storage/xxx</code> 形式；「网站网址 + 路径」返回 <code>https://example.com/storage/xxx</code>，「网站网址」留空时自动使用当前访问域名。</div>
                             </div>
+
+                            <div class="col-12"><hr class="my-2"><h6 class="small fw-semibold mb-2">对象存储（OSS）</h6></div>
+                            <div class="col-md-6">
+                                <label for="upload.storage_mode" class="form-label small">存储模式</label>
+                                <select class="form-select form-select-sm" id="upload.storage_mode"
+                                        name="options[upload.storage_mode]">
+                                    <option value="local" <?php if(($options['upload.storage_mode'] ?? 'local') === 'local') echo 'selected';?>>仅服务器（默认）</option>
+                                    <option value="both" <?php if(($options['upload.storage_mode'] ?? '') === 'both') echo 'selected';?>>服务器 + OSS</option>
+                                    <option value="oss" <?php if(($options['upload.storage_mode'] ?? '') === 'oss') echo 'selected';?>>仅 OSS</option>
+                                </select>
+                                <div class="form-text">「服务器 + OSS」本地写成功即返回，OSS 同步失败只记日志不影响上传；「仅 OSS」本地不保留原图，缩略图走 OSS 图片处理。</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="upload.public_base" class="form-label small">双写模式前台使用的地址</label>
+                                <select class="form-select form-select-sm" id="upload.public_base"
+                                        name="options[upload.public_base]">
+                                    <option value="oss" <?php if(($options['upload.public_base'] ?? 'oss') === 'oss') echo 'selected';?>>OSS / CDN 地址（默认）</option>
+                                    <option value="local" <?php if(($options['upload.public_base'] ?? '') === 'local') echo 'selected';?>>服务器本地地址</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="upload.oss_bucket" class="form-label small">Bucket 名称</label>
+                                <input type="text" class="form-control form-control-sm" id="upload.oss_bucket"
+                                       name="options[upload.oss_bucket]" value="<?php echo e($options['upload.oss_bucket'] ?? ''); ?>" placeholder="my-bucket" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="upload.oss_endpoint" class="form-label small">Endpoint</label>
+                                <input type="text" class="form-control form-control-sm" id="upload.oss_endpoint"
+                                       name="options[upload.oss_endpoint]" value="<?php echo e($options['upload.oss_endpoint'] ?? ''); ?>" placeholder="oss-cn-hangzhou.aliyuncs.com" />
+                                <div class="form-text">填 <code>http://</code> 开头时按 HTTP 访问（内网/MinIO）。</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="upload.oss_base_url" class="form-label small">CDN / 自定义域名（可选）</label>
+                                <input type="text" class="form-control form-control-sm" id="upload.oss_base_url"
+                                       name="options[upload.oss_base_url]" value="<?php echo e($options['upload.oss_base_url'] ?? ''); ?>" placeholder="https://cdn.example.com" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="upload.oss_prefix" class="form-label small">对象 Key 前缀（可选）</label>
+                                <input type="text" class="form-control form-control-sm" id="upload.oss_prefix"
+                                       name="options[upload.oss_prefix]" value="<?php echo e($options['upload.oss_prefix'] ?? ''); ?>" placeholder="cms" />
+                            </div>
+                            <div class="col-12">
+                                <div class="alert alert-light border py-2 small mb-2">
+                                    使用阿里云 OSS Signature V1 自签，无需安装 SDK。密钥不在此处保存，请配置
+                                    <code>config/storage.php</code> 或环境变量
+                                    <code>OSS_ACCESS_KEY_ID</code> / <code>OSS_ACCESS_KEY_SECRET</code>
+                                    （STS 临时凭证另设 <code>OSS_SECURITY_TOKEN</code>）。一期要求 Bucket 公共读。
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="storageTestBtn">
+                                    <i class="fa fa-plug me-1"></i>测试存储连接
+                                </button>
+                                <span id="storageTestResult" class="small ms-2 text-muted"></span>
+                            </div>
                         </div>
+                        <script>
+                            $(function () {
+                                $('#storageTestBtn').on('click', function () {
+                                    var $btn = $(this), $out = $('#storageTestResult');
+                                    $btn.prop('disabled', true);
+                                    $out.text('测试中…');
+                                    $.getJSON('<?php echo url_action('Upload@storageTest'); ?>', function (res) {
+                                        $out.text((res.ok ? '✓ ' : '✗ ') + (res.msg || ''));
+                                        $out.removeClass('text-muted text-success text-danger')
+                                            .addClass(res.ok ? 'text-success' : 'text-danger');
+                                    }).fail(function () {
+                                        $out.text('✗ 请求失败').addClass('text-danger');
+                                    }).always(function () {
+                                        $btn.prop('disabled', false);
+                                    });
+                                });
+                            });
+                        </script>
                     </div>
 
                     <div class="tab-pane fade" id="server-tab-pane" role="tabpanel" aria-labelledby="server-tab"

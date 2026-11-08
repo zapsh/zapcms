@@ -5,6 +5,8 @@ namespace zapcms\controllers;
 
 use zapcms\controllers\AdminController;
 use zapcms\models\AdminLog;
+use zapcms\services\Storage\StorageException;
+use zapcms\services\Storage\StorageManager;
 use zap\http\Request;
 use zap\http\Response;
 
@@ -111,24 +113,29 @@ class UploadController extends AdminController
             return;
         }
 
-        $targetDir = $relPath === '' ? storage_path() : storage_path($relPath);
-        if (!is_dir($targetDir)) {
-            // 0775 而非 0777：目录只需属主与属组可写，不应开放 other-write
-            mkdir($targetDir, 0775, true);
-            @chmod($targetDir, 0775);
-        }
-
         // 按后台配置的命名规则生成文件名（original 规则下会自动规避重名）
-        $filename = $this->buildFilename($file['name'], $ext, $targetDir);
+        $filename = $this->buildFilename($file['name'], $ext, $relPath);
+        $key = $relPath === '' ? $filename : $relPath . '/' . $filename;
 
-        if (!move_uploaded_file($file['tmp_name'], $targetDir . '/' . $filename)) {
-            Response::json(['code' => 1, 'msg' => '文件保存失败']);
+        try {
+            $result = StorageManager::put($key, $file['tmp_name'], ['size' => (int)$file['size']]);
+        } catch (StorageException $e) {
+            Response::json(['code' => 1, 'msg' => '文件保存失败：' . $e->getMessage()]);
             return;
         }
 
-        $urlPath = $relPath === '' ? $filename : $relPath . '/' . $filename;
         AdminLog::info(AdminLog::CATEGORY_CONTENT, '上传文件', '文件名：' . $filename . '（.' . $ext . '），路径：' . ($relPath === '' ? '/' : $relPath));
-        Response::json(['code' => 0, 'url' => storage_url($urlPath)]);
+        $resp = ['code' => 0, 'url' => $result->url];
+        if (!$result->synced && $result->warning !== '') {
+            $resp['warning'] = $result->warning;
+        }
+        Response::json($resp);
+    }
+
+    /** 后台「系统设置 → 文件上传」的存储连接测试 */
+    function storageTest()
+    {
+        Response::json(StorageManager::test());
     }
 
     /**
@@ -163,9 +170,9 @@ class UploadController extends AdminController
      * 按后台「文件上传」配置 upload.name_rule 生成文件名
      * @param string $originalName 原始文件名
      * @param string $ext          扩展名（小写，不含点）
-     * @param string $targetDir    目标目录（original 规则用于判断重名）
+     * @param string $relPath      storage 相对目录（original 规则用于判断重名）
      */
-    private function buildFilename(string $originalName, string $ext, string $targetDir): string
+    private function buildFilename(string $originalName, string $ext, string $relPath): string
     {
         $rule = (string)option('upload.name_rule', 'random');
         switch ($rule) {
@@ -178,7 +185,7 @@ class UploadController extends AdminController
                 $base = mb_substr($base, 0, 80);
                 $candidate = $base . '.' . $ext;
                 $i = 1;
-                while (file_exists($targetDir . '/' . $candidate)) {
+                while (StorageManager::exists(($relPath === '' ? '' : $relPath . '/') . $candidate)) {
                     $candidate = $base . '_' . $i . '.' . $ext;
                     $i++;
                 }

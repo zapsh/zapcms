@@ -11,49 +11,46 @@
 namespace zapcms\helpers;
 
 use zap\image\Image;
-use zap\util\Str;
+use zapcms\services\Storage\Drivers\LocalStorage;
+use zapcms\services\Storage\StorageManager;
 
 class ThumbHelper
 {
     /**
      * 生成（或复用）指定尺寸的缩略图，返回可访问的 URL。
      *
-     * 约定：
-     *   - $file 可为 storage 相对路径（如 2024/foo.jpg）、带 /storage 前缀的路径、或空/null。
-     *   - 缩略图保存在 storage/thumbs/ 下，沿用原图相对目录，命名为 {文件名}-{宽}x{高}.{扩展名}。
-     *   - 原图不存在或已损坏时，降级返回占位图（优先对应尺寸的占位缩略图）。
+     * $file 可以是 storage 相对 key、/storage 前缀路径、本站绝对 URL、
+     * 或 OSS/CDN 绝对 URL —— 统一由 storage_key() 逆解析，因此
+     * upload.url_mode=absolute 与 OSS 域名下的图片都能正确找到原图。
      *
-     * @param string|null $file
+     *  - local / both：本地 GD 生成 storage/thumbs/ 缓存；
+     *  - oss：直接返回 OSS 图片处理参数 URL，不消耗服务器带宽。
      */
     public static function thumb($file, $width, $height): string
     {
-        $file = (string) $file;
-
-        // 归一化为 storage 相对路径：去掉可能的 /storage 前缀与开头斜杠
-        if (Str::startsWith($file, '/storage')) {
-            $file = substr($file, 8); // strlen('/storage') === 8
-        }
-        $file = ltrim($file, '/\\');
-
-        // 空路径无法定位原图，直接走占位图
-        if ($file === '') {
+        $key = storage_key($file);
+        if ($key === null || $key === '') {
             return self::placeholderThumb($width, $height);
         }
 
-        $info     = pathinfo($file);
-        $dir      = ($info['dirname'] ?? '.') === '.' ? '' : rtrim($info['dirname'], '/') . '/';
-        $name     = $info['filename'] ?? '';
-        $ext      = $info['extension'] ?? 'jpg';
-        $thumbRel = $dir . $name . "-{$width}x{$height}.{$ext}";
+        if (storage_mode() === 'oss') {
+            return StorageManager::thumbUrl($key, (int) $width, (int) $height);
+        }
 
+        $thumbRel  = LocalStorage::thumbKey($key, (int) $width, (int) $height);
         $thumbPath = storage_path("thumbs/{$thumbRel}");
         if (is_file($thumbPath)) {
             return storage_url("thumbs/{$thumbRel}");
         }
 
-        $source = storage_path($file);
+        $source = storage_path($key);
         if (!is_file($source)) {
             return self::placeholderThumb($width, $height);
+        }
+
+        $dir = dirname($thumbPath);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
         }
 
         try {
