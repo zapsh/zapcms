@@ -65,21 +65,6 @@ $fieldGroups  = array_column($groups, 'name');
 
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label class="form-label">处理类</label>
-                            <input type="text" name="node_type" value="<?=e($class)?>"
-                                   class="form-control" placeholder="如: \zapcms\node\ArticleNodeType"
-                                   maxlength="200">
-                            <div class="form-text">PHP 类名，用于自定义节点行为，留空使用默认处理。</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">版本</label>
-                            <input type="text" name="version" value="<?=e($version)?>"
-                                   class="form-control" placeholder="0.0.0" maxlength="20">
-                        </div>
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
                             <label class="form-label">排序</label>
                             <input type="number" name="sort_order" value="<?=$sort?>"
                                    class="form-control" min="0" step="1">
@@ -91,6 +76,40 @@ $fieldGroups  = array_column($groups, 'name');
                                 <option value="0" <?=$status == 0 ? 'selected' : ''?>>禁用</option>
                             </select>
                         </div>
+                    </div>
+
+                    <!-- 高级配置：处理类（继承 AbstractNodeType 的自定义控制器），日常不需要动 -->
+                    <div class="mb-3">
+                        <details>
+                            <summary class="text-muted small" style="cursor:pointer;">
+                                <i class="fa fa-gear"></i> 高级配置
+                            </summary>
+                            <div class="border rounded p-3 mt-2 bg-body-tertiary">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">处理类（可选）</label>
+                                        <input type="text" name="node_type" value="<?=e($class)?>"
+                                               class="form-control font-monospace"
+                                               placeholder="zapcms\node\controllers\XxxController"
+                                               maxlength="200">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">版本</label>
+                                        <input type="text" name="version" value="<?=e($version)?>"
+                                               class="form-control" placeholder="0.0.0" maxlength="20">
+                                    </div>
+                                </div>
+                                <div class="form-text">
+                                    仅在需要自定义内容行为（视图处理不了的逻辑）时填写：
+                                    继承 <code>AbstractNodeType</code> 的类，放在
+                                    <code>app/zapcms/node/controllers/</code>，命名 <code>驼峰Controller</code>。
+                                    类名用单反斜杠（多余的 <code>\</code> 会自动归一化）；
+                                    留空 = 默认处理。保存时会校验类存在且继承基类。
+                                    <br>提示：未配置时系统也会自动优先使用
+                                    <code>node/controllers/</code> 下与类型标识同名的控制器。
+                                </div>
+                            </div>
+                        </details>
                     </div>
 
                     <hr id="fields">

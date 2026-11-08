@@ -156,11 +156,12 @@ class CreateBaseData
 
         Schema::alter('node_types',function (AlertTable $table){
             $table->batchInsert([
-                ['type_id' => 1, 'type_name' => 'article', 'title' => '文章', 'description' => '文章、新闻', 'node_type' => 'zapcms\\\\node\\\\AbstractNodeType', 'version' => '1.0.0', 'sort_order' => 0, 'status' => 1, 'updated_at' => 1694153650, 'created_at' => 1694153650],
-                ['type_id' => 2, 'type_name' => 'product', 'title' => '产品', 'description' => '简单企业产品展示', 'node_type' => 'zapcms\\\\node\\\\AbstractNodeType', 'version' => '1.0.0', 'sort_order' => 0, 'status' => 1, 'updated_at' => 1786680643, 'created_at' => 1694153650],
-                ['type_id' => 3, 'type_name' => 'page', 'title' => '单页', 'description' => '单页', 'node_type' => 'zapcms\\\\node\\\\AbstractNodeType', 'version' => '1.0.0', 'sort_order' => 0, 'status' => 1, 'updated_at' => 1694153650, 'created_at' => 1694153650],
-                ['type_id' => 4, 'type_name' => 'faq', 'title' => 'FAQ', 'description' => '常见问题', 'node_type' => 'zapcms\\\\node\\\\AbstractNodeType', 'version' => '1.0.0', 'sort_order' => 0, 'status' => 1, 'updated_at' => 1694153650, 'created_at' => 1694153650],
-                ['type_id' => 5, 'type_name' => 'link-url', 'title' => '链接', 'description' => '链接地址', 'node_type' => 'zapcms\\\\node\\\\AbstractNodeType', 'version' => '1.0.0', 'sort_order' => 0, 'status' => 1, 'updated_at' => 1694153650, 'created_at' => 1694153650],
+                // node_type：自定义处理类，空串 = 使用 AbstractNodeType 基类（node/controllers 同名控制器仍会被优先发现）
+                ['type_id' => 1, 'type_name' => 'article', 'title' => '文章', 'description' => '文章、新闻', 'node_type' => '', 'version' => '1.0.0', 'sort_order' => 0, 'status' => 1, 'updated_at' => 1694153650, 'created_at' => 1694153650],
+                ['type_id' => 2, 'type_name' => 'product', 'title' => '产品', 'description' => '简单企业产品展示', 'node_type' => '', 'version' => '1.0.0', 'sort_order' => 0, 'status' => 1, 'updated_at' => 1786680643, 'created_at' => 1694153650],
+                ['type_id' => 3, 'type_name' => 'page', 'title' => '单页', 'description' => '单页', 'node_type' => '', 'version' => '1.0.0', 'sort_order' => 0, 'status' => 1, 'updated_at' => 1694153650, 'created_at' => 1694153650],
+                ['type_id' => 4, 'type_name' => 'faq', 'title' => 'FAQ', 'description' => '常见问题', 'node_type' => '', 'version' => '1.0.0', 'sort_order' => 0, 'status' => 1, 'updated_at' => 1694153650, 'created_at' => 1694153650],
+                ['type_id' => 5, 'type_name' => 'link-url', 'title' => '链接', 'description' => '链接地址', 'node_type' => '', 'version' => '1.0.0', 'sort_order' => 0, 'status' => 1, 'updated_at' => 1694153650, 'created_at' => 1694153650],
             ], true);
         });
 

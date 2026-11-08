@@ -98,10 +98,33 @@ class NodeType
        return static::getNodeType($type_name,'title');
     }
 
+    /**
+     * 获取模型的自定义处理类。
+     *
+     * 归一化规则（兼容历史脏数据）：
+     *  - 折叠多余反斜杠（历史数据存过 "zap\\node\\Xxx" 这种双反斜杠）；
+     *  - 旧命名空间 zap\node\ 前缀迁移为 zapcms\node\；
+     *  - 校验类存在且继承 AbstractNodeType，否则回落基类。
+     * 返回空配置（''）同样回落基类。
+     */
     public static function getClass(string $type_name)
     {
-        $node_type = static::getNodeType($type_name,'node_type');
-        return $node_type ?? AbstractNodeType::class;
+        $class = trim((string) static::getNodeType($type_name, 'node_type'));
+        if ($class === '') {
+            return AbstractNodeType::class;
+        }
+
+        $class = str_replace('\\\\', '\\', $class);
+        $class = ltrim($class, '\\');
+        // 旧命名空间迁移：zap\node\... → zapcms\node\...
+        if (stripos($class, 'zap\\node\\') === 0) {
+            $class = 'zapcms\\' . substr($class, 4);
+        }
+
+        if (!class_exists($class) || !is_subclass_of($class, AbstractNodeType::class)) {
+            return AbstractNodeType::class;
+        }
+        return $class;
     }
 
     public static function getID(string $type_name)

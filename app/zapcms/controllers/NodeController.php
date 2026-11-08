@@ -25,11 +25,19 @@ class NodeController extends AdminController
             $action = array_shift($params) ?? 'index';
             $controller = Router::convertToName($method);
             $action = Router::convertToName($action);
+            $typeName = strtolower($method);
 
-            $class = "\\zapcms\\node\\controllers\\{$controller}Controller";
-            if(!class_exists($class)){
-                $nodeTypeClass = NodeType::getClass($method);
-                $class = class_exists($nodeTypeClass) ? $nodeTypeClass : AbstractNodeType::class;
+            // 处理类调度优先级：显式配置（node_types.node_type）> 目录约定
+            // （node\controllers\{Name}Controller）> AbstractNodeType 基类。
+            // 显式配置的类已由 NodeType::getClass 校验存在且继承基类。
+            $configured = NodeType::getClass($typeName);
+            if ($configured !== AbstractNodeType::class) {
+                $class = $configured;
+            } else {
+                $class = "\\zapcms\\node\\controllers\\{$controller}Controller";
+                if(!class_exists($class)){
+                    $class = AbstractNodeType::class;
+                }
             }
             if(!method_exists($class,$action)){
 //                trigger_error("{$class}::{$action} - Method does not exist!!",E_USER_ERROR);
@@ -39,7 +47,6 @@ class NodeController extends AdminController
                 IS_AJAX ? Response::json($respondData) : View::render('node.notfound',$respondData);
                 return false;
             }
-            $typeName = strtolower($method);
             $zapController = new $class();
             $zapController->controller = $controller;
             $zapController->action = $action;
@@ -127,11 +134,23 @@ class NodeController extends AdminController
 
     function typesSave(){
         $id   = (int)req()->post('type_id', 0);
+
+        // 处理类归一化：去首尾空白、折叠多余反斜杠、去前导反斜杠；空串 = 使用基类
+        $handler = trim((string)req()->post('node_type', ''));
+        $handler = str_replace('\\\\', '\\', $handler);
+        $handler = ltrim($handler, '\\');
+        // 白名单校验：非空时必须存在且继承 AbstractNodeType，杜绝无效类名入库
+        if ($handler !== ''
+            && (!class_exists($handler) || !is_subclass_of($handler, AbstractNodeType::class))) {
+            Response::json(['code' => 1, 'msg' => '处理类无效：类不存在或未继承 AbstractNodeType']);
+            return;
+        }
+
         $data = [
             'type_name'   => trim((string)req()->post('type_name', '')),
             'title'       => trim((string)req()->post('title', '')),
             'description' => trim((string)req()->post('description', '')),
-            'node_type'   => trim((string)req()->post('node_type', '')),
+            'node_type'   => $handler,
             'version'     => trim((string)req()->post('version', '0.0.0')),
             'sort_order'  => (int)req()->post('sort_order', 0),
             'status'      => (int)req()->post('status', 1) === 0 ? 0 : 1,

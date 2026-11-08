@@ -70,7 +70,10 @@ use zap\facades\Url;
                     <td><code><?=e($row['type_name'])?></code></td>
                     <td><strong><?=e($row['title'])?></strong></td>
                     <td class="text-muted small"><?=e(mb_strlen($row['description'] ?? '') > 30 ? mb_substr($row['description'], 0, 30) . '…' : ($row['description'] ?? ''))?></td>
-                    <td><small class="text-monospace"><?=e($row['node_type'] ?? '—')?></small></td>
+                    <td><small class="text-monospace text-muted"><?php
+                        $handler = trim((string)($row['node_type'] ?? ''));
+                        echo e($handler !== '' ? $handler : '默认（AbstractNodeType）');
+                    ?></small></td>
                     <td class="text-center">
                         <a href="<?= Url::action('Node/typesForm', ['id' => $row['type_id']])?>#fields"
                            class="badge text-decoration-none bg-<?=($fieldCount[$row['type_id']] ?? 0) ? 'info' : 'light text-dark border'?>"
