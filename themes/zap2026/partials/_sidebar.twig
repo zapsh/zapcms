@@ -13,11 +13,14 @@
         {% set firstCatalogTitle = firstCatalog.title ?? '' %}
         {% set lastCatalog = catalogPaths is not empty ? catalogPaths|last : null %}
         {% set lastCatalogId = lastCatalog.id ?? 0 %}
+        {# 分支根项（父级）已作为标题显示，列表只渲染其子级（当前层级），避免重复；无子级时回退渲染根项 #}
+        {% set rootBranch = catalogs[0] ?? {} %}
+        {% set sidebarItems = rootBranch.children is defined and rootBranch.children is not empty ? rootBranch.children : catalogs %}
         <div class="widget">
             <h4>{{ firstCatalogTitle ? firstCatalogTitle : (node.title ?? '') }}</h4>
             <ul>
                 {{ include('partials/_sidebar_items.twig', {
-                    items: catalogs,
+                    items: sidebarItems,
                     lastCatalogId: lastCatalogId,
                 }) }}
             </ul>
