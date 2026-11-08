@@ -188,6 +188,15 @@ class AbstractNodeType
         if(Request::isPost()){
             $node = Request::post('node');
             $catalogArray = Request::post('catalog',[]);
+            // 通用发布表单（node/default/add）允许显式指定内容模型；
+            // 仅接受已存在且非虚拟的模型，防止任意类型入库
+            $postedType = trim((string) Request::post('node_type', ''));
+            if ($postedType !== '' && $postedType !== $this->nodeType
+                && !NodeType::isVirtual($postedType) && NodeType::getID($postedType)) {
+                $this->nodeType = $postedType;
+                $typeTitle = NodeType::getTitle($this->nodeType);
+                $typeTitle and $this->setTitle($typeTitle);
+            }
             $node['node_type'] = $this->nodeType;
             $node['add_time'] = time();
             // slug：优先使用手动输入，否则从标题生成
@@ -210,6 +219,20 @@ class AbstractNodeType
             $nodeModel->saveMeta(Request::post('meta', []));
             // 保存多语言译文（translations）
             $this->saveTranslations((int) $nodeModel->id);
+            // 栏目关联按内容模型过滤（服务端兜底，防止跨类型混选入库）
+            if ($catalogArray !== []) {
+                $validCatalogs = [];
+                $rows = DB::table('catalog')
+                    ->whereIn('id', array_map('intval', array_keys($catalogArray)))
+                    ->fetchAll();
+                foreach ((array) $rows as $row) {
+                    if ((string) ($row['node_type'] ?? '') === $this->nodeType) {
+                        $cid = (int) $row['id'];
+                        $validCatalogs[$cid] = (int) ($catalogArray[$cid] ?? $row['level'] ?? 1);
+                    }
+                }
+                $catalogArray = $validCatalogs;
+            }
             foreach ($catalogArray as $catalog_id=>$level){
                 NodeRelation::create(['node_id'=>$nodeModel->id,'catalog_id'=>$catalog_id,'level'=>$level]);
             }
@@ -220,12 +243,15 @@ class AbstractNodeType
                 '标题：' . ($node['title'] ?? '') . '（' . $this->nodeType . ' #' . $nodeModel->id . '）'
             );
             // redirect_to：新建成功后前端用 history.replaceState 把地址切到 edit/{id}，
-            // 不再整体跳转，表单原地变成“修改”状态，连续保存不会产生重复内容
+            // 不再整体跳转，表单原地变成“修改”状态，连续保存不会产生重复内容；
+            // 通用发布（default 控制器）下按实际入库的内容模型跳转，直接进入对应模型的编辑表单
+            $editController = ($node['node_type'] !== '' && $node['node_type'] !== 'default')
+                ? $node['node_type'] : $this->controller;
             Response::json([
                 'code'=>0,
                 'msg'=> $this->title . '创建成功',
                 'id'=>$nodeModel->id,
-                'redirect_to'=>url_action("Node@{$this->controller}/edit/{$nodeModel->id}",$_GET),
+                'redirect_to'=>url_action("Node@{$editController}/edit/{$nodeModel->id}"),
                 'slug'=>$node['slug'] ?? '',
                 'update_time'=>$node['update_time'] ?? time(),
                 'title'=>$this->getTitle("修改%s"),

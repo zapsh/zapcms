@@ -19,7 +19,7 @@ class NodeController extends AdminController
     {
         View::paths(base_path("app/zapcms/node/views"));
         if($method == 'index'){$method = 'default';}
-        if(in_array($method , ['types','typesForm','typesConfig','typesConfigSave'])){
+        if(in_array($method , ['types','typesForm','typesConfig','typesConfigSave','metaFields'])){
             $this->$method();
         }else{
             $action = array_shift($params) ?? 'index';
@@ -131,6 +131,42 @@ class NodeController extends AdminController
 
     /** 与框架内部/路由语义冲突的模型标识 */
     private const RESERVED_TYPE_NAMES = ['catalog', 'node', 'link-url', 'default', 'system', 'admin', 'api', 'index'];
+
+    /**
+     * 通用发布表单：按内容模型渲染自定义字段 HTML（AJAX）
+     *
+     * GET: type 内容模型标识（须为已存在且非虚拟的模型）
+     */
+    function metaFields()
+    {
+        $type = trim((string) req()->get('type', ''));
+        if ($type === '' || NodeType::isVirtual($type) || !NodeType::getID($type)) {
+            Response::json(['code' => 1, 'msg' => '无效的内容模型']);
+            return;
+        }
+
+        $node    = new \zapcms\models\Node();
+        $groups  = NodeType::getFieldsGrouped($type);
+
+        ob_start();
+        try {
+            foreach ($groups as $gname => $fields) {
+                if ($gname !== '') {
+                    echo '<hr><h6 class="text-muted small mb-2"><i class="fa fa-tags me-1"></i>'
+                        . htmlspecialchars($gname, ENT_QUOTES, 'UTF-8') . '</h6>';
+                }
+                $node_fields = $fields;
+                $meta_section_title = '自定义字段';
+                $meta_show_header = ($gname === '');
+                include base_path('app/zapcms/node/views/_meta_fields.php');
+                unset($node_fields, $meta_section_title, $meta_show_header);
+            }
+        } finally {
+            $html = ob_get_clean();
+        }
+
+        Response::json(['code' => 0, 'html' => $html]);
+    }
 
     function typesSave(){
         $id   = (int)req()->post('type_id', 0);
