@@ -21,7 +21,7 @@ use zap\facades\Url;
     var mlSaveItemUrl = '<?php echo Url::action("MenuLocation@saveItem"); ?>';
     var mlmCatalogChildrenUrl = '<?php echo Url::action("Catalog@children"); ?>';
 
-    // ───────────────────── 栏目目录树勾选（WordPress「分类目录」式） ─────────────────────
+    // ───────────────────── 栏目目录树勾选  ─────────────────────
     function mlmCatalogNodeHtml(n, depth) {
         var toggle = n.has_children
             ? '<a href="javascript:;" class="text-muted me-1 mlm-tree-toggle flex-shrink-0" data-id="' + n.id + '" style="text-decoration:none;width:14px;text-align:center;">' +
@@ -328,7 +328,8 @@ use zap\facades\Url;
         var rect = miSrc[0].getBoundingClientRect();
 
         miPlaceholder = $('<li class="list-group-item mi-placeholder py-2" ' +
-            'style="height:' + Math.round(rect.height) + 'px;border:2px dashed #0d6efd;background:#f1f6ff;"></li>');
+            'style="height:' + Math.round(rect.height) + 'px;margin-left:' + (parseInt(miSrc.css('margin-left'), 10) || 0) + 'px;' +
+            'border:2px dashed #0d6efd;background:var(--bs-tertiary-bg);"></li>');
         miSrc.after(miPlaceholder);
         miSrc.addClass('mi-dragging-src'); // 隐藏原件（display:none）
 
@@ -375,11 +376,12 @@ use zap\facades\Url;
             miDropMode = 'child'; miDropTarget.addClass('mi-drop-child');
             miPlaceholder.insertAfter(miSubtreeLast(miDropTarget));
         }
-        // 子菜单模式下占位行随目标缩进，直观预览层级
+        // 占位行缩进直观预览层级：子菜单模式 = 目标缩进 + 一级；
+        // before/after 模式 = 与落点目标同级（原实现清空缩进 → 子项拖动时占位框总是顶到最左层）
         if (miDropMode === 'child') {
             miPlaceholder.css('margin-left', ((parseInt(miDropTarget.css('margin-left'), 10) || 0) + 18) + 'px');
         } else {
-            miPlaceholder.css('margin-left', '');
+            miPlaceholder.css('margin-left', miDropTarget.css('margin-left'));
         }
     }
 

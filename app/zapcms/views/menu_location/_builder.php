@@ -16,7 +16,7 @@ foreach ($items as $it) {
     $parentMap[(int) $it['id']] = (int) $it['parent_id'];
 }
 ?>
-<div class="d-flex align-items-center px-2 py-2 border-bottom bg-light gap-2 flex-wrap">
+<div class="d-flex align-items-center px-2 py-2 border-bottom bg-body-tertiary gap-2 flex-wrap">
     <button class="btn btn-sm btn-link text-decoration-none px-0 flex-shrink-0" onclick="mlBackToList()" title="返回">
         <i class="fa fa-arrow-left"></i>
     </button>

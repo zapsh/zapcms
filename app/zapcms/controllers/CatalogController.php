@@ -22,7 +22,7 @@ use zap\view\View;
 class CatalogController extends AdminController
 {
     /** 模块权限键：「栏目」菜单（admin_menu.id=22），extras 子项：view/add/edit/delete */
-    protected string $permKey = 'admin_menu_221';
+    protected string $permKey = 'admin_menu_22';
 
     function index(){
         $this->requirePerm('view', '查看');
@@ -286,5 +286,57 @@ class CatalogController extends AdminController
         }
 
         Response::json(['code' => 0, 'nodes' => $nodes, 'total' => count($nodes)]);
+    }
+
+    /**
+     * 菜单构建器「链接目标」搜索：栏目 + 内容节点一次返回
+     *
+     * GET: keyword（为空返回空列表）、node_type（可选，过滤栏目/节点模型）、limit
+     * 响应: {code:0, catalogs:[{kind:'catalog',id,title,path_label}],
+     *        nodes:[{kind:'node',id,title,path_label}]}
+     */
+    public function searchLinkTarget()
+    {
+        $this->requirePerm('view', '查看');
+        $keyword  = trim((string) Request::get('keyword', ''));
+        $nodeType = trim((string) Request::get('node_type', ''));
+        $limit    = min(50, max(1, intval(Request::get('limit', 30))));
+
+        $catalogs = [];
+        $nodes    = [];
+        if ($keyword !== '') {
+            // 栏目（含 node_type 过滤，供「单页」面板使用）
+            $conds = [];
+            if ($nodeType !== '') {
+                $conds[] = ['node_type', $nodeType];
+            }
+            foreach (Catalog::instance()->search($keyword, $limit, $conds, '', ['node_type']) as $row) {
+                $level = max(1, (int) ($row['level'] ?? 1));
+                $catalogs[] = [
+                    'kind'       => 'catalog',
+                    'id'         => (int) $row['id'],
+                    'title'      => (string) ($row['title'] ?? ''),
+                    'path_label' => str_repeat('— ', $level - 1) . (string) ($row['title'] ?? ''),
+                ];
+            }
+
+            // 内容节点：排除栏目双表行（node_type=catalog），按模型过滤
+            $query = DB::table('node')
+                ->where('title', 'LIKE', "%{$keyword}%")
+                ->where('node_type', '!=', 'catalog');
+            if ($nodeType !== '') {
+                $query->where('node_type', $nodeType);
+            }
+            foreach ($query->orderBy('id', 'DESC')->limit($limit)->get(FETCH_ASSOC) ?: [] as $row) {
+                $nodes[] = [
+                    'kind'       => 'node',
+                    'id'         => (int) $row['id'],
+                    'title'      => (string) ($row['title'] ?? ''),
+                    'path_label' => (string) ($row['title'] ?? ''),
+                ];
+            }
+        }
+
+        Response::json(['code' => 0, 'catalogs' => $catalogs, 'nodes' => $nodes]);
     }
 }

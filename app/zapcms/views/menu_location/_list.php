@@ -37,7 +37,7 @@ use zap\facades\Url;
                             <?php if (!empty($loc['is_system'])): ?>
                                 <span class="badge text-bg-secondary">系统</span>
                             <?php else: ?>
-                                <span class="badge text-bg-light">自定义</span>
+                                <span class="badge text-bg-secondary">自定义</span>
                             <?php endif; ?>
                         </td>
                         <td class="align-middle">

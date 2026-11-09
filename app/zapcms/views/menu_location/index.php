@@ -5,7 +5,7 @@ use zap\facades\Url;
 IS_AJAX !== true && $this->layout('layouts/common');
 
 /**
- * WordPress 式菜单管理（外观 > 菜单）
+ * 菜单管理（外观 > 菜单）
  * Tab1 管理菜单：菜单列表（新建 / 删除 / 进入编辑）；
  * Tab2 编辑菜单：菜单构建器（左栏添加项 / 右栏菜单结构拖拽排序）；
  * Tab3 管理位置：位置列表 + 把菜单分配到位置（前台 catalog_menu('key') 输出）。
@@ -27,31 +27,30 @@ $menusCount = count($menus);
 .mi-handle { cursor: grab; }
 .mi-handle:active { cursor: grabbing; }
 .mi-dragging-src { display: none !important; }
-.mi-ghost { background: #fff; border: 1px solid #dee2e6; border-radius: .375rem; }
+.mi-ghost { background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: .375rem; }
 .mi-item .mi-title { min-width: 140px; }
 .mi-item.mi-drop-before { box-shadow: inset 0 3px 0 #0d6efd; }
 .mi-item.mi-drop-after  { box-shadow: inset 0 -3px 0 #0d6efd; }
 .mi-item.mi-drop-child  { box-shadow: inset 0 0 0 2px #198754; }
 
-/* ── 左栏「添加菜单项」面板（WordPress 式） ── */
-.mlm-panel{border:1px solid #dee2e6;border-radius:.375rem;overflow:hidden;}
-.mlm-panel .accordion-item { border-color: #e9ecef; }
-.mlm-panel .accordion-button { font-weight: 600; font-size: .875rem; padding: .55rem .75rem; color: #212529; }
-.mlm-panel .accordion-button:not(.collapsed) { background: #fff; box-shadow: inset 0 -1px 0 #dee2e6; }
+/* ── 左栏「添加菜单项」── 全部 CSS 变量，暗黑模式自适应 */
+.mlm-panel{border:1px solid var(--bs-border-color);border-radius:.375rem;overflow:hidden;}
+.mlm-panel .accordion-item { border-color: var(--bs-border-color); }
+.mlm-panel .accordion-button { font-weight: 600; font-size: .875rem; padding: .55rem .75rem; color: var(--bs-body-color); }
+.mlm-panel .accordion-button:not(.collapsed) { background: var(--bs-body-bg); box-shadow: inset 0 -1px 0 var(--bs-border-color); }
 .mlm-panel .accordion-body { padding: .6rem .75rem .75rem; }
-.mlm-list { border: 1px solid #dee2e6; border-radius: .375rem; }
-.mlm-list .list-group-item { padding: .5rem .65rem; border-color: #f1f3f5; font-size: .9rem; }
-.mlm-list .list-group-item:hover { background: #f8f9fa; }
+.mlm-list { border: 1px solid var(--bs-border-color); border-radius: .375rem; }
+.mlm-list .list-group-item { padding: .5rem .65rem; border-color: var(--bs-border-color); font-size: .9rem; background: var(--bs-body-bg); color: var(--bs-body-color); }
+.mlm-list .list-group-item:hover { background: var(--bs-tertiary-bg); }
 .mlm-list .form-check-input { width: 1.05em; height: 1.05em; flex-shrink: 0; }
 
-/* ── 右栏菜单项 ── */
-.mi-item { border-color: #e9ecef; margin-bottom: .35rem; }
-.mi-bar { border-radius: .25rem; transition: background .15s; }
-.mi-bar:hover { background: #f8f9fa; }
+/* ── 右栏菜单项 ── hover 高亮填充整行、边框透明，避免内嵌“边框”观感 */
+.mi-item { border-color: transparent; background: var(--bs-body-bg); color: var(--bs-body-color); margin-bottom: .35rem; transition: background .15s, border-color .15s; }
+.mi-item:hover { background: var(--bs-tertiary-bg); border-color: transparent; }
 .mi-type { font-weight: 500; }
-.mi-type-catalog { background: #e7f1ff; color: #0d6efd; }
-.mi-type-node    { background: #e6f4ea; color: #198754; }
-.mi-type-custom  { background: #fff3cd; color: #997404; }
+.mi-type-catalog { background: rgba(13,110,253,.14); color: var(--bs-primary-text-emphasis); }
+.mi-type-node    { background: rgba(25,135,84,.16); color: var(--bs-success-text-emphasis); }
+.mi-type-custom  { background: rgba(255,193,7,.18); color: var(--bs-warning-text-emphasis); }
 </style>
  <ul class="nav nav-tabs" style="gap:.25rem">
      <li class="nav-item">
@@ -69,7 +68,7 @@ $menusCount = count($menus);
 <!-- Tab 2：编辑菜单（平铺在卡片外，左添加项 / 右菜单结构，避免卡片内多层嵌套边框） -->
 <div id="tabEditMenu" class="<?php echo $active_tab === 'edit' ? '' : 'd-none'; ?>">
     <!-- WordPress 式：选择要编辑的菜单 -->
-    <div class="d-flex align-items-center gap-2 flex-wrap bg-white border p-2 mb-2">
+    <div class="d-flex align-items-center gap-2 flex-wrap bg-body border p-2 mb-2">
         <label class="small text-muted mb-0">选择要编辑的菜单：</label>
         <select id="mlMenuSelect" class="form-select form-select-sm" style="width:auto;min-width:220px">
             <?php foreach ($menus as $m): ?>
@@ -93,7 +92,7 @@ $menusCount = count($menus);
                 'resolved' => $resolved,
             ]); ?>
         <?php else: ?>
-            <div class="text-center text-muted py-5 border rounded bg-white">
+            <div class="text-center text-muted py-5 border rounded">
                 <i class="fa fa-list-ul fa-2x d-block mb-2 opacity-50"></i>
                 <div>请先在「管理菜单」中创建或选择一个菜单。</div>
                 <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="mlCreateMenu()">
@@ -144,7 +143,7 @@ $menusCount = count($menus);
                                     <code class="small text-muted ms-2">#<?php echo $mid; ?></code>
                                 </td>
                                 <td class="text-center align-middle">
-                                    <span class="badge text-bg-light"><?php echo (int) ($menu_item_counts[$mid] ?? 0); ?></span>
+                                    <span class="badge text-bg-secondary"><?php echo (int) ($menu_item_counts[$mid] ?? 0); ?></span>
                                 </td>
                                 <td class="align-middle d-none d-md-table-cell">
                                     <?php if (!empty($menu_locations[$mid])): ?>

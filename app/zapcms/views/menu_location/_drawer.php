@@ -12,7 +12,7 @@ use zap\facades\Url;
 .mi-handle { cursor: grab; }
 .mi-handle:active { cursor: grabbing; }
 .mi-dragging-src { display: none !important; }
-.mi-ghost { background: #fff; border: 1px solid #dee2e6; border-radius: .375rem; }
+.mi-ghost { background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: .375rem; }
 .mi-item .mi-title { min-width: 140px; }
 .mi-item.mi-drop-before { box-shadow: inset 0 3px 0 #0d6efd; }
 .mi-item.mi-drop-after  { box-shadow: inset 0 -3px 0 #0d6efd; }
@@ -22,7 +22,7 @@ use zap\facades\Url;
 
 <!-- 菜单位置管理：右侧抽屉 -->
 <div class="offcanvas offcanvas-end" tabindex="-1" id="menuLocationDrawer" aria-labelledby="menuLocationDrawerLabel" style="width: min(1040px, 96vw);">
-    <div class="offcanvas-header bg-light border-bottom py-2">
+    <div class="offcanvas-header bg-body-tertiary border-bottom py-2">
         <h6 class="offcanvas-title mb-0" id="menuLocationDrawerLabel">
             <i class="fa fa-bars me-1 text-success"></i>菜单位置
         </h6>
@@ -31,7 +31,7 @@ use zap\facades\Url;
     <div class="offcanvas-body p-0" id="menuLocationDrawerBody">
         <?php echo $this->partial('menu_location._list', ['locations' => \zapcms\services\MenuLocation::instance()->all()]); ?>
     </div>
-    <div class="offcanvas-footer border-top p-2 small text-muted bg-light">
+    <div class="offcanvas-footer border-top p-2 small text-muted bg-body-tertiary">
         选择位置后管理其分配菜单的菜单项（栏目 / 内容 / 自定义链接）；前台用
         <code>catalog_menu('key')</code> 输出对应位置菜单。
     </div>
