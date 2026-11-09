@@ -17,17 +17,6 @@ $this->view->page_subtitle = '站点信息 & 统计与嵌入代码 & 邮件配�
 
 <form id="zapForm">
 
-    <!-- <div class="row g-3 mb-3">
-        <div class="col-12">
-            <div class="alert alert-info d-flex align-items-center mb-0 py-2 px-3 small" role="alert">
-                <i class="fa fa-link me-2"></i>
-                <div>
-                    如需配置 URL 别名（Slug）生成规则，包括分隔符、中文转拼音等，请前往
-                    <a href="<?php echo Url::action('System@slugSettings'); ?>" class="alert-link">Slug 生成设置</a> 页面。
-                </div>
-            </div>
-        </div>
-    </div> -->
 
     <div class="row g-3">
         <div class="col-12">

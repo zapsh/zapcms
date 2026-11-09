@@ -3,6 +3,7 @@
 namespace zapcms\controllers;
 
 use zapcms\controllers\AdminController;
+use zapcms\auth\RBAC;
 use zapcms\models\AdminLog;
 use zapcms\services\AdminMenu;
 use zap\DB;
@@ -29,6 +30,8 @@ class AdminMenuController extends AdminController
         foreach ($catalog as $id=>$row){
             DB::update('admin_menu',$row,['id'=>$id]);
         }
+        // 菜单变动 → 失效 active_rule 映射缓存（guard 路由鉴权依赖）
+        RBAC::invalidateMenuRules();
         Response::json(['code'=>0,'msg'=>'保存成功']);
     }
 
@@ -80,6 +83,8 @@ class AdminMenuController extends AdminController
                 '菜单：' . ($data['title'] ?? '') . ($menu_id ? ' #' . $menu_id : '')
             );
 
+            // 菜单变动 → 失效 active_rule 映射缓存（guard 路由鉴权依赖）
+            RBAC::invalidateMenuRules();
             Response::json(['code'=>0,'msg'=>'保存成功']);
         }
     }
@@ -93,6 +98,8 @@ class AdminMenuController extends AdminController
             $menu->remove($id);
         }
         AdminLog::info(AdminLog::CATEGORY_SYSTEM, '删除后台菜单', '共 ' . count($catalog) . ' 个菜单');
+        // 菜单变动 → 失效 active_rule 映射缓存（guard 路由鉴权依赖）
+        RBAC::invalidateMenuRules();
         Response::json(['code'=>0,'msg'=>'系统菜单删除成功']);
     }
 

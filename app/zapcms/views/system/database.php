@@ -59,13 +59,8 @@ foreach ($tablesRaw as $name) {
                     $entry['size'] = \zap\util\Fmt::ByteToHuman($size);
                 }
             }
-        } else {
-            // SQLite: 仅统计行数（表头对 sqlite 隐藏了行数/大小列，这里算出备用）
-            $cnt = \zap\DB::select("SELECT COUNT(*) AS cnt FROM `{$name}`");
-            if (!empty($cnt)) {
-                $entry['rows'] = (int) ($cnt[0]['cnt'] ?? 0);
-            }
         }
+        // SQLite: 表格对 sqlite 隐藏了行数/大小列，不逐表 COUNT(*)（纯浪费的 N 条查询）
     } catch (\Throwable $e) {}
 
     $tableData[] = $entry;

@@ -57,6 +57,8 @@ class RBAC
                 // extras 的缓存键同样是带版本前缀的（旧代码删的是不带版本的
                 // 键，从未命中 → 用户权限变更后 extras 残留最多 1 小时）
                 Cache::delete("rbac:v{$v}:extras:{$userId}");
+                // 超管身份同样随角色变更失效，防止收回超管后缓存仍判为有效
+                Cache::delete("rbac:v{$v}:super:{$userId}");
             }
         }
     }
@@ -166,27 +168,41 @@ class RBAC
     }
 
     /**
-     * 后台菜单的 active_rule 映射（请求级内存缓存）
+     * 后台菜单的 active_rule 映射（请求级内存缓存 + 持久缓存）
+     *
+     * 菜单极少变动，用持久缓存避免每个 admin 请求都跑一遍
+     * SELECT id, active_rule FROM admin_menu；菜单增删改后由 invalidateMenuRules() 失效。
      *
      * @return array menu_id => active_rule（仅含非空规则）
      */
     protected static function menuActiveRules(): array
     {
         if (static::$menuRuleCache === null) {
-            static::$menuRuleCache = [];
-            try {
-                $rows = DB::fetchAll('SELECT id, active_rule FROM {admin_menu}') ?: [];
-                foreach ($rows as $row) {
-                    $rule = trim((string) ($row['active_rule'] ?? ''));
-                    if ($rule !== '') {
-                        static::$menuRuleCache[(int) $row['id']] = $rule;
+            static::$menuRuleCache = Cache::get('rbac:menu_rules', function () {
+                $map = [];
+                try {
+                    $rows = DB::fetchAll('SELECT id, active_rule FROM {admin_menu}') ?: [];
+                    foreach ($rows as $row) {
+                        $rule = trim((string) ($row['active_rule'] ?? ''));
+                        if ($rule !== '') {
+                            $map[(int) $row['id']] = $rule;
+                        }
                     }
+                } catch (\Throwable $e) {
+                    $map = [];
                 }
-            } catch (\Throwable $e) {
-                static::$menuRuleCache = [];
-            }
+                return $map;
+            }, 3600);
         }
         return static::$menuRuleCache;
+    }
+
+    /**
+     * 后台菜单 active_rule 映射缓存失效（菜单增删改后调用，避免 guard 路由鉴权脏读）
+     */
+    public static function invalidateMenuRules(): void
+    {
+        Cache::delete('rbac:menu_rules');
     }
 
     /**
@@ -334,16 +350,29 @@ class RBAC
 
     public function isSuperAdmin(?int $userId = null): bool
     {
-        // 直接查 DB 避免缓存污染导致误判；但同一请求内多次 check()/getUserExtras()
-        // 都会调到这里，记忆化避免重复执行 SELECT COUNT(*) ... role_id=1（N+1）。
+        // 请求内记忆化（零开销，且避免同一请求重复查库）
         $uid = $userId ?? $this->getUserId();
         if ($this->superAdminCache !== null && array_key_exists($uid, $this->superAdminCache)) {
             return $this->superAdminCache[$uid];
         }
-        $result = DB::table('admin_roles')
-            ->where('admin_id', $uid)
-            ->where('role_id', 1)
-            ->exists();
+
+        // 仅当前用户走持久缓存（与 roles/perms 约定一致：非当前用户不缓存，避免误判）；
+        // 缓存键带版本前缀，角色变更经 invalidateUser() 失效，不会把已收回的超管误判为有效。
+        if ($uid === $this->getUserId()) {
+            $result = Cache::get($this->cacheKey('super'), function () use ($uid) {
+                return DB::table('admin_roles')
+                    ->where('admin_id', $uid)
+                    ->where('role_id', 1)
+                    ->exists();
+            }, $this->cacheTtl);
+        } else {
+            // 非当前用户：直接查库（保持原“不污染”语义，仅做请求内记忆化）
+            $result = DB::table('admin_roles')
+                ->where('admin_id', $uid)
+                ->where('role_id', 1)
+                ->exists();
+        }
+
         $this->superAdminCache[$uid] = $result;
         return $result;
     }

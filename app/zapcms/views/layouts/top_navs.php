@@ -83,11 +83,13 @@ body.sidebar-mini:not(.sidebar-open) .docs-btn-text {
                 // 按角色权限递归过滤（约定：admin_menu_{id} 为权限 key）
                 $rbac       = app()->rbac;
                 $needFilter = $rbac !== null && !$rbac->isSuperAdmin();
-                $filterMenu = function (array $items) use (&$filterMenu, $rbac, $needFilter): array {
+                // 只取一次权限键，循环内 in_array 比对，避免逐菜单项调用 check()（N+1）
+                $perms      = $needFilter ? $rbac->permissions() : [];
+                $filterMenu = function (array $items) use (&$filterMenu, $perms, $needFilter): array {
                     $out = [];
                     foreach ($items as $item) {
                         $id = (int) ($item['id'] ?? 0);
-                        if ($needFilter && !$rbac->check("admin_menu_{$id}")) {
+                        if ($needFilter && !in_array("admin_menu_{$id}", $perms, true)) {
                             continue;
                         }
                         if (!empty($item['children'])) {
