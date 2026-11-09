@@ -429,16 +429,40 @@ class UpdateBaseData extends Command
         $lines[] = '';
         $lines[] = 'use zap\\db\\AlertTable;';
         $lines[] = 'use zap\\db\\Schema;';
+        $lines[] = 'use zap\\DB;';
         $lines[] = '';
         $lines[] = 'class CreateBaseData';
         $lines[] = '{';
-        $lines[] = '    public static function install()';
+        $lines[] = '    /**';
+        $lines[] = '     * 导入基础数据。';
+        $lines[] = '     *';
+        $lines[] = '     * @param array $overrides 安装期覆盖项，目前支持：';
+        $lines[] = "     *                         ['passwords' => ['admin' => 哈希, 'demo' => 哈希]]";
+        $lines[] = '     *                         安装向导可把用户填写的管理员密码传进来覆盖默认种子密码；';
+        $lines[] = '     *                         demo 未单独指定时默认复用 admin 的覆盖密码（即与后台管理员同密码）。';
+        $lines[] = '     *                         不传则保持种子里的默认密码不变（命令行 / 重置场景）。';
+        $lines[] = '     */';
+        $lines[] = '    public static function install(array $overrides = [])';
         $lines[] = '    {';
 
         foreach ($tables as $tableInfo) {
             $lines[] = '';
             $lines[] = $this->exportTableData($tableInfo['full'], $tableInfo['logical']);
         }
+
+        $lines[] = '';
+        $lines[] = '        // ── 安装向导覆盖默认密码（demo 默认复用 admin 的密码）──';
+        $lines[] = "        \$pwOverrides = \$overrides['passwords'] ?? [];";
+        $lines[] = '        if (!empty($pwOverrides)) {';
+        $lines[] = "            \$adminHash = \$pwOverrides['admin'] ?? null;";
+        $lines[] = "            \$demoHash  = \$pwOverrides['demo']  ?? \$adminHash;";
+        $lines[] = '            if ($adminHash !== null) {';
+        $lines[] = "                DB::update('admin', ['password' => \$adminHash], ['username' => 'admin']);";
+        $lines[] = '            }';
+        $lines[] = '            if ($demoHash !== null) {';
+        $lines[] = "                DB::update('admin', ['password' => \$demoHash], ['username' => 'demo']);";
+        $lines[] = '            }';
+        $lines[] = '        }';
 
         $lines[] = '    }';
         $lines[] = '}';
