@@ -44,6 +44,11 @@ class Locale
     const CACHE_GROUP_KEY = '_opts_languages';
     /** 请求容器里 option('languages.*') 的分组键 */
     const OPTION_GROUP_CONTAINER_KEY = 'options_languages';
+    /**
+     * 「可用语言列表 + 默认语言」合并缓存 key（单条 SQL 同时取回两项，
+     * 未开启多语言时判断 enabled() 只需要这 1 次查询）
+     */
+    const CONFIG_CACHE_KEY = 'languages.config';
 
     /**
      * 常用语言名称字典（code => [中文名, 本地语言名]）
@@ -81,6 +86,8 @@ class Locale
     protected static ?string $defaultCache = null;
     /** @var string|null 当前语言 */
     protected static ?string $current = null;
+    /** @var array|null 请求级合并配置缓存：[availableRaw, defaultRaw] */
+    protected static ?array $configCache = null;
 
     // ===================== 读取配置 =====================
 
@@ -121,6 +128,50 @@ class Locale
     }
 
     /**
+     * 一次查询同时取回「可用语言列表 + 默认语言」两项原始配置。
+     *
+     * 未开启多语言的站点判断 Locale::enabled() 只需要这 1 条 SQL
+     * （此前 available + default 各查一次）；持久缓存命中时 0 次查询。
+     *
+     * @return string[] [availableRaw, defaultRaw]
+     */
+    protected static function configPair(): array
+    {
+        if (static::$configCache !== null) {
+            return static::$configCache;
+        }
+
+        $load = static function (): array {
+            try {
+                $rows = Option::getArray([static::OPTION_AVAILABLE, static::OPTION_DEFAULT]);
+            } catch (Throwable $e) {
+                $rows = [];
+            }
+            return [
+                (string) ($rows[static::OPTION_AVAILABLE] ?? ''),
+                (string) ($rows[static::OPTION_DEFAULT] ?? ''),
+            ];
+        };
+
+        try {
+            $ttl = (int) config('cache.ttl', 0);
+            if ($ttl <= 0) {
+                $ttl = static::CACHE_TTL_FALLBACK;
+            }
+            $pair = Cache::get(static::CONFIG_CACHE_KEY, $load, $ttl);
+        } catch (Throwable $e) {
+            // 缓存不可用时退回直查数据库
+            $pair = $load();
+        }
+
+        if (!is_array($pair) || count($pair) !== 2) {
+            $pair = $load();
+        }
+
+        return static::$configCache = $pair;
+    }
+
+    /**
      * 可用语言列表（已规范化、去重、保持顺序）
      *
      * @return string[]
@@ -133,8 +184,8 @@ class Locale
 
         $locales = [];
 
-        // 1) options 表后台配置优先
-        foreach (static::readOptionList(static::OPTION_AVAILABLE) as $code) {
+        // 1) options 表后台配置优先（与默认语言合并为单条查询）
+        foreach (static::readRawList(static::configPair()[0]) as $code) {
             $locales[] = $code;
         }
 
@@ -170,7 +221,7 @@ class Locale
 
         $default = '';
         try {
-            $default = static::normalize(static::cachedOption(static::OPTION_DEFAULT, ''));
+            $default = static::normalize(static::configPair()[1]);
         } catch (Throwable $e) {
             $default = '';
         }
@@ -548,9 +599,12 @@ class Locale
         static::$availableCache = null;
         static::$defaultCache = null;
         static::$current = null;
+        static::$configCache = null;
 
         try {
-            // cachedOption() 直接用 option 名作为 key，这里逐个失效
+            // available + default 合并存放在 CONFIG_CACHE_KEY；旧版本按 option 名分别缓存，
+            // 这里一并删除以兼容升级场景
+            Cache::delete(static::CONFIG_CACHE_KEY);
             Cache::delete(static::OPTION_AVAILABLE);
             Cache::delete(static::OPTION_DEFAULT);
             Cache::delete(static::OPTION_STRATEGY);
@@ -569,17 +623,12 @@ class Locale
     }
 
     /**
-     * 读取 JSON 数组形式的 option
+     * 解析 JSON 数组形式的语言列表原始值
      *
      * @return string[]
      */
-    protected static function readOptionList(string $key): array
+    protected static function readRawList(string $raw): array
     {
-        try {
-            $raw = static::cachedOption($key, '');
-        } catch (Throwable $e) {
-            return [];
-        }
         if (!is_string($raw) || $raw === '') {
             return [];
         }

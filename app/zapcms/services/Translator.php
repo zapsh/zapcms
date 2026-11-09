@@ -346,9 +346,12 @@ class Translator
      */
     public static function hideMissing(?string $locale = null, string $scope = 'node'): bool
     {
+        // 先判多语言开关：未开启时不读取策略配置（missing_strategy 等），避免无谓查询
+        if (!Locale::enabled()) {
+            return false;
+        }
         $strategy = $scope === 'catalog' ? Locale::catalogStrategy() : Locale::nodeStrategy();
-        return Locale::enabled()
-            && $strategy === 'hide'
+        return $strategy === 'hide'
             && static::resolveLocale($locale) !== Locale::defaultLocale();
     }
 
