@@ -100,8 +100,8 @@ if (!function_exists('_zap_sidebar_render_menu')) {
 ?>
 <aside class="sidebar col-sm-3">
     <?php
-    // 小工具区域：按当前内容模型取（首页/搜索页等无模型时回退 sidebar）
-    echo widget((string) (pageState()->nodeMimeType ?: 'sidebar'));
+    // widget area
+    echo widget('sidebar');
     ?>
     <?php if (!empty($catalogs)): ?>
     <?php

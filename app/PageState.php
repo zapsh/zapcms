@@ -259,6 +259,11 @@ class PageState extends ArrayObject
      * 例如当前页属于「公司简介」时，只返回公司简介及其子孙，
      * 不输出菜单里其它顶级栏目（新闻中心 / 产品中心…）。
      *
+     * 选择优先级：当前内容节点精确命中的分支 > 栏目路径命中的第一个 active 分支。
+     * 前者用于「单页本身是顶级菜单项」的场景（如联系我们）——此时它会同时把
+     * 所属栏目分支（公司简介）标记为祖先高亮，若只取第一个 active 分支
+     * 会错选栏目分支，导致侧栏显示不出当前页自己的菜单项。
+     *
      * 数据源只有 menu_items：某个栏目没挂进该位置菜单时，侧边栏自然不显示它，
      * 需要在后台「外观 > 菜单」把它加进对应位置。未命中任何分支时返回空数组。
      *
@@ -266,12 +271,44 @@ class PageState extends ArrayObject
      */
     public function getSidebarMenu(string $position = 'left'): array
     {
-        foreach ($this->getNavMenu($position) as $branch) {
+        $branches = $this->getNavMenu($position);
+
+        // 1) 优先：精确包含当前内容节点 id 的分支（栏目页时 nodeId 即栏目节点 id，同样命中）
+        $nodeId = $this['nodeId'] ?? null;
+        if ($nodeId !== null && $nodeId !== '') {
+            foreach ($branches as $branch) {
+                if (is_array($branch) && $this->branchContainsId($branch, (string) $nodeId)) {
+                    return [$branch];
+                }
+            }
+        }
+
+        // 2) 兜底：第一个祖先链路命中的分支（内容详情页等菜单树里没有内容 id 的场景）
+        foreach ($branches as $branch) {
             if (is_array($branch) && !empty($branch['active'])) {
                 return [$branch];
             }
         }
         return [];
+    }
+
+    /**
+     * 递归判断分支内是否存在指定 id 的菜单项
+     */
+    protected function branchContainsId(array $items, string $id): bool
+    {
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            if ((string) ($item['id'] ?? '') === $id) {
+                return true;
+            }
+            if (!empty($item['children']) && $this->branchContainsId($item['children'], $id)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -28,5 +28,8 @@
         "basic_home.service6_content": "",
         "basic_home.about_us": ""
     },
+    "widget_areas": {
+        "sidebar":"侧边栏"
+    },
     "screenshot": "screenshot.png"
 }
