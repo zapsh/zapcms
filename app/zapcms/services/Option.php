@@ -122,7 +122,13 @@ class Option
 
         $query = DB::table('options')->select('option_name,option_value')
             ->orderBy('sort_order desc');
-        $query->where('option_name',$type,$option_name);
+        if (is_array($option_name) && ($type === '=' || $type === '')) {
+            // 数组 + 等值 = IN 查询。Query::where() 不支持数组绑定，直接传数组
+            // 会生成 `option_name = ?` 并绑定数组，触发 "Array to string conversion"
+            $query->whereIn('option_name', $option_name);
+        } else {
+            $query->where('option_name',$type,$option_name);
+        }
         $options = $query->fetchAll(FETCH_KEY_PAIR);
         if(empty($options)){
             return [];
@@ -143,7 +149,11 @@ class Option
         $query = DB::table('options')->select('option_name')
             ->orderBy('sort_order desc');
 
-        $query->where('option_name',$type,$option_name);
+        if (is_array($option_name) && ($type === '=' || $type === '')) {
+            $query->whereIn('option_name', $option_name);
+        } else {
+            $query->where('option_name',$type,$option_name);
+        }
         $options = $query->fetchAll(FETCH_COLUMN);
         if(empty($options)){
             return [];
