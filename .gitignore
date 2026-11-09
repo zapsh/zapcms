@@ -24,3 +24,5 @@ storage/thumbs/*
 .env.*
 !.env.example
 *.db
+*.db-wal
+*.db-shm

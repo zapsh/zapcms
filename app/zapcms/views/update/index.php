@@ -58,14 +58,18 @@ $this->view->breadcrumbs = [
         </div>
     </div>
 
-    <!-- 磁盘空间 -->
+    <!-- 服务器信息（点击查看完整服务器环境详情） -->
     <div class="col-lg-4 col-sm-6">
-        <div class="position-relative rounded shadow-sm p-3 mb-3 text-white overflow-hidden" style="background-color:<?php echo $disk_space_ok ? '#17a2b8' : '#dc3545'; ?>;min-height:110px;">
+        <div class="position-relative rounded shadow-sm p-3 mb-3 text-white overflow-hidden" style="background-color:#6f42c1;min-height:110px;">
             <div class="pe-5">
-                <h4 class="fw-bold mb-2"><?php echo $disk_space_ok ? '充足' : '不足'; ?></h4>
-                <p class="mb-0 opacity-75 small">磁盘空间</p>
+                <h4 class="fw-bold mb-2">服务器信息</h4>
+                <p class="mb-1 opacity-75 small">PHP <?php echo PHP_VERSION; ?></p>
+                <p class="mb-0 opacity-75 small"><?php echo e($_SERVER['SERVER_SOFTWARE'] ?? '未知'); ?></p>
             </div>
-            <i class="fa-solid fa-hard-drive position-absolute opacity-25" style="font-size:4rem;right:15px;top:10px;"></i>
+            <i class="fa-solid fa-server position-absolute opacity-25" style="font-size:4rem;right:15px;top:10px;"></i>
+            <a href="<?php echo Url::action('System@sysInfo'); ?>"
+               class="stretched-link"
+               title="查看完整服务器环境、PHP 与数据库信息"></a>
         </div>
     </div>
 </div>

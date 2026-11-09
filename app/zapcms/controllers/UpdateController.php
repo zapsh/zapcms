@@ -31,7 +31,6 @@ class UpdateController extends AdminController
         $updateHistory   = $this->updater->getUpdateHistory(10);
         $systemInfo      = $this->updater->getSystemInfo();
         $filePermissions = $this->updater->checkFilePermissions();
-        $diskSpace       = $this->updater->checkDiskSpace();
 
         view('update.index', [
             'update_info'         => $updateInfo,
@@ -39,7 +38,6 @@ class UpdateController extends AdminController
             'update_history'      => $updateHistory,
             'system_info'         => $systemInfo,
             'file_permissions_ok' => $filePermissions,
-            'disk_space_ok'       => $diskSpace,
         ]);
     }
 
