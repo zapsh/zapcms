@@ -20,8 +20,7 @@ use zapcms\services\BreadCrumb;
 class AdminController extends Controller
 {
     /**
-     * 子类覆写：模块权限键（后台菜单 id，如栏目 = 'admin_menu_22'）
-     * 留空表示该模块不启用子权限检查
+     * @var string Perm Key
      */
     protected string $permKey = '';
 
@@ -32,7 +31,7 @@ class AdminController extends Controller
         //初始化RBAC
         app()->make(RBAC::class,[],'rbac');
         app()->breadcrumb = BreadCrumb::instance();
-        BreadCrumb::instance()->add('控制台',url_action('Index'));
+        BreadCrumb::instance()->add(__t('admin.dashboard','控制台'),url_action('Index'));
         //website options
 
     }

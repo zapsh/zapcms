@@ -1,4 +1,13 @@
 <?php
+/**
+ * @var array $logs
+ * @var array $levelClass
+ * @var string $level
+ * @var string $badge
+ * @var string $level
+ * @var string $badge
+ * @var string $level
+ */
 $levelClass = [
     'ERROR' => 'text-bg-danger', 'CRITICAL' => 'text-bg-danger', 'ALERT' => 'text-bg-danger',
     'EMERGENCY' => 'text-bg-danger', 'WARNING' => 'text-bg-warning', 'NOTICE' => 'text-bg-info',
