@@ -29,7 +29,8 @@ $childLastId = [];
                     $isActive    = ($navNodeId !== null && $navNodeId !== ''
                         && (((string) ($menu['id'] ?? '') === (string) $navNodeId
                             || (isset($menu['link_object']) && (string) $menu['link_object'] === (string) $navNodeId)))
-                        ) || !empty($menu['active']); // 子项选中时父级链路高亮
+                        ) || !empty($menu['exact']); // 仅菜单结构内精确命中（含子项选中时的父级链路）；
+                                                     // 不按栏目路径高亮，避免所属栏目分支跟着亮
                     $linkClass   = $isChild ? 'dropdown-item' : 'nav-link';
                     if ($hasChildren) {
                         $linkClass .= ' dropdown-toggle';

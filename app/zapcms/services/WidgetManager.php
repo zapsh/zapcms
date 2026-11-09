@@ -156,6 +156,9 @@ class WidgetManager
             if ($class === null) {
                 continue;
             }
+            // config 列存的是 JSON 字符串，渲染前必须解码，否则 Widget::config()
+            // 对字符串取下标只会拿到首个字符，所有配置项都会退回默认值
+            $row['config'] = json_decode((string) ($row['config'] ?? ''), true) ?: [];
             /** @var Widget $widget */
             $widget = new $class($row);
             $html  .= $widget->output();

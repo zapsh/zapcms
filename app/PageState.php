@@ -208,8 +208,10 @@ class PageState extends ArrayObject
         //    需用「所属栏目及其路径」匹配，父级才能跟随子项高亮
         $ids = [];
         $nodeId = $this['nodeId'] ?? null;
+        $exactIds = []; // 仅精确命中（不含栏目路径）：顶部导航等只按菜单结构高亮的场景
         if ($nodeId !== null && $nodeId !== '') {
             $ids[(string) $nodeId] = true;
+            $exactIds[(string) $nodeId] = true;
         }
         $catalogId = (int) ($this['catalogId'] ?? 0);
         if ($catalogId > 0) {
@@ -227,23 +229,32 @@ class PageState extends ArrayObject
 
         // 注意：必须让递归返回修改后的数组再回填，否则按值传递会因写时分离
         // 导致所有 active 标记停留在内部副本上，最终 return 的原树一个标记都没有
-        $walk = function (array $items) use (&$walk, $ids): array {
+        $walk = function (array $items) use (&$walk, $ids, $exactIds): array {
             foreach ($items as $key => $item) {
                 if (!is_array($item)) {
                     continue;
                 }
                 $childActive = false;
+                $childExact = false;
                 if (!empty($item['children'])) {
                     $item['children'] = $walk($item['children']);
                     foreach ($item['children'] as $child) {
                         if (!empty($child['active'])) {
                             $childActive = true;
-                            break;
+                        }
+                        if (!empty($child['exact'])) {
+                            $childExact = true;
                         }
                     }
                 }
+                // active：精确命中 + 栏目路径命中 + 子项链路（侧栏分支选择依赖栏目路径命中）
                 if ($childActive || isset($ids[(string) ($item['id'] ?? '')])) {
                     $item['active'] = true;
+                }
+                // exact：仅菜单结构内精确命中及其子项链路（顶部导航高亮用，
+                // 不受「内容属于某栏目」影响，避免所属栏目分支跟着亮）
+                if ($childExact || isset($exactIds[(string) ($item['id'] ?? '')])) {
+                    $item['exact'] = true;
                 }
                 $items[$key] = $item;
             }

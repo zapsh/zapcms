@@ -64,10 +64,13 @@ abstract class Widget
         return (string) ($this->instance['title'] ?? '');
     }
 
-    /** 读取配置项 */
+    /** 读取配置项（兼容 config 未解码的 JSON 字符串） */
     public function config(string $name, $default = null)
     {
         $config = $this->instance['config'] ?? [];
+        if (!is_array($config)) {
+            $config = json_decode((string) $config, true) ?: [];
+        }
         return $config[$name] ?? $default;
     }
 
@@ -81,7 +84,7 @@ abstract class Widget
 
         if ($this->widgetTitle() !== '') {
             $html = '<div class="widget widget-' . $key . '">'
-                . '<h3 class="widget-title">' . e($this->widgetTitle()) . '</h3>'
+                . '<h4 class="widget-title">' . e($this->widgetTitle()) . '</h4>'
                 . '<div class="widget-body">' . $body . '</div></div>';
         } else {
             $html = '<div class="widget widget-' . $key . '"><div class="widget-body">' . $body . '</div></div>';
