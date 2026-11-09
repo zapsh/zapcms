@@ -29,6 +29,7 @@ class CommentController extends AdminController
      */
     public function index()
     {
+        $this->requirePerm('view');
         $keyword    = Request::get('keyword', '');
         $status     = Request::get('status', '');
         $objectType = Request::get('object_type', '');
@@ -131,6 +132,7 @@ class CommentController extends AdminController
      */
     public function save()
     {
+        $this->requirePerm('edit');
         $id = (int)Request::post('comment_id', 0);
         if ($id <= 0) {
             Response::json(['code' => 1, 'msg' => '参数错误']);
@@ -173,6 +175,7 @@ class CommentController extends AdminController
      */
     public function setStatus()
     {
+        $this->requirePerm('edit');
         $ids    = Request::post('ids', []);
         $status = (int)Request::post('status', -1);
         if (empty($ids) || !is_array($ids)) {
@@ -207,6 +210,7 @@ class CommentController extends AdminController
      */
     public function remove()
     {
+        $this->requirePerm('delete');
         $ids = Request::post('ids', []);
         if (empty($ids) || !is_array($ids)) {
             Response::json(['code' => 1, 'msg' => '请选择评论']);

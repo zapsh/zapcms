@@ -5,41 +5,27 @@ use zap\facades\Url;
 
 // 统计数据
 $totalUsers  = $totalAll ?? count($users);
-$activeCount = $activeCount ?? 0;
-$latestUser  = $latestUser ?? '-';
 ?>
 
-<!--begin::Stats Row-->
-<div class="row">
-    <div class="col-lg-4 col-6">
-        <div class="small-box text-bg-primary">
-            <div class="inner">
-                <h3><?php echo e($totalUsers); ?></h3>
-                <p>用户总数</p>
-            </div>
-            <i class="fa fa-users small-box-icon fs-1"></i>
-        </div>
-    </div>
-    <div class="col-lg-4 col-6">
-        <div class="small-box text-bg-success">
-            <div class="inner">
-                <h3><?php echo e($activeCount); ?></h3>
-                <p>已激活用户</p>
-            </div>
-            <i class="fa fa-user-check small-box-icon fs-1"></i>
-        </div>
-    </div>
-    <div class="col-lg-4 col-6">
-        <div class="small-box text-bg-info">
-            <div class="inner">
-                <h3><?php echo e($latestUser); ?></h3>
-                <p>最新注册用户</p>
-            </div>
-            <i class="fa fa-user-plus small-box-icon fs-1"></i>
-        </div>
-    </div>
-</div>
-<!--end::Stats Row-->
+<!--begin::Section Pills-->
+<ul class="nav nav-pills zap-section-pills mb-3">
+    <li class="nav-item">
+        <a class="nav-link active" href="<?php echo url_action('User@index'); ?>">
+            <i class="fa fa-users me-1"></i>用户管理
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="<?php echo url_action('User@roles'); ?>">
+            <i class="fa fa-user-gear me-1"></i>角色
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="<?php echo url_action('User@permissions'); ?>">
+            <i class="fa fa-shield-halved me-1"></i>权限
+        </a>
+    </li>
+</ul>
+<!--end::Section Pills-->
 
 <!--begin::User Table Card-->
 <div class="row">
@@ -51,12 +37,6 @@ $latestUser  = $latestUser ?? '-';
                     <span class="badge text-bg-primary ms-2"><?php echo e($totalUsers); ?></span>
                 </h3>
                 <div class="d-flex gap-2">
-                    <a href="<?php echo url_action('User@roles') ?>" class="btn btn-sm btn-outline-secondary">
-                        <i class="fa fa-user-gear me-1"></i>角色
-                    </a>
-                    <a href="<?php echo url_action('User@permissions') ?>" class="btn btn-sm btn-outline-secondary">
-                        <i class="fa fa-shield-halved me-1"></i>权限
-                    </a>
                     <button type="button" class="btn btn-sm btn-success" onclick="addOrEdit(0)">
                         <i class="fa fa-plus me-1"></i>添加
                     </button>

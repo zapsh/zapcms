@@ -28,6 +28,22 @@ use \zap\facades\Url;
             padding-left: .4rem !important;
             padding-right: .4rem !important;
         }
+
+        /* 用户/角色/权限 区导航 pills：激活态淡化（浅底+主色字，而非实色填充） */
+        .zap-section-pills .nav-link {
+            color: #6c757d;
+            background: transparent;
+            border: 1px solid transparent;
+        }
+        .zap-section-pills .nav-link:hover {
+            background: rgba(0, 0, 0, .04);
+        }
+        .zap-section-pills .nav-link.active {
+            background: rgba(13, 110, 253, .10);
+            color: #0d6efd;
+            font-weight: 600;
+            border-color: rgba(13, 110, 253, .20);
+        }
     </style>
     
     <script src="<?php echo base_url();?>/assets/sweetalert2.all.min.js"></script>

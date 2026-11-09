@@ -16,6 +16,7 @@ use zap\view\View;
 class AdminMenuController extends AdminController
 {
     function index(){
+        $this->requirePerm('view');
         $data = [];
         $data['menu'] = AdminMenu::instance();
         View::render("admin_menu.index",$data);
@@ -23,6 +24,7 @@ class AdminMenuController extends AdminController
 
     public function save()
     {
+        $this->requirePerm('edit');
         $catalog = Request::post('admin_menu',[]);
         foreach ($catalog as $id=>$row){
             DB::update('admin_menu',$row,['id'=>$id]);
@@ -32,6 +34,7 @@ class AdminMenuController extends AdminController
 
     public function saveAdminMenu(){
         if(Request::isPost()){
+            $this->requirePerm('edit');
             $data = Request::post('zap_data',[]);
             $menu_id = intval(Request::post('menu_id'));
             $data['icon'] = $data['icon'] ?? 'fa fa-circle-notch';
@@ -83,6 +86,7 @@ class AdminMenuController extends AdminController
 
     public function remove()
     {
+        $this->requirePerm('delete');
         $catalog = Request::post('admin_menu',[]);
         $menu = AdminMenu::instance();
         foreach ($catalog as $id=>$row){
@@ -103,12 +107,8 @@ class AdminMenuController extends AdminController
         if($data['id']){
             $data['menu'] = AdminMenu::instance()->get($data['id']);
         }
-        // 新增时无菜单记录，模板闭包引用 $menu，兜底为空数组避免 Undefined variable
-        $data['menu'] = $data['menu'] ?? [];
-//        $data['catalog'] = Catalog::instance()->getTreeArray();
-//        print_r($data['parent']);
-//        echo ltrim($data['parent']['path'],'0,');
 
+        $data['menu'] = $data['menu'] ?? [];
         View::render('admin_menu.form',$data);
     }
 

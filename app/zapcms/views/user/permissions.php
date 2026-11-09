@@ -5,6 +5,26 @@ use zap\facades\Url;
 $permCount = count($data);
 ?>
 
+<!--begin::Section Pills-->
+<ul class="nav nav-pills zap-section-pills mb-3">
+    <li class="nav-item">
+        <a class="nav-link" href="<?php echo url_action('User@index'); ?>">
+            <i class="fa fa-users me-1"></i>用户管理
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="<?php echo url_action('User@roles'); ?>">
+            <i class="fa fa-user-gear me-1"></i>角色
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active" href="<?php echo url_action('User@permissions'); ?>">
+            <i class="fa fa-shield-halved me-1"></i>权限
+        </a>
+    </li>
+</ul>
+<!--end::Section Pills-->
+
 <!--begin::Permission Table Card-->
 <div class="row">
     <div class="col-12">
@@ -15,9 +35,6 @@ $permCount = count($data);
                     <span class="badge text-bg-danger ms-2"><?php echo e($permCount); ?></span>
                 </h3>
                 <div class="d-flex gap-2">
-                    <a href="<?php echo url_action('User@roles') ?>" class="btn btn-sm btn-outline-secondary">
-                        <i class="fa fa-user-gear me-1"></i>角色管理
-                    </a>
                     <button type="button" class="btn btn-sm btn-success" onclick="addOrEdit(0)">
                         <i class="fa fa-plus me-1"></i>添加权限
                     </button>
@@ -35,20 +52,27 @@ $permCount = count($data);
                                     <th>权限名称</th>
                                     <th class="d-none d-md-table-cell">描述</th>
                                     <th class="d-none d-lg-table-cell">修改时间</th>
-                                    <th class="d-none d-lg-table-cell">创建时间</th>
                                     <th class="text-center" style="width: 140px;">操作</th>
                                 </tr>
                             </thead>
                             <tbody>
                             <?php if (empty($data)): ?>
                             <tr>
-                                <td colspan="6" class="text-center text-muted py-4">
+                                <td colspan="5" class="text-center text-muted py-4">
                                     <i class="fa fa-inbox fs-1 d-block mb-2"></i>暂无偿限
                                 </td>
                             </tr>
                             <?php else: ?>
                             <?php foreach ($data as $item):
                                 $level = intval($item['level']);
+                                // extras：子权限定义（JSON：{key: 标签}），解析失败忽略
+                                $extrasList = [];
+                                if (!empty($item['extras'])) {
+                                    $decoded = json_decode($item['extras'], true);
+                                    if (is_array($decoded)) {
+                                        $extrasList = $decoded;
+                                    }
+                                }
                             ?>
                             <tr>
                                 <td class="text-center">
@@ -57,14 +81,18 @@ $permCount = count($data);
                                            class="form-check-input zap_catalog" type="checkbox"/>
                                 </td>
                                 <td>
-                                    <div class="d-flex align-items-center" style="padding-left:<?php echo $level * 20; ?>px;">
+                                    <div class="d-flex align-items-center flex-wrap gap-1" style="padding-left:<?php echo $level * 20; ?>px;">
                                         <?php if ($level > 0): ?>
                                         <span class="text-muted me-2">&#9492;</span>
                                         <?php endif; ?>
                                         <span class="fw-semibold"><?php echo htmlspecialchars($item['title']); ?></span>
                                         <small class="text-muted ms-2">ID:<?php echo e($item['perm_id']); ?></small>
+                                        <?php foreach ($extrasList as $xKey => $xLabel): ?>
+                                        <span class="badge text-bg-light border text-secondary small"
+                                              title="子权限 <?php echo e((string)$xKey); ?>"><?php echo e((string)$xLabel); ?></span>
+                                        <?php endforeach; ?>
                                         <?php if (!empty($item['perm_key'])): ?>
-                                        <code class="ms-2 small"><?php echo htmlspecialchars($item['perm_key']); ?></code>
+                                        <code class="ms-1 small"><?php echo htmlspecialchars($item['perm_key']); ?></code>
                                         <?php endif; ?>
                                     </div>
                                 </td>
@@ -73,9 +101,6 @@ $permCount = count($data);
                                 </td>
                                 <td class="d-none d-lg-table-cell text-muted">
                                     <?php echo date('Y-m-d H:i', $item['updated_at']); ?>
-                                </td>
-                                <td class="d-none d-lg-table-cell text-muted">
-                                    <?php echo date('Y-m-d H:i', $item['created_at']); ?>
                                 </td>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm">

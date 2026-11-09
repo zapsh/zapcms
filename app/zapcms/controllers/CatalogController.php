@@ -62,6 +62,7 @@ class CatalogController extends AdminController
     }
 
     public function saveCatalog(){
+        $this->requirePerm('edit');
         $catalog = Request::post('catalog',[]);
         $catalogId = intval(Request::post('catalog_id',0));
         $this->requirePerm($catalogId ? 'edit' : 'add', $catalogId ? '编辑' : '新增');
@@ -102,7 +103,7 @@ class CatalogController extends AdminController
      */
     public function quickCreate()
     {
-        $this->requirePerm('add', '新增');
+        $this->requirePerm('edit', '新增');
         $title = trim((string) Request::post('title', ''));
         if ($title === '') {
             Response::json(['code' => 1, 'msg' => '请填写分区名称']);

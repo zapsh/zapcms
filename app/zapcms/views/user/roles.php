@@ -5,6 +5,26 @@ use zap\facades\Url;
 $roleCount = count($data);
 ?>
 
+<!--begin::Section Pills-->
+<ul class="nav nav-pills zap-section-pills mb-3">
+    <li class="nav-item">
+        <a class="nav-link" href="<?php echo url_action('User@index'); ?>">
+            <i class="fa fa-users me-1"></i>用户管理
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link active" href="<?php echo url_action('User@roles'); ?>">
+            <i class="fa fa-user-gear me-1"></i>角色
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="<?php echo url_action('User@permissions'); ?>">
+            <i class="fa fa-shield-halved me-1"></i>权限
+        </a>
+    </li>
+</ul>
+<!--end::Section Pills-->
+
 <!--begin::Role Table Card-->
 <div class="row">
     <div class="col-12">
@@ -15,9 +35,6 @@ $roleCount = count($data);
                     <span class="badge text-bg-warning ms-2"><?php echo e($roleCount); ?></span>
                 </h3>
                 <div class="d-flex gap-2">
-                    <a href="<?php echo url_action('User@permissions') ?>" class="btn btn-sm btn-outline-secondary">
-                        <i class="fa fa-shield-halved me-1"></i>权限管理
-                    </a>
                     <button type="button" class="btn btn-sm btn-success" onclick="addOrEdit(0)">
                         <i class="fa fa-plus me-1"></i>添加角色
                     </button>

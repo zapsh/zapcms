@@ -18,11 +18,14 @@ use zap\util\Password;
 class UserController extends AdminController
 {
 
+    protected string $permKey = 'admin_menu_8';
+
     /**
      * 后台会员管理 — 列表页
      */
     public function index()
     {
+        $this->requirePerm('view');
         $keyword = Request::get('keyword', '');
         $status  = Request::get('status', '');
         $page    = max(1, (int)Request::get('page', 1));
@@ -115,6 +118,7 @@ class UserController extends AdminController
      */
     public function saveUser()
     {
+        $this->requirePerm('edit');
         if (!Request::isPost()) {
             Response::json(['code' => 1, 'msg' => '非法请求']);
         }
@@ -257,6 +261,7 @@ class UserController extends AdminController
      */
     public function remove()
     {
+        $this->requirePerm('delete');
         if (!Request::isPost()) {
             Response::json(['code' => 1, 'msg' => '非法请求']);
         }
@@ -577,8 +582,11 @@ class UserController extends AdminController
             }
         }
 
-        // 所有权限
-        $permissions = DB::table('permissions')->orderBy('perm_id')->fetchAll();
+        // 所有权限（按 pid 树结构 DFS 排序，并计算 level 供视图缩进；
+        // permissions 表同时存在菜单镜像与手动创建两类来源，perm_id 顺序 ≠ 树顺序）
+        $permissions = $this->sortPermissionTree(
+            DB::table('permissions')->fetchAll()
+        );
 
         // 系统菜单（用于菜单权限）
         $adminMenus = $this->getAdminMenuTree();
@@ -589,6 +597,53 @@ class UserController extends AdminController
             'role_permissions'  => $rolePermissions,
             'admin_menus'       => $adminMenus,
         ]);
+    }
+
+    /**
+     * 把权限行按 pid 组装成树并返回 DFS 顺序（父项在前、子项紧随），
+     * 同级按 sort_order、perm_id 排序；每行附上树深度 level（顶级 = 0）。
+     *
+     * 孤儿行（父级已删除且自身 pid 非顶级）降级为顶级追加在末尾，保证不丢权限。
+     */
+    protected function sortPermissionTree(array $rows): array
+    {
+        $children = [];
+        foreach ($rows as $row) {
+            $children[(int)($row['pid'] ?? 0)][] = $row;
+        }
+        foreach ($children as &$list) {
+            usort($list, static function ($a, $b) {
+                return [(int)($a['sort_order'] ?? 0), (int)$a['perm_id']]
+                    <=> [(int)($b['sort_order'] ?? 0), (int)$b['perm_id']];
+            });
+        }
+        unset($list);
+
+        $out = [];
+        $walk = static function (int $pid, int $level) use (&$walk, $children, &$out): void {
+            foreach ($children[$pid] ?? [] as $row) {
+                $row['level'] = $level;
+                $out[] = $row;
+                $walk((int)$row['perm_id'], $level + 1);
+            }
+        };
+        $walk(0, 0);
+
+        // 兜底：任何未被树遍历覆盖的行（父级指向不存在且不在顶级桶里）追加末尾
+        if (count($out) < count($rows)) {
+            $seen = [];
+            foreach ($out as $row) {
+                $seen[(int)$row['perm_id']] = true;
+            }
+            foreach ($rows as $row) {
+                if (!isset($seen[(int)$row['perm_id']])) {
+                    $row['level'] = 0;
+                    $out[] = $row;
+                }
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -634,9 +689,17 @@ class UserController extends AdminController
         ];
 
         if ($roleId > 0) {
+            // 更新：表单未提供 status 时不改动现有启用状态
+            if (isset($data['status'])) {
+                $row['status'] = (int)(bool)$data['status'];
+            }
             DB::update('roles', $row, ['role_id' => $roleId]);
             AdminLog::info(AdminLog::CATEGORY_USER, '修改角色', "修改了角色: {$name}（ID {$roleId}），权限 " . count((array)$perms) . ' 项');
         } else {
+            // 新建：必须默认启用。roles.status 默认 0（禁用），而 RBAC 只认
+            // status=1 的角色（queryRoleIds INNER JOIN ... r.status=1），
+            // 不写 status 会导致新角色被静默禁用 → 分了权限菜单/页面也全被过滤
+            $row['status']     = 1;
             $row['created_at'] = $now;
             $roleId = DB::insert('roles', $row);
             AdminLog::info(AdminLog::CATEGORY_USER, '新增角色', "添加了角色: {$name}（ID {$roleId}），权限 " . count((array)$perms) . ' 项');

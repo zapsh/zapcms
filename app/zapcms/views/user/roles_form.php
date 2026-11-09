@@ -45,13 +45,11 @@
 
 
                         <td class="w-50">
-                                <?php echo e($item['title']); ?>
+                            <div style="padding-left: <?php echo (int)($item['level'] ?? 0) * 0.9 ?>rem !important;">
+                                <i class="fa-solid fa-angle-right text-body-secondary me-1" style="font-size:.7rem;"></i><?php echo e($item['title']); ?>
                                 <small class="text-body-secondary">ID:<?php echo e($item['perm_id']); ?></small>
                                 <small class="text-body-secondary"><?php echo e($item['perm_key']); ?></small>
-
-
-
-
+                            </div>
                         </td>
 
                         <td >
@@ -75,15 +73,12 @@
                             <?php }else{ ?>
                                 <small class="text-muted">— 拥有全部 —</small>
                             <?php } ?>
-                            <?php
-                            };
-                            ?>
                         </td>
 
                     </tr>
-
-
-
+                    <?php
+                }
+                ?>
                 </tbody>
             </table>
 
@@ -137,9 +132,8 @@
                     </tr>
 
                     <?php
-                };
+                }
                 ?>
-
 
                 </tbody>
             </table>

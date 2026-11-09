@@ -60,6 +60,7 @@ class DevelopmentController extends AdminController
 
     public function saveFile()
     {
+        $this->requirePerm('edit');
         if (!req()->isPost()) {
             response(['code' => 1, 'msg' => '无效的请求方式'])->withJson();
             return;
@@ -124,6 +125,7 @@ class DevelopmentController extends AdminController
      */
     public function createFile()
     {
+        $this->requirePerm('edit');
         if (!req()->isPost()) {
             response(['code' => 1, 'msg' => '无效的请求方式'])->withJson();
             return;
@@ -169,6 +171,7 @@ class DevelopmentController extends AdminController
      */
     public function createDir()
     {
+        $this->requirePerm('edit');
         if (!req()->isPost()) {
             response(['code' => 1, 'msg' => '无效的请求方式'])->withJson();
             return;
@@ -206,6 +209,7 @@ class DevelopmentController extends AdminController
      */
     public function rename()
     {
+        $this->requirePerm('edit');
         if (!req()->isPost()) {
             response(['code' => 1, 'msg' => '无效的请求方式'])->withJson();
             return;
@@ -262,6 +266,7 @@ class DevelopmentController extends AdminController
      */
     public function delete()
     {
+        $this->requirePerm('delete');
         if (!req()->isPost()) {
             response(['code' => 1, 'msg' => '无效的请求方式'])->withJson();
             return;
