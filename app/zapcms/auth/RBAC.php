@@ -24,6 +24,9 @@ class RBAC
     /** @var array|null [perm_key => []]  */
     protected ?array $userExtrasCache = null;
 
+    /** @var array|null 请求内 isSuperAdmin 记忆化 [user_id => bool] */
+    protected ?array $superAdminCache = null;
+
     /** @var array|null 后台菜单 active_rule 映射（请求级内存缓存） */
     protected static ?array $menuRuleCache = null;
 
@@ -91,6 +94,7 @@ class RBAC
         $this->permissionKeys = null;
         $this->rolePermissions = null;
         $this->userExtrasCache = null;
+        $this->superAdminCache = null;
         return $this;
     }
 
@@ -330,12 +334,18 @@ class RBAC
 
     public function isSuperAdmin(?int $userId = null): bool
     {
-        // 直接查 DB 避免缓存污染导致误判
+        // 直接查 DB 避免缓存污染导致误判；但同一请求内多次 check()/getUserExtras()
+        // 都会调到这里，记忆化避免重复执行 SELECT COUNT(*) ... role_id=1（N+1）。
         $uid = $userId ?? $this->getUserId();
-        return DB::table('admin_roles')
+        if ($this->superAdminCache !== null && array_key_exists($uid, $this->superAdminCache)) {
+            return $this->superAdminCache[$uid];
+        }
+        $result = DB::table('admin_roles')
             ->where('admin_id', $uid)
             ->where('role_id', 1)
             ->exists();
+        $this->superAdminCache[$uid] = $result;
+        return $result;
     }
 
     /**
