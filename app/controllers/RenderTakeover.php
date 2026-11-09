@@ -69,10 +69,17 @@ trait RenderTakeover
     protected function renderCatalog(string $mime): bool
     {
         $payload = [pageState()->node ?: [], $mime, $this];
-        foreach (["catalog_render_{$mime}", "catalog_product_list_render"] as $tag) {
-            if ($this->tryTakeover($tag, $payload)) {
-                return true;
-            }
+        if ($this->tryTakeover("catalog_render_{$mime}", $payload)) {
+            return true;
+        }
+        return false;
+    }
+
+    protected function renderPage(string $mime): bool
+    {
+        $payload = [pageState()->node ?: [], $mime, $this];
+        if ($this->tryTakeover('page_render', $payload)) {
+            return true;
         }
         return false;
     }

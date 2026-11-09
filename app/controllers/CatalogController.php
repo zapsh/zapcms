@@ -102,11 +102,12 @@ class CatalogController extends Controller
         pageState()->subCatalogList = pageState()->getSidebarMenu('left');
         try{
             if(pageState()->nodeMimeType==='page') {
+                if ($this->renderPage(pageState()->nodeMimeType)) {
+                    return;
+                }
                 view($template, ['node' => pageState()->node]);
                 return;
             }else{
-                // 模块接管整页列表渲染（约定式 catalog_render_{mime} 及旧式
-                // catalog_product_list_render）；命中即接管并结束渲染。
                 if ($this->renderCatalog(pageState()->nodeMimeType)) {
                     return;
                 }
