@@ -47,6 +47,12 @@ class CacheManager
                 'icon'  => 'fa-broom',
                 'path'  => var_path('tmp'),
             ],
+            'sitemap' => [
+                'label' => 'Sitemap 缓存',
+                'desc'  => 'sitemap.xml 及各类型 URL set 的生成结果，删除后下次访问自动重新生成',
+                'icon'  => 'fa-sitemap',
+                'path'  => '', // 以缓存键形式存在于数据缓存中，无独立目录
+            ],
         ];
     }
 
@@ -106,6 +112,12 @@ class CacheManager
                 continue;
             }
 
+            if ($key === 'sitemap') {
+                // sitemap 缓存以键值形式存放在数据缓存（文件/Redis）中，无独立目录
+                $stats[$key] = ['files' => null, 'bytes' => null, 'exists' => true];
+                continue;
+            }
+
             $measured = self::measure($target['path']);
             $stats[$key] = [
                 'files'  => $measured['files'],
@@ -120,7 +132,7 @@ class CacheManager
     /**
      * 执行清理。
      *
-     * @param string $type cache（数据+模板）/ data / template / thumbs / logs / tmp / all
+     * @param string $type cache（数据+模板）/ data / template / thumbs / logs / tmp / sitemap / all
      *
      * @return array{removed:int, freed:int, failed:int, redis:bool}
      */
@@ -140,6 +152,9 @@ class CacheManager
                 self::merge($result, self::clear('data'));
                 self::merge($result, self::clear('template'));
                 return $result;
+
+            case 'sitemap':
+                return self::clearSitemap();
 
             case 'data':
                 if (self::driver() === 'redis') {
@@ -282,5 +297,39 @@ class CacheManager
         $result['freed']   += $part['freed'];
         $result['failed']  += $part['failed'];
         $result['redis']    = $result['redis'] || $part['redis'];
+    }
+
+    /**
+     * 清除 sitemap 缓存。
+     *
+     * sitemap 以缓存键形式存放在数据缓存（文件/Redis）里，键名为
+     * SitemapController::CACHE_PREFIX(=sitemap:) + 文件名：
+     *   sitemap:sitemap.xml                         （索引）
+     *   sitemap:sitemap-{catalog|page|article|product|faq}.xml
+     * 这里显式枚举删除，避免与「数据缓存」整块清除耦合。
+     *
+     * @return array{removed:int, freed:int, failed:int, redis:bool}
+     */
+    protected static function clearSitemap(): array
+    {
+        $result = ['removed' => 0, 'freed' => 0, 'failed' => 0, 'redis' => false];
+
+        $keys = ['sitemap:sitemap.xml'];
+        foreach (array_keys(\zapcms\services\Sitemap::$types) as $type) {
+            $keys[] = 'sitemap:sitemap-' . $type . '.xml';
+        }
+
+        foreach ($keys as $key) {
+            try {
+                if (Cache::delete($key)) {
+                    $result['removed']++;
+                }
+            } catch (\Throwable $e) {
+                // 缓存键不存在或缓存不可用时忽略
+                $result['failed']++;
+            }
+        }
+
+        return $result;
     }
 }

@@ -1,4 +1,11 @@
 <?php
+/**
+ * Copyright (c) 2023.  ZAP.CN  - ZAP CMS
+ * @var string $cache_driver 当前缓存驱动
+ * @var bool $cache_enabled 缓存是否开启
+ * @var array $cache_targets 清理项目列表
+ * @var array $cache_stats 清理项目统计信息
+ */
 use zap\facades\Url;
 use zapcms\services\CacheManager;
 
@@ -89,9 +96,11 @@ $relativePath = static function (string $path): string {
                                     <i class="fa <?php echo e($target['icon']); ?> me-2 text-primary"></i><?php echo e($target['label']); ?>
                                 </div>
                                 <div class="text-secondary small"><?php echo e($target['desc']); ?></div>
+                                <?php if ($target['path'] !== ''): ?>
                                 <div class="text-secondary small">
                                     <code><?php echo $relativePath($target['path']); ?></code>
                                 </div>
+                                <?php endif; ?>
                             </td>
                             <td class="text-end">
                                 <?php echo $stat['files'] === null ? '—' : number_format($stat['files']); ?>

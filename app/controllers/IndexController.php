@@ -14,7 +14,7 @@ class IndexController extends Controller
     function index(){
         pageState()->isHome = true;
 
-        // 模块接管首页（约定式 home_render）；命中即接管并结束渲染
+        // hook : render_home
         if ($this->renderHome()) {
             return;
         }
