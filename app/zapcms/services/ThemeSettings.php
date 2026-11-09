@@ -57,12 +57,7 @@ class ThemeSettings
     public function save(): void
     {
         foreach ($this->dirty as $key => $_) {
-            $exists = Option::get($key) !== null;
-            if ($exists) {
-                Option::update($key, $this->data[$key]);
-            } else {
-                Option::add($key, $this->data[$key]);
-            }
+            Option::upsert($key, $this->data[$key]);
         }
         $this->dirty = [];
     }

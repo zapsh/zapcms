@@ -32,11 +32,7 @@ function clearHomeOptionCache(): void
  */
 function saveOption(string $name, string $value): void
 {
-    if (\zapcms\services\Option::get($name) === null) {
-        \zapcms\services\Option::add($name, $value);
-    } else {
-        \zapcms\services\Option::update($name, $value);
-    }
+    \zapcms\services\Option::upsert($name, $value);
 }
 
 // ============ 保存逻辑 ============

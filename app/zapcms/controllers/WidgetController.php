@@ -13,8 +13,12 @@ use zapcms\services\WidgetManager;
  */
 class WidgetController extends AdminController
 {
+
+    protected string $permKey = 'admin_menu_26';
+
     public function index()
     {
+        $this->requirePerm('view');
         $manager = WidgetManager::instance();
 
         $data['areas']      = $manager->areas();
@@ -35,6 +39,7 @@ class WidgetController extends AdminController
      */
     public function areaList()
     {
+        $this->requirePerm('view');
         $area    = trim((string) Request::get('area', ''));
         $manager = WidgetManager::instance();
         $registered = $manager->registered();
@@ -56,6 +61,7 @@ class WidgetController extends AdminController
      */
     public function save()
     {
+        $this->requirePerm('edit');
         $id    = (int) Request::post('id', 0);
         $key   = trim((string) Request::post('widget_key', ''));
         $area  = trim((string) Request::post('area', ''));
@@ -101,6 +107,7 @@ class WidgetController extends AdminController
      */
     public function reorder()
     {
+        $this->requirePerm('edit');
         $area = trim((string) Request::post('area', ''));
         $ids  = Request::post('ids', []);
         if (!is_array($ids)) {
@@ -115,6 +122,7 @@ class WidgetController extends AdminController
      */
     public function remove()
     {
+        $this->requirePerm('delete');
         $id = (int) Request::post('id', 0);
         WidgetManager::instance()->remove($id);
         Response::json(['code' => 0, 'msg' => '已删除']);

@@ -13,6 +13,9 @@ use zap\http\Response;
 
 class UploadController extends AdminController
 {
+
+    // Media Library Upload Controller
+    protected string $permKey = 'admin_menu_18';
     /**
      * 允许上传的扩展名白名单（小写）
      *
@@ -41,8 +44,12 @@ class UploadController extends AdminController
         'exe', 'dll', 'sh', 'bat', 'cmd', 'com',
     ];
 
+    /**
+     * 上传图片
+     */
     function image()
     {
+        $this->requirePerm('upload_image');
         if (Request::isPost()) {
             $this->saveUpload('images', '', '', true);
         }
@@ -51,6 +58,7 @@ class UploadController extends AdminController
 
     function file()
     {
+        $this->requirePerm('upload_file');
         if (Request::isPost()) {
             // fullPath：拖拽上传目录时由前端传入（形如 /dir/sub/file.txt），用于保留目录结构
             // storage=local：媒体库「本地存储」tab 上传，强制写入服务器磁盘（不走云同步）
@@ -69,6 +77,7 @@ class UploadController extends AdminController
      */
     private function saveUpload(string $subDir, string $path = '', string $fullPath = '', bool $imageOnly = false, bool $forceLocal = false)
     {
+        $this->requirePerm('upload_file');
         $file = Request::file('file');
         if (!isset($file['error']) || $file['error'] != UPLOAD_ERR_OK) {
             Response::json(['code' => 1, 'msg' => $this->errorMessage($file['error'] ?? UPLOAD_ERR_NO_FILE)]);

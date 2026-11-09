@@ -106,11 +106,7 @@ class Theme
             if(is_object($value) || is_array($value)){
                 $value = json_encode($value);
             }
-            if(in_array($key, $themeSettingsKeys)){
-                Option::update($key,$value);
-            }else{
-                Option::add($key,$value);
-            }
+            Option::upsert($key,$value);
 
         }
         $option_keys[] = "{$theme}.option_keys";

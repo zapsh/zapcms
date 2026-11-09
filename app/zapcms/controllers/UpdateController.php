@@ -74,6 +74,7 @@ class UpdateController extends AdminController
      */
     public function doUpdate()
     {
+        $this->requirePerm('update');
         if (!Request::isPost()) {
             Response::json(['code' => 1, 'msg' => '无效请求']);
         }
@@ -132,6 +133,7 @@ class UpdateController extends AdminController
      */
     public function manualUpdate()
     {
+        $this->requirePerm('update');
         if (!Request::isPost()) {
             Response::json(['code' => 1, 'msg' => '无效请求']);
         }

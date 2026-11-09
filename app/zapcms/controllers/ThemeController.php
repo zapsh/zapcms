@@ -16,7 +16,10 @@ use zap\view\View;
 class ThemeController extends AdminController
 {
 
+    protected string $permKey = 'admin_menu_7';
+
     public function index(){
+        $this->requirePerm('view');
         config_set('cache.status','disabled');
         $themes = Theme::instance()->getAllThemesInfo();
         $website_options = Option::getArray('website','REGEXP');
@@ -25,6 +28,7 @@ class ThemeController extends AdminController
 
 
     public function activationTheme(){
+        $this->requirePerm('edit');
         if(Request::isPost()){
             $theme = trim(req()->post('theme'));
             if(preg_match('/^[a-z0-9]{1,255}$/i',$theme) === false){
@@ -68,6 +72,7 @@ class ThemeController extends AdminController
      */
     public function deleteTheme()
     {
+        $this->requirePerm('delete');
         if (Request::isPost()) {
             $theme = trim(req()->post('theme'));
             if (preg_match('/^[a-z0-9_-]{1,255}$/i', $theme) === false) {
@@ -117,6 +122,7 @@ class ThemeController extends AdminController
 
 
     public function settings(){
+        $this->requirePerm('edit');
         $theme = Option::get('website.theme','basic');
         $themeFile = themes_path("{$theme}/theme.json");
         if(!is_file($themeFile)){
@@ -139,6 +145,7 @@ class ThemeController extends AdminController
 
     public function saveSettings()
     {
+        $this->requirePerm('edit');
         if(req()->isPost()){
             $settings = req()->post('settings') ?:[];
             $theme = Option::get('website.theme','basic');
@@ -154,6 +161,7 @@ class ThemeController extends AdminController
 
 
     public function callCustomPage($method){
+        $this->requirePerm('edit');
         $theme = Option::get('website.theme','basic');
         $themeFile = themes_path("{$theme}/theme.json");
         if(!is_file($themeFile)){

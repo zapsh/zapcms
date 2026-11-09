@@ -18,10 +18,12 @@ use zap\facades\Url;
 
 class SystemController extends AdminController
 {
+    protected string $permKey = 'admin_menu_4';
     function settings(){
         // 基础设置同时管理：站点信息（website.*）、文件上传（upload.*）
         $keyPrefix = ['website\.', 'upload\.'];
         if(Request::isPost()){
+            $this->requirePerm('edit');
             $options = Request::post('options',[]);
             // 网站网址必须为完整的 http(s):// 地址
             $siteUrl = trim((string)($options['website.url'] ?? ''));
@@ -38,11 +40,8 @@ class SystemController extends AdminController
                 if ($key === 'website.smtp_pass') {
                     continue;
                 }
-                if(in_array($key,$optionKeys)){
-                    Option::update($key,$value,null,1);
-                }else{
-                    Option::add($key,$value,0,1);
-                }
+                // upsert：命中 option_name 唯一索引则更新，否则插入（autoload=1）
+                Option::upsert($key,$value,null,1);
             }
             // 服务器设置（server.*）与缓存设置（cache.*）保存到 options 表
             $this->saveServerOptions((array)Request::post('server', []));
@@ -166,12 +165,7 @@ class SystemController extends AdminController
                 $value = trim(preg_replace('/[^a-zA-Z0-9_-]/', '', $value) ?: 'z-admin', '-_');
                 $value = $value !== '' ? $value : 'z-admin';
             }
-            $existing = Option::get($optionName);
-            if ($existing !== null) {
-                Option::update($optionName, $value, 0, 1);
-            } else {
-                Option::add($optionName, $value, 0, 1);
-            }
+            Option::upsert($optionName, $value, 0, 1);
             // 清除单个 option 缓存
             \zap\facades\Cache::delete($optionName);
         }
@@ -209,12 +203,7 @@ class SystemController extends AdminController
                 default:
                     $value = trim($value);
             }
-            $existing = Option::get($optionName);
-            if ($existing !== null) {
-                Option::update($optionName, $value, 0, 1);
-            } else {
-                Option::add($optionName, $value, 0, 1);
-            }
+            Option::upsert($optionName, $value, 0, 1);
             // 清除单个 option 缓存
             \zap\facades\Cache::delete($optionName);
         }
@@ -706,12 +695,7 @@ class SystemController extends AdminController
                     $value = trim($value);
                 }
 
-                $existing = Option::get($key);
-                if ($existing !== null) {
-                    Option::update($key, (string) $value, 0, 1);
-                } else {
-                    Option::add($key, (string) $value, 0, 1);
-                }
+                Option::upsert($key, (string) $value, 0, 1);
             }
 
             // 百度翻译密钥改走加密存储（secret.slug.baidu_key）
