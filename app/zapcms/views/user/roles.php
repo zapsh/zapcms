@@ -1,7 +1,7 @@
 <?php
 use zap\facades\Url;
 
-$this->layout('layouts/common');
+!IS_AJAX && $this->layout('layouts/common');
 $roleCount = count($data);
 ?>
 
@@ -104,14 +104,26 @@ $roleCount = count($data);
             ZapToast.alert('请选择需要删除的角色',{bgColor:bgWarning,position:Toast_Pos_Center});
             return;
         }
-        $.ajax({
-            url:'<?php echo Url::action("User@removeRole");?>',
-            method:'post',
-            data:checkedCatalog,
-            success:function (data){
-                ZapToast.alert(data.msg,{bgColor:data.code===0?bgSuccess:bgDanger,position:Toast_Pos_Center});
-                Zap.reload();
-            }
+        Swal.fire({
+            title:'确定删除选中的角色？',
+            text:'将同时清除该角色的权限配置与用户关联，且不可恢复！',
+            icon:'warning',
+            showCancelButton:true,
+            confirmButtonText:'删除',
+            cancelButtonText:'取消',
+            confirmButtonColor:'#dc3545',
+            reverseButtons:true
+        }).then(function (r) {
+            if (!r.isConfirmed) { return; }
+            $.ajax({
+                url:'<?php echo Url::action("User@removeRole");?>',
+                method:'post',
+                data:checkedCatalog,
+                success:function (data){
+                    ZapToast.alert(data.msg,{bgColor:data.code===0?bgSuccess:bgDanger,position:Toast_Pos_Center});
+                    Zap.reload();
+                }
+            })
         })
     }
 

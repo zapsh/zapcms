@@ -51,9 +51,11 @@ class RBAC
                 Cache::delete("rbac:v{$v}:roles:{$userId}");
                 Cache::delete("rbac:v{$v}:role_rows:{$userId}");
                 Cache::delete("rbac:v{$v}:perms:{$userId}");
+                // extras 的缓存键同样是带版本前缀的（旧代码删的是不带版本的
+                // 键，从未命中 → 用户权限变更后 extras 残留最多 1 小时）
+                Cache::delete("rbac:v{$v}:extras:{$userId}");
             }
         }
-        Cache::delete("rbac:extras:{$userId}");
     }
 
     /**
@@ -491,7 +493,7 @@ class RBAC
         $rows = DB::query(
             "SELECT perm_key, extras FROM {roles_permissions} WHERE role_id IN ({$placeholders})",
             $roleIds
-        )->fetchAll();
+        )->fetchAll(FETCH_ASSOC);
 
         $result = [];
         foreach ($rows as $row) {
@@ -517,7 +519,7 @@ class RBAC
             $permRows = DB::query(
                 "SELECT perm_key, extras FROM {permissions} WHERE perm_key IN ({$pkp})",
                 $pkList
-            )->fetchAll();
+            )->fetchAll(FETCH_ASSOC);
 
             $defined = [];
             foreach ($permRows as $pr) {

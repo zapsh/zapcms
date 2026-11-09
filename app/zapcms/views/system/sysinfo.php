@@ -11,7 +11,7 @@
 use zapcms\support\Asset;
 use zap\facades\Url;
 
-$this->layout('layouts/common');
+!IS_AJAX && $this->layout('layouts/common');
 
 // 辅助函数
 $success_status = '<span class="badge text-bg-success">Yes</span>';

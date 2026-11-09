@@ -4,7 +4,7 @@ use zapcms\support\Asset;
 use zap\facades\Url;
 
 Asset::library('jqueryvalidation');
-$this->layout('layouts/common');
+!IS_AJAX && $this->layout('layouts/common');
 
 $this->view->page_title = '系统设置';
 $this->view->page_subtitle = '站点信息 & 统计与嵌入代码 & 邮件配置 & 文件上传 & 系统 & 缓存';

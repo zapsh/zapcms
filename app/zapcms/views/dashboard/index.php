@@ -3,7 +3,7 @@
 use zapcms\services\Dashboard;
 
 $page_title = __('admin.dashboard');
-$this->layout('layouts/common');
+!IS_AJAX && $this->layout('layouts/common');
 ?>
 
 <div class="d-flex justify-content-between align-items-center mb-3">

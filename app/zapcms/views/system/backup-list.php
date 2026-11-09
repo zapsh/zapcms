@@ -1,6 +1,6 @@
 <?php
 use zap\facades\Url;
-$this->layout('layouts/common');
+!IS_AJAX && $this->layout('layouts/common');
 
 $totalSize = 0;
 $totalRows = 0;

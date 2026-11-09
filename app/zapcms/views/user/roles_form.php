@@ -16,8 +16,8 @@
         <label  class="form-label">权限</label>
         <div class="table-responsive">
             <table class="table table-bordered table-hover text-nowrap">
-                <thead class="bg-light sticky-top top-0">
-                <tr class="table-secondary">
+                <thead class="table-light sticky-top top-0">
+                <tr>
                     <th scope="col" style="width: 50px">
                         <label>
                             <input class="form-check-input" type="checkbox" onclick="Zap.CheckBox_CheckAll(this,'.sl_perm_list')"/>
@@ -46,8 +46,8 @@
 
                         <td class="w-50">
                                 <?php echo e($item['title']); ?>
-                                <small class="text-black-50">ID:<?php echo e($item['perm_id']); ?></small>
-                                <small class="text-black-50"><?php echo e($item['perm_key']); ?></small>
+                                <small class="text-body-secondary">ID:<?php echo e($item['perm_id']); ?></small>
+                                <small class="text-body-secondary"><?php echo e($item['perm_key']); ?></small>
 
 
 
@@ -96,8 +96,8 @@
         <label  class="form-label">系统菜单</label>
         <div class="table-responsive">
             <table class="table table-hover text-nowrap">
-                <thead class="bg-light sticky-top top-0">
-                <tr class="table-secondary">
+                <thead class="table-light sticky-top top-0">
+                <tr>
                     <th scope="col" style="width: 50px">
                         <label>
                             <input class="form-check-input" type="checkbox" onclick="Zap.CheckBox_CheckAll(this,'.sl_admin_menus')"/>
@@ -128,11 +128,11 @@
                             <div style="padding-left: <?php echo $item['level']*0.9 ?>rem !important;">
                             <i class="<?php echo e($item['icon']); ?>"></i>
                             <?php echo e($item['title']); ?>
-                            <small class="text-black-50">ID:<?php echo e($item['id']); ?></small>
+                            <small class="text-body-secondary">ID:<?php echo e($item['id']); ?></small>
                             </div>
                         </td>
 
-                        <td class="text-black-50"><?php echo e($item['link_to']); ?></td>
+                        <td class="text-body-secondary"><?php echo e($item['link_to']); ?></td>
 
                     </tr>
 

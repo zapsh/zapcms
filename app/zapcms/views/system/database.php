@@ -11,7 +11,7 @@
 use zapcms\support\Asset;
 use zap\facades\Url;
 
-$this->layout('layouts/common');
+!IS_AJAX && $this->layout('layouts/common');
 
 $conn_name = config('database.default');
 $driver = \zap\DB::connection()->driver;

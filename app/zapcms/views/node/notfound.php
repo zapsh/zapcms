@@ -2,7 +2,7 @@
 
 use zap\facades\Url;
 
-$this->layout('layouts/common');
+!IS_AJAX && $this->layout('layouts/common');
 ?>
 
 

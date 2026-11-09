@@ -56,7 +56,7 @@ $structureTags = [
     '%node_type%' => '内容类型（article, product 等）',
 ];
 
-$this->layout('layouts/common');
+!IS_AJAX && $this->layout('layouts/common');
 ?>
 
     <div class="row">

@@ -144,20 +144,22 @@ class AdminMenu extends Category
         // 父级权限行定位：pid 树与菜单树一致
         $parentPermId = 0;
         $level        = 1;
-        $path         = '';
+        $parentPath   = '';
         if ($pid > 0) {
             $parent = DB::table('permissions')->where('perm_key', 'admin_menu_' . $pid)->first();
             if ($parent) {
                 $parentPermId = (int) $parent['perm_id'];
                 $level        = (int) ($parent['level'] ?? 0) + 1;
-                $path         = rtrim((string) ($parent['path'] ?? '') . $parentPermId . ',', ',') . ',';
+                $parentPath   = (string) ($parent['path'] ?? '');
             }
         }
 
+        // path 规则与 Category::add 一致：根 = "{自身id},"，子 = "{父path}{自身id},"
+        // （父 path 已以父 id 结尾，子行需追加的是自己的 id，不能重复拼父 id）
         $permId = (int) DB::insert('permissions', [
             'title'       => $title !== '' ? $title : $permKey,
             'pid'         => $parentPermId,
-            'path'        => $path,
+            'path'        => '',
             'level'       => $level,
             'perm_key'    => $permKey,
             'extras'      => null,
@@ -166,9 +168,12 @@ class AdminMenu extends Category
             'created_at'  => $now,
             'sort_order'  => $sort,
         ]);
-        if ($parentPermId === 0 && $permId > 0) {
-            // 根节点回写自身 path（与分类树 path 规则一致："{id},"）
-            DB::update('permissions', ['path' => $permId . ','], ['perm_id' => $permId]);
+        if ($permId > 0) {
+            DB::update(
+                'permissions',
+                ['path' => $parentPath . $permId . ','],
+                ['perm_id' => $permId]
+            );
         }
     }
 

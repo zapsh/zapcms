@@ -190,9 +190,15 @@ class Category
         if(is_null($category)){
             return false;
         }
-        $path = $category[$this->pathColumn];
-        //删除子类
-        DB::table($this->table)->where($this->pathColumn,'LIKE',"{$path}%")->delete();
+        $path = (string)($category[$this->pathColumn] ?? '');
+        if ($path !== '') {
+            // 删除子树。注意：path 为空的行绝不能走 LIKE 级联——
+            // LIKE '%' 会匹配全表（历史 bug：删一个空 path 的权限清空整张表）
+            DB::table($this->table)->where($this->pathColumn,'LIKE',"{$path}%")->delete();
+        } else {
+            // 兜底：空 path 的行只按 pid 清理可能的直接子级
+            DB::table($this->table)->where($this->parentColumn, $id)->delete();
+        }
         $this->flushCache();
         return DB::table($this->table)->where($this->primaryKey,$id)->delete();
     }

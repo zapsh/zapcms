@@ -19,7 +19,7 @@ foreach ($knownLocales as $code) {
     }
 }
 
-$this->layout('layouts/common');
+!IS_AJAX && $this->layout('layouts/common');
 ?>
 
     <div class="row">

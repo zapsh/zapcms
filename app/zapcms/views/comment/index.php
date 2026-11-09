@@ -2,7 +2,7 @@
 use zap\facades\Url;
 use zapcms\models\Comment;
 
-$this->layout('layouts/common');
+!IS_AJAX && $this->layout('layouts/common');
 
 // 统计
 $totalAll    = $totalAll ?? 0;
@@ -242,31 +242,48 @@ $spamCnt     = $spamCnt ?? 0;
             ZapToast.alert('请选择评论',{bgColor:bgWarning,position:Toast_Pos_Center});
             return;
         }
-        if(!confirm('确定删除选中的 ' + ids.length + ' 条评论吗？')){
-            return;
-        }
-        $.ajax({
-            url:'<?php echo Url::action("Comment@remove");?>',
-            method:'post',
-            data:{ids:ids},
-            success:function (data){
-                ZapToast.alert(data.msg,{bgColor:data.code===0?bgSuccess:bgDanger,position:Toast_Pos_Center});
-                if(data.code===0){
-                    setTimeout(function(){ Zap.reload(); }, 600);
+        Swal.fire({
+            title:'确定删除选中的评论？',
+            text:'共 ' + ids.length + ' 条，此操作不可恢复！',
+            icon:'warning',
+            showCancelButton:true,
+            confirmButtonText:'删除',
+            cancelButtonText:'取消',
+            confirmButtonColor:'#dc3545',
+            reverseButtons:true
+        }).then(function (r) {
+            if (!r.isConfirmed) { return; }
+            $.ajax({
+                url:'<?php echo Url::action("Comment@remove");?>',
+                method:'post',
+                data:{ids:ids},
+                success:function (data){
+                    ZapToast.alert(data.msg,{bgColor:data.code===0?bgSuccess:bgDanger,position:Toast_Pos_Center});
+                    if(data.code===0){
+                        setTimeout(function(){ Zap.reload(); }, 600);
+                    }
                 }
-            }
+            })
         })
     }
 
     /** 删除单条 */
     function removeOne(id){
-        if(!confirm('确定删除这条评论吗？')){
-            return;
-        }
-        $.ajax({
-            url:'<?php echo Url::action("Comment@remove");?>',
-            method:'post',
-            data:{ids:[id]},
+        Swal.fire({
+            title:'确定删除这条评论？',
+            text:'此操作不可恢复！',
+            icon:'warning',
+            showCancelButton:true,
+            confirmButtonText:'删除',
+            cancelButtonText:'取消',
+            confirmButtonColor:'#dc3545',
+            reverseButtons:true
+        }).then(function (r) {
+            if (!r.isConfirmed) { return; }
+            $.ajax({
+                url:'<?php echo Url::action("Comment@remove");?>',
+                method:'post',
+                data:{ids:[id]},
             success:function (data){
                 ZapToast.alert(data.msg,{bgColor:data.code===0?bgSuccess:bgDanger,position:Toast_Pos_Center});
                 if(data.code===0){

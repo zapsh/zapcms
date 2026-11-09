@@ -2,7 +2,7 @@
 use zap\facades\Url;
 use zapcms\services\CacheManager;
 
-$this->layout('layouts/common');
+!IS_AJAX && $this->layout('layouts/common');
 
 $isAudit     = ($active_tab === 'audit');
 $relativeDir = str_replace(rtrim(str_replace('\\', '/', base_path()), '/') . '/', '', str_replace('\\', '/', $log_dir));

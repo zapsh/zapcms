@@ -1,5 +1,5 @@
 <?php
-$this->layout('layouts/common');
+!IS_AJAX && $this->layout('layouts/common');
 /**
  * @var string $path 当前目录路径
  */

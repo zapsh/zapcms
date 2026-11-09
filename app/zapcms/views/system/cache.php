@@ -2,7 +2,7 @@
 use zap\facades\Url;
 use zapcms\services\CacheManager;
 
-$this->layout('layouts/common');
+!IS_AJAX && $this->layout('layouts/common');
 
 $relativePath = static function (string $path): string {
     $base = rtrim(str_replace('\\', '/', base_path()), '/') . '/';

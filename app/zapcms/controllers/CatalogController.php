@@ -21,7 +21,11 @@ use zap\view\View;
  */
 class CatalogController extends AdminController
 {
+    /** 模块权限键：「栏目」菜单（admin_menu.id=22），extras 子项：view/add/edit/delete */
+    protected string $permKey = 'admin_menu_221';
+
     function index(){
+        $this->requirePerm('view', '查看');
         $data = [];
         $menu = Catalog::instance();
         $data['menu'] = $menu;
@@ -38,6 +42,7 @@ class CatalogController extends AdminController
 
     public function save()
     {
+        $this->requirePerm('edit', '编辑');
         $catalog = Request::post('catalog',[]);
         $titleChanged = false;
         foreach ($catalog as $id=>$row){
@@ -59,6 +64,7 @@ class CatalogController extends AdminController
     public function saveCatalog(){
         $catalog = Request::post('catalog',[]);
         $catalogId = intval(Request::post('catalog_id',0));
+        $this->requirePerm($catalogId ? 'edit' : 'add', $catalogId ? '编辑' : '新增');
         $catalog['slug'] = SlugHelper::generate(empty($catalog['slug']) ? $catalog['title'] : $catalog['slug']);
 
         $menu = Catalog::instance();
@@ -96,6 +102,7 @@ class CatalogController extends AdminController
      */
     public function quickCreate()
     {
+        $this->requirePerm('add', '新增');
         $title = trim((string) Request::post('title', ''));
         if ($title === '') {
             Response::json(['code' => 1, 'msg' => '请填写分区名称']);
@@ -150,6 +157,7 @@ class CatalogController extends AdminController
      */
     public function catalogOptions()
     {
+        $this->requirePerm('view', '查看');
         $nodeType = trim((string) Request::get('node_type', ''));
         $conditions = $nodeType !== '' ? ['node_type' => $nodeType] : [];
         $catalogList = Catalog::instance()->getTreeArray($conditions, ['columns' => ['title', 'level']]);
@@ -194,6 +202,7 @@ class CatalogController extends AdminController
 
     public function remove()
     {
+        $this->requirePerm('delete', '删除');
         $catalog = Request::post('catalog',[]);
         $menu = Catalog::instance();
         foreach ($catalog as $id=>$row){
@@ -207,7 +216,7 @@ class CatalogController extends AdminController
 
     public function form()
     {
-
+        $this->requirePerm('view', '查看');
         $data['pid'] = intval(Request::get('pid',0));
         $data['cid'] = intval(Request::get('cid',0));
         if($data['pid']){
@@ -231,6 +240,7 @@ class CatalogController extends AdminController
      */
     public function options()
     {
+        $this->requirePerm('view', '查看');
         $keyword     = trim((string) Request::get('keyword', ''));
         $limit       = min(100, max(1, intval(Request::get('limit', 30))));
         $excludePath = (string) Request::get('exclude_path', '');
@@ -255,6 +265,7 @@ class CatalogController extends AdminController
      */
     public function children()
     {
+        $this->requirePerm('view', '查看');
         $parentId = intval(Request::get('parent_id', 0));
 
         $rows = Catalog::instance()->getChildren($parentId);

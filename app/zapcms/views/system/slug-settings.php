@@ -4,7 +4,7 @@ use zapcms\support\Asset;
 use zap\facades\Url;
 
 Asset::library('jqueryvalidation');
-$this->layout('layouts/common');
+!IS_AJAX && $this->layout('layouts/common');
 
 $this->view->page_title = 'Slug 生成设置';
 $this->view->page_subtitle = '配置 URL 别名（Slug）的生成规则';
