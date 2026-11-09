@@ -301,8 +301,52 @@ use zap\facades\Url;
         return false;
     }
 
-    var miSrc = null, miGhost = null, miPlaceholder = null, miDropTarget = null, miDropMode = 'after',
-        miOrigNext = null, miMoved = false, miStarted = false, miStartX = 0, miStartY = 0;
+    // 条目当前层级（缩进 18px = 一级）
+    function miLevel($el){
+        return Math.round((parseInt($el.css('margin-left'), 10) || 0) / 18);
+    }
+
+    // 从 $target 向后跳过所有比 level 更深的行，返回插入锚点：
+    // 「排到某项后面」必须落在其整棵子树之后，否则会把目标的子项挤到新条目名下
+    function miSkipDeeper($target, level){
+        var $pos = $target, $n = $target.next('.mi-item');
+        while ($n.length) {
+            if ($n.hasClass('mi-dragging-src')) { $n = $n.next('.mi-item'); continue; } // 被拖原件不参与
+            if (miLevel($n) <= level) { break; }
+            $pos = $n; $n = $n.next('.mi-item');
+        }
+        return $pos;
+    }
+
+    // 落点上方最近的浅一级条目 = 新父菜单（WordPress 式：父菜单由缩进层级推导，层级 0 = 顶级）
+    function miParentAtLevel($from, level, dragId){
+        if (level <= 0) { return 0; }
+        var $p = $from.prev('.mi-item');
+        while ($p.length) {
+            if (!$p.hasClass('mi-dragging-src')) {
+                if (miLevel($p) < level && !miInSubtree(dragId, $p[0])) {
+                    return parseInt($p.data('id'), 10);
+                }
+            }
+            $p = $p.prev('.mi-item');
+        }
+        return 0;
+    }
+
+    // 被拖条目连同其子树的所有行（DOM 顺序）——整块搬家，保证父子不被拆散
+    function miSubtreeRows($src){
+        var sLevel = miLevel($src), $rows = $src, $n = $src.next('.mi-item');
+        while ($n.length) {
+            if (miLevel($n) <= sLevel) { break; }
+            $rows = $rows.add($n);
+            $n = $n.next('.mi-item');
+        }
+        return $rows;
+    }
+
+    var miSrc = null, miGhost = null, miPlaceholder = null, miDropTarget = null, miDropMode = 'after', miDropLevel = 0,
+        miDropAnchor = null, miOrigParent = 0, miMoved = false, miStarted = false, miStartX = 0, miStartY = 0,
+        miZoneKey = null;
 
     // 整行（mi-bar）可起拽；点按钮/链接/输入框不触发；禁用文本选择与原生拖拽
     $(document).on('mousedown', '#miList .mi-bar', function (e){
@@ -312,7 +356,7 @@ use zap\facades\Url;
         var $item = $(this).closest('.mi-item');
         if (!$item.length) { return; }
         miSrc = $item;
-        miOrigNext = $item.next();
+        miOrigParent = parseInt($item.attr('data-parent'), 10) || 0;
         miStartX = e.clientX;
         miStartY = e.clientY;
         miMoved = false;
@@ -341,6 +385,8 @@ use zap\facades\Url;
                 boxShadow: '0 6px 18px rgba(0,0,0,.25)', listStyle: 'none'
             });
         $('body').append(miGhost);
+        miZoneKey = null; // 首次 onMiMove 必然会应用一次落区
+        miDropAnchor = null;
     }
 
     function onMiMove(e){
@@ -351,38 +397,69 @@ use zap\facades\Url;
         }
         miMoved = true;
         if (miGhost) { miGhost.css({left: (e.clientX + 8) + 'px', top: (e.clientY + 8) + 'px'}); }
-        miClearDropMarks();
+
         var $items = $('#miList .mi-item').not('.mi-dragging-src');
-        var best = null, bestDist = Infinity, bestRect = null;
+        if (!$items.length || !miPlaceholder) { return; }
+
+        // 用「虚拟坐标」做落区判定：占位框会把其下方条目顶下去，若直接读真实坐标，
+        // 等于用"被占位框自己改变的布局"做判定 → 判定变 → 占位框移动 → 布局又变 → 来回震荡（闪烁的根源）。
+        // 把占位框高度从其下方条目的坐标里扣掉后，坐标与占位框位置无关，判定稳定不抖。
+        var phRect = miPlaceholder[0].getBoundingClientRect();
+        var best = null, bestDist = Infinity, bestTop = 0, bestH = 1, bestLeft = 0;
         $items.each(function (){
             var r = this.getBoundingClientRect();
-            var d = Math.abs(e.clientY - (r.top + r.height / 2));
-            if (d < bestDist) { bestDist = d; best = this; bestRect = r; }
+            var top = r.top, bottom = r.bottom;
+            if (top >= phRect.top) { top -= phRect.height; bottom -= phRect.height; }
+            var d = Math.abs(e.clientY - (top + (bottom - top) / 2));
+            if (d < bestDist) { bestDist = d; best = this; bestTop = top; bestH = bottom - top; bestLeft = r.left; }
         });
-        if (!best) {
-            $('#miList').append(miPlaceholder);
-            miDropTarget = null; miDropMode = 'after';
-            return;
-        }
-        var rel = (e.clientY - bestRect.top) / bestRect.height;
-        var dx  = e.clientX - bestRect.left;
-        miDropTarget = $(best);
+        if (!best) { return; }
+
+        var $target = $(best);
+        var tLevel = miLevel($target);
+        var rel = (e.clientY - bestTop) / bestH;
+        var dx  = e.clientX - bestLeft;
+        var mode, level;
         if (rel < 0.35) {
-            miDropMode = 'before'; miDropTarget.addClass('mi-drop-before'); miPlaceholder.insertBefore(miDropTarget);
+            // 目标上半部 → 排到目标前面（与目标同级）
+            mode = 'before'; level = tLevel;
         } else if (rel > 0.65 && dx < 32) {
-            miDropMode = 'after'; miDropTarget.addClass('mi-drop-after'); miPlaceholder.insertAfter(miDropTarget);
+            // 目标下半部靠左 → 排到目标（整棵子树）之后；层级由横向位置决定（WordPress 同款）：
+            // 每向左 18px 浅一级，0 = 顶级 → 拖到列表末尾向左一抹即可变回一级菜单，占位框无需瞬移
+            mode = 'after';
+            level = Math.max(0, Math.min(tLevel, Math.floor((dx + tLevel * 18) / 18)));
         } else {
-            // 目标中部 或 下方靠右（WordPress 式「往下并缩进」）→ 设为子菜单
-            miDropMode = 'child'; miDropTarget.addClass('mi-drop-child');
-            miPlaceholder.insertAfter(miSubtreeLast(miDropTarget));
+            // 目标中部 或 下方靠右 → 设为目标的子菜单
+            mode = 'child'; level = tLevel + 1;
         }
-        // 占位行缩进直观预览层级：子菜单模式 = 目标缩进 + 一级；
-        // before/after 模式 = 与落点目标同级（原实现清空缩进 → 子项拖动时占位框总是顶到最左层）
-        if (miDropMode === 'child') {
-            miPlaceholder.css('margin-left', ((parseInt(miDropTarget.css('margin-left'), 10) || 0) + 18) + 'px');
+
+        // 插入锚点：before → 目标之前；after → 目标子树之后（跳过比落点层级更深的行）；
+        // child → 目标子树之后（深一级）。锚点决定占位框位置、层级只决定缩进
+        // → 横向移动只改缩进不动位置，从机制上消除占位框跳动
+        var $anchor;
+        if (mode === 'before') {
+            $anchor = $target;
+        } else if (mode === 'after') {
+            $anchor = miSkipDeeper($target, level);
         } else {
-            miPlaceholder.css('margin-left', miDropTarget.css('margin-left'));
+            $anchor = miSubtreeLast($target);
         }
+
+        // 落区（模式+目标+层级）没变就不碰 DOM：占位框只在落区真正变化时更新一次
+        var zoneKey = mode + ':' + $target.data('id') + ':' + level;
+        if (zoneKey === miZoneKey) { return; }
+        miZoneKey = zoneKey;
+
+        miClearDropMarks();
+        miDropTarget = $target;
+        miDropMode = mode;
+        miDropLevel = level;
+        miDropAnchor = $anchor;
+
+        $target.addClass(mode === 'before' ? 'mi-drop-before' : (mode === 'after' ? 'mi-drop-after' : 'mi-drop-child'));
+        if (mode === 'before') { miPlaceholder.insertBefore($anchor); }
+        else { miPlaceholder.insertAfter($anchor); }
+        miPlaceholder.css('margin-left', (level * 18) + 'px');
     }
 
     function onMiUp(){
@@ -399,38 +476,37 @@ use zap\facades\Url;
         }
 
         var $src = miSrc;
-        if (miDropMode === 'child' && miDropTarget && miDropTarget.length) {
-            var dragId = parseInt($src.data('id'), 10);
-            if (miInSubtree(dragId, miDropTarget[0])) {
-                ZapToast.alert('不能将菜单拖入其自身子菜单',{bgColor:bgWarning,position:Toast_Pos_Center});
-                if (miOrigNext && miOrigNext.length) { miOrigNext.before($src); } else { $('#miList').append($src); }
-                $src.removeClass('mi-dragging-src');
-                if (miPlaceholder) { miPlaceholder.remove(); }
-                cleanupMi();
-                return;
-            }
-            var newPid = parseInt(miDropTarget.data('id'), 10);
-            $src.attr('data-parent', newPid);
-            // 插到目标子树的末尾（成为其最后一个子项，与占位预览位置一致）
-            miSubtreeLast(miDropTarget).after($src);
-        } else if (miDropTarget && miDropTarget.length) {
-            var sibPid = parseInt(miDropTarget.attr('data-parent'), 10) || 0;
-            $src.attr('data-parent', sibPid);
-            miPlaceholder.after($src);
-        } else {
-            $src.attr('data-parent', 0);
-            miPlaceholder.after($src);
+        var dragId = parseInt($src.data('id'), 10);
+        var newPid = 0;
+
+        // 锚点落在被拖条目自己的子树里 → 整块搬过去仍是原顺序（原地不动），静默忽略
+        var selfDrop = miDropAnchor && miDropAnchor.length
+            && miDropAnchor[0] !== $src[0] && miInSubtree(dragId, miDropAnchor[0]);
+        if (selfDrop) {
+            newPid = miOrigParent;
+        } else if (miDropMode === 'child' && miDropTarget && miDropTarget.length) {
+            newPid = parseInt(miDropTarget.data('id'), 10);
+        } else if (miDropMode === 'before' && miDropTarget && miDropTarget.length) {
+            newPid = parseInt(miDropTarget.attr('data-parent'), 10) || 0;
+        } else if (miDropMode === 'after' && miPlaceholder && miPlaceholder.length) {
+            // after：父菜单由占位框层级向上推导（缩进浅一级的最近前项；层级 0 = 顶级）
+            newPid = miParentAtLevel(miPlaceholder, miDropLevel, dragId);
         }
+
+        $src.attr('data-parent', newPid);
+        // 整棵子树作为一块搬到占位框位置（父菜单挪动时子菜单跟随，父子永不拆散）
+        var $block = miSubtreeRows($src);
+        miPlaceholder.after($block);
         $src.removeClass('mi-dragging-src');
         if (miPlaceholder) { miPlaceholder.remove(); }
         miRefreshIndent();
         cleanupMi();
-        mlSaveOrder();
+        if (!selfDrop) { mlSaveOrder(); }
     }
 
     function cleanupMi(){
-        miSrc = null; miPlaceholder = null; miDropTarget = null; miDropMode = 'after';
-        miOrigNext = null; miMoved = false; miStarted = false;
+        miSrc = null; miPlaceholder = null; miDropTarget = null; miDropMode = 'after'; miDropLevel = 0;
+        miDropAnchor = null; miOrigParent = 0; miMoved = false; miStarted = false; miZoneKey = null;
         $('.mi-item').removeClass('mi-dragging-src');
     }
 

@@ -105,8 +105,6 @@ if (!function_exists('_zap_sidebar_render_menu')) {
     ?>
     <?php if (!empty($catalogs)): ?>
     <?php
-    // 分支根项（父级）已作为 <h4> 标题显示，列表只渲染其子级（当前层级），
-    // 避免标题与列表首项重复；根项无子级时（叶子顶级栏目）回退渲染根项本身
     $rootBranch = is_array($catalogs[0] ?? null) ? $catalogs[0] : [];
     $sidebarItems = !empty($rootBranch['children']) ? $rootBranch['children'] : (array) $catalogs;
     ?>

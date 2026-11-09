@@ -151,7 +151,7 @@ foreach ($items as $it) {
                 <div class="card-header bg-body-tertiary py-2 d-flex align-items-center flex-wrap">
                     <h6 class="mb-0">菜单结构</h6>
                     <span class="ms-2 small text-muted">
-                        按住条目直接拖动排序；拖到某项中部、或拖到它下方并靠右，可设为它的子菜单；点 <i class="fa fa-chevron-down"></i> 编辑。
+                        按住条目拖动排序：纵向决定插入位置，横向决定层级（越靠左层级越浅，最左 = 顶级）；拖到某项中部或其下方靠右 = 设为子菜单；点 <i class="fa fa-chevron-down"></i> 编辑。
                     </span>
                 </div>
                 <div class="card-body p-2">
