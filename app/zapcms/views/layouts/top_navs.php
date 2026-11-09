@@ -156,8 +156,7 @@ body.sidebar-mini:not(.sidebar-open) .docs-btn-text {
                         $linkExtra = $active ? ' active' : '';
                         $icon      = $iconOf($item['icon'] ?? '');
 
-                        // data-menu-id：侧栏菜单展开状态记忆（localStorage）的定位锚点
-                        echo '<li class="' . e($liClass) . '"' . ($hasChildren ? ' data-menu-id="' . e((int) ($item['id'] ?? 0)) . '"' : '') . '>';
+                        echo '<li class="' . e($liClass) . '">';
 
                         if ($hasChildren && $depth > 0 && $action !== '#') {
                             echo '<div class="nav-link nav-link-group p-0 d-flex align-items-center' . $linkExtra . '">';
@@ -215,55 +214,5 @@ body.sidebar-mini:not(.sidebar-open) .docs-btn-text {
             body.classList.remove('sidebar-open');
         });
     }
-})();
-</script>
-<script>
-(function () {
-    // 后台主侧栏菜单展开状态记忆（localStorage，按管理员区分）
-    // Treeview 组件（admin.js）开关只切换 .menu-open 类并派发
-    // expanded/collapsed.zui.treeview 事件，这里不重写组件、只挂钩持久化。
-    var KEY = 'zapcms.adminMenu.state.u<?php echo (int) (\zapcms\services\Auth::user('id') ?? 0); ?>';
-    function loadState() {
-        try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; }
-    }
-    function saveState(s) {
-        try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
-    }
-    function menuId(item) { return item.getAttribute('data-menu-id'); }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        var items = document.querySelectorAll('.app-sidebar .nav-item[data-menu-id]');
-
-        // 应用记忆状态（覆盖服务端默认：默认只展开当前选中路径）
-        var state = loadState();
-        items.forEach(function (item) {
-            var ul = item.querySelector('.nav-treeview');
-            if (!ul) { return; }
-            var st = state[menuId(item)];
-            if (st !== 'open' && st !== 'closed') { return; }
-            if (st === 'open') {
-                item.classList.add('menu-open');
-                ul.style.display = 'block';
-            } else {
-                item.classList.remove('menu-open');
-                ul.style.display = 'none';
-            }
-        });
-
-        // 持久化用户的展开/折叠操作
-        items.forEach(function (item) {
-            if (!item.querySelector('.nav-treeview')) { return; }
-            item.addEventListener('expanded.zui.treeview', function () {
-                var s = loadState();
-                s[menuId(item)] = 'open';
-                saveState(s);
-            });
-            item.addEventListener('collapsed.zui.treeview', function () {
-                var s = loadState();
-                s[menuId(item)] = 'closed';
-                saveState(s);
-            });
-        });
-    });
 })();
 </script>

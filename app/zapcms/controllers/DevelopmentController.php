@@ -20,7 +20,7 @@ class DevelopmentController extends AdminController
                 ['title' => '控制台', 'url' => \zap\facades\Url::action('Index')],
                 ['title' => '代码编辑器', 'url' => \zap\facades\Url::action('Development')],
             ],
-            'body_class' => 'layout-fixed sidebar-expand-lg sidebar-mini sidebar-collapse bg-body-tertiary app-loaded',
+            // 'body_class' => 'layout-fixed sidebar-expand-lg sidebar-mini sidebar-collapse bg-body-tertiary app-loaded',
         ]);
     }
 
