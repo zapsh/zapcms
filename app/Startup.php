@@ -67,6 +67,15 @@ class Startup
             (new ZqueryController())->meta();
         });
 
+        // ──── 后台管理 API（需鉴权：会话或 Bearer Token，复用 RBAC）────
+        $this->router->match(['GET', 'POST'], '/api/admin/{any:.*}', function ($any = '') {
+            (new \app\controllers\api\ApiDispatch())->admin($any);
+        });
+        // ──── 模块 API（是否鉴权由模块自身决定）────
+        $this->router->match(['GET', 'POST'], '/api/mod/{any:.*}', function ($any = '') {
+            (new \app\controllers\api\ApiDispatch())->module($any);
+        });
+
         $router->setNotFound(function () {
             $this->notFound = true;
             (new \app\controllers\NotFoundController())->index();
