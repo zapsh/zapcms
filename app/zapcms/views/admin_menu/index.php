@@ -41,7 +41,6 @@ $this->view->page_title = '系统菜单管理';
                     <th style="width:60px">排序</th>
                     <th class="w-100">菜单名称</th>
                     <th>链接</th>
-                    <th style="width:130px">显示位置</th>
                     <th style="width:150px">操作</th>
                 </tr>
             </thead>
@@ -78,14 +77,6 @@ $this->view->page_title = '系统菜单管理';
                         </div>
                     </td>
                     <td class="text-muted text-break"><?php echo e($admin_menu['link_to']); ?></td>
-                    <td>
-                        <?php
-                        $positions = array_filter(explode(',', $admin_menu['show_position'] ?? ''), 'strlen');
-                        foreach ($positions as $p) {
-                            echo '<span class="badge rounded-pill text-bg-secondary me-1">' . e(AdminMenu::positionTitle($p)) . '</span>';
-                        }
-                        ?>
-                    </td>
                     <td>
                         <button type="button" class="btn btn-outline-success btn-sm me-1"
                                 onclick="addOrEdit(<?php echo e($admin_menu['id']); ?>)"

@@ -43,21 +43,6 @@ use zapcms\services\AdminMenu;
         </select>
     </div>
     <div class="col-md-6">
-        <label class="form-label small d-block">显示位置</label>
-        <?php
-        $positions = explode(',', $menu['show_position'] ?? '');
-        foreach (AdminMenu::getPositions() as $id => $title):
-            ?>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" name="zap_data[show_position][]"
-                    <?php echo in_array($id, $positions) ? 'checked' : ''; ?>
-                       id="data_show_position<?php echo e($id); ?>" value="<?php echo e($id); ?>">
-                <label class="form-check-label small"
-                       for="data_show_position<?php echo e($id); ?>"><?php echo e($title); ?></label>
-            </div>
-        <?php endforeach; ?>
-    </div>
-    <div class="col-md-6">
         <label for="data_link_to" class="form-label small">链接地址</label>
         <input type="text" class="form-control form-control-sm" name="zap_data[link_to]" id="data_link_to"
                value="<?php echo e($menu['link_to'] ?? ''); ?>" placeholder="例: System@settings"/>
