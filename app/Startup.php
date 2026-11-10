@@ -478,13 +478,11 @@ class Startup
      */
     private function serveNode($pageState, array $node): void
     {
-        if ($node['node_type'] === 'catalog' && empty($node['content'])) {
+        $isTerm = in_array($node['node_type'], ['category', 'tag'], true);
 
-            // 走 Catalog::get（请求内记忆化），与后续 getCatalog()/getCatalogPathById() 共享同一次查询
-            $catalog = Catalog::instance()->get($node['id']);
-            // 栏目同时存在 node / catalog 两份记录且 id 相同，译文统一按 node 维度存放
-            $catalog and $catalog = Translator::apply((array) $catalog, Locale::current());
-            $pageState->catalog = $catalog;
+        // 分类项/标签项（taxonomy term）自身就是 node，直接作为 pageState->catalog 供面包屑/SEO 使用
+        if ($isTerm) {
+            $pageState->catalog = Translator::apply((array) $node, Locale::current());
         }
 
         // 多语言 SEO：canonical + hreflang
@@ -495,14 +493,17 @@ class Startup
         $pageState->nodeType = $node['node_type'];
         $pageState->nodeMimeType = $node['mime_type'];
 
-        if($node['node_type'] === 'catalog' && $this->resetRoute($node['mime_type'] ?: 'catalog', 'index')) {
-
+        if ($isTerm) {
+            // 分类/标签归档页：交给 Catalog 控制器，按 nodeMimeType 过滤内容
+            if (!$this->resetRoute('catalog', 'index')) {
+                $this->resetRoute('node', $node['node_type']);
+            }
         } else if (!$this->resetRoute($node['node_type'], empty($node['mime_type']) ? 'index' : $node['mime_type'])) {
             DB::update('node', ['hits' => DB::raw('hits+1')], ['id' => $node['id']]);
             $this->resetRoute('node', $node['node_type']);
         }
-        $pageState->isNode = $node['node_type'] !== 'catalog';
-        $pageState->isCatalog = $node['node_type'] === 'catalog';
+        $pageState->isNode = !$isTerm;
+        $pageState->isCatalog = $isTerm;
     }
 
     /**

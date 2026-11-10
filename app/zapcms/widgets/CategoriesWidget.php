@@ -53,7 +53,7 @@ class CategoriesWidget extends Widget
         $html = '<ul class="widget-list list-unstyled mb-0">';
         foreach ($rows as $row) {
             $url = smart_node_url([
-                'node_type' => 'catalog',
+                'node_type' => 'category',
                 'id'        => $row['id'] ?? 0,
                 'slug'      => $row['slug'] ?? '',
             ]);

@@ -85,7 +85,11 @@ if (!function_exists('contentNavNodeFromCatalog')) {
      */
     function contentNavNodeFromCatalog($menu, array $cat, int $catalogId, array $children = []): array
     {
-        $nodeType = $cat['node_type'] ?? 'page';
+        // 分类项的内容模型存在 mime_type（node_type 恒为 'category'）
+        $nodeType = (string) ($cat['mime_type'] ?? '');
+        if ($nodeType === '') {
+            $nodeType = 'page'; // 未绑定模型时兜底
+        }
         $url = Url::action("Node@{$nodeType}", ['cid' => intval($cat['id'])]);
         $icon = $nodeType === 'page' ? 'far fa-file' : 'far fa-folder';
         return [
@@ -136,15 +140,29 @@ if (!function_exists('contentNavNodeFromCatalog')) {
                     if (empty($targetNode)) {
                         continue;
                     }
-                    // 菜单项未自定义标题时取节点标题，并按当前语言取译文
-                    $fallbackTitle = contentNavTranslateRow(['id' => $ref, 'title' => $targetNode->title ?? ''])['title'] ?? '';
-                    $node = [
-                        'title'    => $it['title'] ?: $fallbackTitle,
-                        'url'      => Url::action("Node@{$targetNode->node_type}/edit/{$ref}"),
-                        'icon'     => $icon ?: 'far fa-file-alt',
-                        'active'   => false,
-                        'children' => [],
-                    ];
+                    // 分类/标签项（迁移后 item_type='node'）：按栏目导航渲染，
+                    // 链接到该模型的内容列表（?cid=），而不是编辑分类节点本身；标签不进内容导航
+                    if ($targetNode->node_type === 'tag') {
+                        continue;
+                    }
+                    if ($targetNode->node_type === 'category') {
+                        $cat = contentNavTranslateRow([
+                            'id'        => $ref,
+                            'title'     => $it['title'] ?: ($targetNode->title ?? ''),
+                            'mime_type' => $targetNode->mime_type ?? '',
+                        ]);
+                        $node = contentNavNodeFromCatalog($menu, (array) $cat, $catalogId);
+                    } else {
+                        // 菜单项未自定义标题时取节点标题，并按当前语言取译文
+                        $fallbackTitle = contentNavTranslateRow(['id' => $ref, 'title' => $targetNode->title ?? ''])['title'] ?? '';
+                        $node = [
+                            'title'    => $it['title'] ?: $fallbackTitle,
+                            'url'      => Url::action("Node@{$targetNode->node_type}/edit/{$ref}"),
+                            'icon'     => $icon ?: 'far fa-file-alt',
+                            'active'   => false,
+                            'children' => [],
+                        ];
+                    }
                 } else {
                     // 自定义链接
                     $url = $it['url'] ?? '';
@@ -163,7 +181,7 @@ if (!function_exists('contentNavNodeFromCatalog')) {
                 if ($node === null) {
                     continue;
                 }
-                if ($icon !== '' && $type === 'catalog') {
+                if ($icon !== '') {
                     $node['icon'] = $icon; // 菜单项自定义图标优先
                 }
                 $node['children'] = $build(intval($it['id']));

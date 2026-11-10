@@ -46,30 +46,30 @@ foreach ($types as $t) {
     $typeTitleMap[$t['name']] = $t['title'];
 }
 
-// ---- 全量栏目（扁平、带模型标识，前端按模型联动过滤） ----
-// 树序（DFS）输出：子树紧跟父级，层级缩进显示才正确；
-// 兄弟栏目间按 sort_order,id 排序。直接按 sort_order/id 平铺会把子栏目和父栏目拆散。
+// ---- 全量分类项（扁平、带模型标识，前端按模型联动过滤） ----
+// 分类已并入 node（node_type='category'）；树序（DFS）输出：子树紧跟父级，层级缩进显示才正确。
 $allCatalogs = [];
-$catalogRows = (array) DB::table('catalog')
+$catalogRows = (array) DB::table('node')
+    ->where('node_type', 'category')
     ->orderBy('sort_order', 'ASC')->orderBy('id', 'ASC')
     ->fetchAll();
 $catalogChildren = [];
 foreach ($catalogRows as $c) {
-    $catalogChildren[(int) ($c['pid'] ?? 0)][] = $c;
+    $catalogChildren[(int) ($c['parent_id'] ?? 0)][] = $c;
 }
 $walkCatalogTree = function (int $pid) use (&$walkCatalogTree, $catalogChildren, &$allCatalogs) {
     foreach ($catalogChildren[$pid] ?? [] as $c) {
         $allCatalogs[] = [
             'id'    => (int) $c['id'],
             'title' => (string) $c['title'],
-            'type'  => (string) ($c['node_type'] ?? ''),
+            'type'  => (string) ($c['mime_type'] ?? ''),
             'level' => (int) ($c['level'] ?? 1),
         ];
         $walkCatalogTree((int) $c['id']);
     }
 };
 $walkCatalogTree(0);
-// 兜底：pid 指向已删除栏目的孤儿节点按 path 追加，避免从选择器中消失
+// 兜底：parent_id 指向已删除分类的孤儿节点按 path 追加，避免从选择器中消失
 if (count($allCatalogs) < count($catalogRows)) {
     $seen = [];
     foreach ($allCatalogs as $c) { $seen[$c['id']] = true; }
@@ -79,7 +79,7 @@ if (count($allCatalogs) < count($catalogRows)) {
         $allCatalogs[] = [
             'id'    => (int) $c['id'],
             'title' => (string) $c['title'],
-            'type'  => (string) ($c['node_type'] ?? ''),
+            'type'  => (string) ($c['mime_type'] ?? ''),
             'level' => (int) ($c['level'] ?? 1),
         ];
     }

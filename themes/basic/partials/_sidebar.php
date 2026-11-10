@@ -7,6 +7,7 @@ $title = htmlspecialchars(
 );
 
 $catalogs = !empty($subCatalogList) ? $subCatalogList : ($state->subCatalogList ?? []);
+
 // 获取 catlogPaths 第一个的title（搜索页等未设置栏目路径时安全降级）
 $catalogPaths = $state->catalogPaths ?? [];
 $firstCatalog = $catalogPaths[0] ?? null;

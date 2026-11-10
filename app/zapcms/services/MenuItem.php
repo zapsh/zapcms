@@ -124,11 +124,12 @@ class MenuItem
         $targetId = 0;
 
         if ($type === 'catalog') {
-            $row = DB::table('catalog')->where('id', (int) $item['ref_id'])->first();
+            // 历史 item_type：分类已并入 node，按 node 解析（兼容旧菜单数据）
+            $row = DB::table('node')->where('id', (int) $item['ref_id'])->first();
             if (!empty($row)) {
                 $title    = $title ?: ($row['title'] ?? '');
                 $targetId = (int) $row['id'];
-                $url      = catalog_item_url($row);
+                $url      = smart_node_url($row);
             } else {
                 $title = $title ?: '(已删除栏目)';
                 $url   = '#';
@@ -184,11 +185,12 @@ class MenuItem
 
         $catInfo = [];
         if (!empty($catalogIds)) {
-            $rows = DB::table('catalog')->whereIn('id', array_unique($catalogIds))->get() ?: [];
+            // 历史 item_type='catalog'：分类已并入 node
+            $rows = DB::table('node')->whereIn('id', array_unique($catalogIds))->get() ?: [];
             foreach ($rows as $r) {
                 $catInfo[(int) $r['id']] = [
                     'title' => $r['title'] ?? '',
-                    'url'   => catalog_item_url($r),
+                    'url'   => smart_node_url($r),
                 ];
             }
         }
@@ -332,7 +334,7 @@ class MenuItem
         }
 
         $rows = DB::table($this->table)
-            ->where('item_type', 'catalog')
+            ->where('item_type', 'node')
             ->where('ref_id', $catalogId)
             ->get();
         $existing = [];
@@ -349,7 +351,7 @@ class MenuItem
             $this->add([
                 'menu_id'      => $menuId,
                 'location_key' => '',
-                'item_type'    => 'catalog',
+                'item_type'    => 'node',
                 'ref_id'       => $catalogId,
                 'parent_id'    => 0,
                 'sort_order'   => count($this->all($menuId)),
@@ -414,7 +416,7 @@ class MenuItem
     public function catalogLocationMap(): array
     {
         $menuToKeys = $this->menuToKeysMap();
-        $rows = DB::table($this->table)->where('item_type', 'catalog')->get();
+        $rows = DB::table($this->table)->where('item_type', 'node')->get();
         $map = [];
         foreach (($rows ?: []) as $r) {
             $keys = $menuToKeys[(int) ($r['menu_id'] ?? 0)] ?? [];

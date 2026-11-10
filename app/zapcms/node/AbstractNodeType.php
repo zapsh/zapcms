@@ -192,8 +192,25 @@ class AbstractNodeType
         }
         $data['node'] = $node;
         $data['node_relations'] = $this->getNodeRelationships($id);
+        // URL 未带 ?cid 时（如单页列表直接 edit/{id}），从当前编辑节点推导所属栏目，
+        // 供左侧「栏目导航」高亮与面包屑使用
+        if (!$this->catalogId) {
+            if ($node->node_type === 'category') {
+                // 分类节点（如单页栏目）自身即选中栏目
+                $this->catalogId = $id;
+            } else {
+                $cid = NodeRelation::find(['node_id' => $id])
+                    ->select('catalog_id')->orderBy('level desc')->fetchColumn();
+                $cid and $this->catalogId = (int) $cid;
+            }
+        }
+        // 分类树按「内容模型」过滤：内容节点取 node_type；分类节点（如单页栏目）自身
+        // node_type='category'，其内容模型在 mime_type 上
+        $catalogFilterType = $data['node']['node_type'] === 'category'
+            ? (string) ($data['node']['mime_type'] ?? '')
+            : $data['node']['node_type'];
         $data['catalogList'] = Catalog::instance()->getTreeArray(
-            ['node_type'=>$data['node']['node_type']],
+            $catalogFilterType !== '' ? ['mime_type' => $catalogFilterType] : [],
             ['columns' => ['title', 'level']]
         );
         $this->display($data,'form');
@@ -238,11 +255,13 @@ class AbstractNodeType
             // 栏目关联按内容模型过滤（服务端兜底，防止跨类型混选入库）
             if ($catalogArray !== []) {
                 $validCatalogs = [];
-                $rows = DB::table('catalog')
+                // 分类项是 node（node_type='category'），内容模型存在 mime_type
+                $rows = DB::table('node')
+                    ->where('node_type', 'category')
                     ->whereIn('id', array_map('intval', array_keys($catalogArray)))
                     ->fetchAll();
                 foreach ((array) $rows as $row) {
-                    if ((string) ($row['node_type'] ?? '') === $this->nodeType) {
+                    if ((string) ($row['mime_type'] ?? '') === $this->nodeType) {
                         $cid = (int) $row['id'];
                         $validCatalogs[$cid] = (int) ($catalogArray[$cid] ?? $row['level'] ?? 1);
                     }
@@ -280,7 +299,7 @@ class AbstractNodeType
         // 添加时若 URL 带 cid 参数（如 ?cid=30），自动勾选对应分类及其全部父级
         $data['node_relations'] = [];
         if ($this->catalogId) {
-            $catalogRow = DB::table('catalog')->where('id', $this->catalogId)->first();
+            $catalogRow = DB::table('node')->where('id', $this->catalogId)->first();
             if ($catalogRow) {
                 // path 形如 "28,29,40,"，包含祖先链 + 自身，全部解析出来勾选
                 $ids = array_filter(explode(',', (string)$catalogRow['path']));
@@ -288,14 +307,14 @@ class AbstractNodeType
                 if (empty($ids) || !in_array($this->catalogId, $ids)) {
                     $ids[] = (int)$this->catalogId;
                 }
-                $rows = DB::table('catalog')->whereIn('id', $ids)->get();
+                $rows = DB::table('node')->whereIn('id', $ids)->get();
                 foreach ($rows as $r) {
                     $data['node_relations'][(int)$r['id']] = (int)($r['level'] ?? 1);
                 }
             }
         }
         $data['catalogList'] = Catalog::instance()->getTreeArray(
-            ['node_type'=>$this->nodeType],
+            ['mime_type'=>$this->nodeType],
             ['columns' => ['title', 'level']]
         );
         $this->display($data,'form');

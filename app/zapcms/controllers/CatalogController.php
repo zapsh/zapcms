@@ -29,7 +29,7 @@ class CatalogController extends AdminController
         $data = [];
         $menu = Catalog::instance();
         $data['menu'] = $menu;
-        $data['catalog_count'] = DB::table('catalog')->count();
+        $data['catalog_count'] = DB::table('node')->where('node_type', 'category')->count();
         $page_title = '栏目管理';
         $breadcrumbs = [
             ['title' => '控制台', 'url' => url_action('Index')],
@@ -112,15 +112,13 @@ class CatalogController extends AdminController
 
         $slug = trim((string) Request::post('slug', ''));
         $slug = SlugHelper::generate($slug !== '' ? $slug : $title);
-        // 栏目 slug 影响路由，避免与已有栏目重复
-        if ($slug !== '' && DB::table('catalog')->where('slug', $slug)->exists()) {
+        // 分类项 slug 与内容同在 node 表且按 slug 路由，需对全表查重
+        if ($slug !== '' && DB::table('node')->where('slug', $slug)->exists()) {
             $slug = $slug . '-' . time();
         }
 
+        // 内容模型（存入分类项节点的 mime_type），留空表示不限
         $nodeType = trim((string) Request::post('node_type', ''));
-        if ($nodeType === '') {
-            $nodeType = 'catalog';
-        }
 
         $catalog = [
             'title'      => $title,
@@ -160,7 +158,8 @@ class CatalogController extends AdminController
     {
         $this->requirePerm('view', '查看');
         $nodeType = trim((string) Request::get('node_type', ''));
-        $conditions = $nodeType !== '' ? ['node_type' => $nodeType] : [];
+        // 内容模型过滤在 node 上对应 mime_type
+        $conditions = $nodeType !== '' ? ['mime_type' => $nodeType] : [];
         $catalogList = Catalog::instance()->getTreeArray($conditions, ['columns' => ['title', 'level']]);
         $nodeRelations = [];
 
@@ -279,8 +278,8 @@ class CatalogController extends AdminController
                 'title'          => $row['title'] ?? '',
                 'icon'           => $row['icon'] ?? '',
                 'slug'           => $row['slug'] ?? '',
-                'node_type'      => $row['node_type'] ?: 'catalog',
-                'node_type_title'=> NodeType::getTitle($row['node_type'] ?: 'catalog'),
+                'node_type'      => $row['mime_type'] ?? '',
+                'node_type_title'=> NodeType::getTitle($row['mime_type'] ?? ''),
                 'sort_order'     => (int) ($row['sort_order'] ?? 0),
                 'has_children'   => !empty($row['has_children']),
             ];
@@ -309,22 +308,22 @@ class CatalogController extends AdminController
             // 栏目（含 node_type 过滤，供「单页」面板使用）
             $conds = [];
             if ($nodeType !== '') {
-                $conds[] = ['node_type', $nodeType];
+                $conds[] = ['mime_type', $nodeType];
             }
             foreach (Catalog::instance()->search($keyword, $limit, $conds, '', ['node_type']) as $row) {
                 $level = max(1, (int) ($row['level'] ?? 1));
                 $catalogs[] = [
-                    'kind'       => 'catalog',
+                    'kind'       => 'node',
                     'id'         => (int) $row['id'],
                     'title'      => (string) ($row['title'] ?? ''),
                     'path_label' => str_repeat('— ', $level - 1) . (string) ($row['title'] ?? ''),
                 ];
             }
 
-            // 内容节点：排除栏目双表行（node_type=catalog），按模型过滤
+            // 内容节点：排除分类/标签项，按模型过滤
             $query = DB::table('node')
                 ->where('title', 'LIKE', "%{$keyword}%")
-                ->where('node_type', '!=', 'catalog');
+                ->whereNotIn('node_type', ['category', 'tag']);
             if ($nodeType !== '') {
                 $query->where('node_type', $nodeType);
             }

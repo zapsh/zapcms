@@ -36,7 +36,7 @@ class NodeController extends Controller
         $slugs = [];
         foreach (pageState()->catalogPaths as $catalog){
             $slugs[] = $catalog['slug'];
-            BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'catalog', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]));
+            BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'category', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]));
         }
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);
 
@@ -58,7 +58,7 @@ class NodeController extends Controller
         $slugs = [];
         foreach (pageState()->catalogPaths as $catalog){
             $slugs[] = $catalog['slug'];
-            BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'catalog', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]));
+            BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'category', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]));
         }
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);
 
@@ -74,7 +74,7 @@ class NodeController extends Controller
         $slugs = [];
         foreach (pageState()->catalogPaths as $catalog){
             $slugs[] = $catalog['slug'];
-            BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'catalog', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]));
+            BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'category', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]));
         }
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);
 
@@ -95,7 +95,7 @@ class NodeController extends Controller
         $slugs = [];
         foreach (pageState()->catalogPaths as $catalog){
             $slugs[] = $catalog['slug'];
-            BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'catalog', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]));
+            BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'category', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]));
         }
         
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);

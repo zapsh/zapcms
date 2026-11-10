@@ -797,23 +797,6 @@ function url_link(string $path, ?string $locale = null): string
 }
 
 /**
- * 生成栏目链接（<a> 标签）
- *
- * @param string $url   链接地址
- * @param string $title 链接文字
- * @param array  $attrs 额外属性
- * @return string
- */
-function catalog_link(string $url, string $title, array $attrs = []): string
-{
-    $attrStr = '';
-    foreach ($attrs as $k => $v) {
-        $attrStr .= ' ' . $k . '="' . htmlspecialchars((string) $v, ENT_QUOTES) . '"';
-    }
-    return '<a href="' . htmlspecialchars($url, ENT_QUOTES) . '"' . $attrStr . '>' . htmlspecialchars($title) . '</a>';
-}
-
-/**
  * 从栏目/节点行数据中提取链接地址（兼容前端模板）
  *
  * 根据 node_type 自动判定：
@@ -828,8 +811,8 @@ function smart_node_url(array $row, ?string $locale = null): string
 {
     $nodeType = $row['node_type'] ?? '';
 
-    // 普通栏目
-    if ($nodeType === 'catalog') {
+    // 分类项 / 标签项（WordPress 式：都是 node）
+    if (in_array($nodeType, ['catalog', 'category', 'tag'], true)) {
         $slug = $row['slug'] ?? '';
         $catalogPrefix = get_catalog_prefix();
         if (!empty($slug)) {

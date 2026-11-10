@@ -36,7 +36,8 @@ class Sitemap
      * value → node 表中的 node_type 值
      */
     public static array $types = [
-        'catalog' => 'catalog',
+        'category' => 'category',
+        'tag'     => 'tag',
         'page'    => 'page',
         'article' => 'article',
         'product' => 'product',
@@ -51,14 +52,6 @@ class Sitemap
     protected static function nodeTable(): string
     {
         return Node::tableName();
-    }
-
-    /**
-     * 获取带表前缀的 catalog 表名
-     */
-    protected static function catalogTable(): string
-    {
-        return 'catalog';
     }
 
     // ==================== 对外 API ====================
@@ -275,7 +268,7 @@ class Sitemap
         }
 
         if ($nodeType === 'catalog') {
-            return \append_url_suffix(\site_url('catalog/' . $id));
+            return \smart_node_url($entry);
         }
         return \append_url_suffix(\site_url('node/' . $nodeType . '?nodeId=' . $id));
     }
@@ -306,7 +299,8 @@ class Sitemap
     protected function changelog(string $type, array $entry): string
     {
         $map = [
-            'catalog' => 'weekly',
+            'category' => 'weekly',
+            'tag'      => 'weekly',
             'page'    => 'monthly',
             'article' => 'weekly',
             'product' => 'weekly',
@@ -317,7 +311,7 @@ class Sitemap
 
     protected function priority(string $type, array $entry): float
     {
-        if ($type === 'catalog') {
+        if ($type === 'category') {
             // 根栏目优先，子栏目略低
             $level  = (int) ($entry['level'] ?? 0);
             $mime   = $entry['mime_type'] ?? '';
@@ -345,16 +339,14 @@ class Sitemap
     protected function fetchPublishedByType(string $nodeType, int $limit = 10000): array
     {
         $table        = static::nodeTable();
-        $catalogTable = static::catalogTable();
-    
-        if ($nodeType === 'catalog') {
-            // 前台导航由 menu_items 驱动：只收录出现在任一菜单中的栏目（导航可达），
-            // 未挂菜单的栏目访问者无法发现，不纳入 sitemap。
-            // catalog 表的 level 字段需要在节点表之外 JOIN 获取
-            $sql = "SELECT n.id, n.slug, n.node_type, n.mime_type, c.level, n.add_time, n.pub_time, n.update_time"
+
+        if ($nodeType === 'category') {
+            // 前台导航由 menu_items 驱动：只收录出现在任一菜单中的分类项（导航可达），
+            // 未挂菜单的分类项访问者无法发现，不纳入 sitemap。
+            // level 已合并到 node 表
+            $sql = "SELECT n.id, n.slug, n.node_type, n.mime_type, n.level, n.add_time, n.pub_time, n.update_time"
                  . " FROM {{$table}} n"
-                 . " INNER JOIN {{menu_items}} mi ON mi.item_type = 'catalog' AND mi.ref_id = n.id"
-                 . " LEFT JOIN {{$catalogTable}} c ON c.id = n.id"
+                 . " INNER JOIN {{menu_items}} mi ON mi.item_type = 'node' AND mi.ref_id = n.id"
                  . " WHERE n.node_type = ? AND n.status = ?"
                  . " AND n.slug IS NOT NULL AND n.slug != ''"
                  . " GROUP BY n.id"
@@ -374,11 +366,11 @@ class Sitemap
     protected function countPublishedByType(string $nodeType): int
     {
         $table = static::nodeTable();
-        if ($nodeType === 'catalog') {
-            // 与 fetchPublishedByType 对齐：仅统计菜单可达的栏目
+        if ($nodeType === 'category') {
+            // 与 fetchPublishedByType 对齐：仅统计菜单可达的分类项
             $row = DB::fetch(
                 "SELECT COUNT(DISTINCT n.id) AS c FROM {{$table}} n"
-                . " INNER JOIN {{menu_items}} mi ON mi.item_type = 'catalog' AND mi.ref_id = n.id"
+                . " INNER JOIN {{menu_items}} mi ON mi.item_type = 'node' AND mi.ref_id = n.id"
                 . " WHERE n.node_type = ? AND n.status = ?",
                 [$nodeType, Node::STATUS_PUBLISH]
             );

@@ -106,7 +106,7 @@ class UpdateBaseData extends Command
     protected function clearDemoData(): void
     {
         $pdo = DB::getPDO();
-        foreach (['node_relation', 'catalog', 'node'] as $table) {
+        foreach (['node_relation', 'node'] as $table) {
             $quoted = $pdo->quoteTable($table);
             $pdo->rawExec("DELETE FROM {$quoted}");
             $this->out->writeln("  Cleared: {$table}");

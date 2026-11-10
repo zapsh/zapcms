@@ -146,21 +146,16 @@ class Node extends Model
     public function getAllTypesCount(){
         $resultNodeTypes = static::createQuery()
             ->select('node_type,count(id) as total')
-            ->whereNotIn('node_type', ['catalog'])
+            ->whereNotIn('node_type', ['category', 'tag'])
             ->groupBy('node_type')
             ->get(FETCH_KEY_PAIR);
-//        SELECT node_type,count(id) FROM `zap_catalog` GROUP BY node_type
-        $catalogResult = DB::table('catalog')->select('node_type,count(id)')->groupBy('node_type')
-            ->fetchAll(FETCH_KEY_PAIR);
-
-        $resultNodeTypes['page'] = ($resultNodeTypes['page'] ?? 0) + arr_get($catalogResult,'page',0);
         return $resultNodeTypes;
     }
 
     public function getPages($columns = '*'){
         $query = Node::where('node_type','page')->select($columns);
         $query->orWhere(function(Query $query){
-            $query->where('node_type','catalog')->where('mime_type','page');
+            $query->where('node_type','category')->where('mime_type','page');
         });
         return $query->get(FETCH_ASSOC);
     }

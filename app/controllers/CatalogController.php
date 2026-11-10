@@ -95,7 +95,7 @@ class CatalogController extends Controller
         );
         $lastKey = array_key_last(pageState()->catalogPaths );
         foreach (pageState()->catalogPaths as $key => $catalog){
-            BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'catalog', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]),$key === $lastKey);
+            BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'category', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]),$key === $lastKey);
         }
 
         // 侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），只显示当前栏目所在分支

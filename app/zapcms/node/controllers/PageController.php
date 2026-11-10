@@ -31,22 +31,35 @@ class PageController extends AbstractNodeType
             $this->title = $node['title'];
             parent::edit($node['id']);
         }else{
-            parent::add();
+            // 单页栏目（迁移后 catalog 并入 node，正文存在分类节点自身，无挂靠内容节点）：
+            // 直接编辑分类节点本身，否则会误入「新增」表单
+            $catalogNode = Node::findById($this->catalogId);
+            if ($catalogNode
+                && $catalogNode->node_type === 'category'
+                && (string) ($catalogNode->mime_type ?? '') === 'page') {
+                $this->title = $catalogNode->title;
+                parent::edit($this->catalogId);
+            } else {
+                parent::add();
+            }
         }
     }
 
     public function getPageTotal(){
-        $query = Node::where('node_type','page');
-        $query->orWhere(function(Query $query){
-            $query->where('node_type','catalog')->where('mime_type','page');
-        });
-        return $query->count('id');
+        return Node::where(function ($q) {
+            $q->where('node_type', 'page')
+              ->orWhere(function ($q2) {
+                  $q2->where('node_type', 'category')->where('mime_type', 'page');
+              });
+        })->count('id');
     }
 
     public function getPages(?Pagination $page = null){
-        $query = Node::where('node_type','page');
-        $query->orWhere(function(Query $query){
-            $query->where('node_type','catalog')->where('mime_type','page');
+        $query = Node::where(function ($q) {
+            $q->where('node_type', 'page')
+              ->orWhere(function ($q2) {
+                  $q2->where('node_type', 'category')->where('mime_type', 'page');
+              });
         });
         if($page){
             $query->limit($page->getLimit())->offset($page->getOffset());

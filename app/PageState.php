@@ -267,19 +267,25 @@ class PageState extends ArrayObject
     /**
      * 取侧边栏目录树：从该位置的 menu_items 菜单中，返回包含当前页面的顶级分支
      *
+     * 命中分支有子级时返回该分支（模板渲染其子级，即当前层级）；
+     * 分支是叶子（如顶级单页栏目、无子分类的顶级栏目）或未命中时，
+     * 回退为整棵菜单树（全部顶级栏目），保证侧栏始终有导航内容。
      *
      * @param string $position 菜单位置 key（如 left）
      */
     public function getSidebarMenu(string $position = 'left'): array
     {
         $branches = $this->getNavMenu($position);
+        if ($branches === []) {
+            return [];
+        }
 
         // 1) 优先：精确包含当前内容节点 id 的分支（栏目页时 nodeId 即栏目节点 id，同样命中）
         $nodeId = $this['nodeId'] ?? null;
         if ($nodeId !== null && $nodeId !== '') {
             foreach ($branches as $branch) {
                 if (is_array($branch) && $this->branchContainsId($branch, (string) $nodeId)) {
-                    return [$branch];
+                    return $this->pickSidebarBranch($branch, $branches);
                 }
             }
         }
@@ -287,10 +293,32 @@ class PageState extends ArrayObject
         // 2) 兜底：第一个祖先链路命中的分支（内容详情页等菜单树里没有内容 id 的场景）
         foreach ($branches as $branch) {
             if (is_array($branch) && !empty($branch['active'])) {
-                return [$branch];
+                return $this->pickSidebarBranch($branch, $branches);
             }
         }
-        return [];
+        return $branches; // 3) 未命中：展示整棵菜单树
+        // 3) 未命中：展示整棵菜单树
+        // return $this->wrapFullTree($branches);
+    }
+
+    /**
+     * 命中分支选择：叶子分支（无子级）单独展示没有导航意义，回退为整棵菜单树
+     */
+    protected function pickSidebarBranch(array $branch, array $branches): array
+    {
+        if (!empty($branch['children'])) {
+            return [$branch];
+        }
+        return $this->wrapFullTree($branches);
+    }
+
+    /**
+     * 包装整棵菜单树为单个虚拟根分支：
+     * 模板取 rootBranch.children 渲染，即全部顶级栏目，无需感知「单分支 / 全树」差异
+     */
+    protected function wrapFullTree(array $branches): array
+    {
+        return [['title' => '', 'children' => array_values($branches)]];
     }
 
     /**
@@ -402,7 +430,7 @@ class PageState extends ArrayObject
      */
     public function getCatalog($key = null)
     {
-        if (!$this['catalog'] && $this['nodeType'] === 'catalog') {
+        if (!$this['catalog'] && in_array($this['nodeType'], ['catalog', 'category', 'tag'], true)) {
             $this['catalog'] = Catalog::instance()->get($this['nodeId']);
         }
         return $key ? ($this['catalog'][$key] ?? null) : $this['catalog'];

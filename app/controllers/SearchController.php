@@ -45,7 +45,7 @@ class SearchController extends Controller
         pageState()->subCatalogList = pageState()->getSearchSidebarMenu();
         $query = Node::where('title','LIKE',"%{$keyword}%")
             ->where('status',Node::STATUS_PUBLISH)
-            ->where('node_type','IN',['product','article','faq','catalog']);
+            ->where('node_type','IN',['product','article','faq']);
         // set total
         $page->setTotal($query->count());
         // limit

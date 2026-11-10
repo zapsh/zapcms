@@ -635,7 +635,7 @@ class SystemController extends AdminController
     public function sitemap()
     {
         $siteUrl = get_site_base_url();
-        $types = ['catalog', 'page', 'article', 'product', 'faq'];
+        $types = ['category', 'tag', 'page', 'article', 'product', 'faq'];
 
         $sitemaps = [];
         foreach ($types as $type) {

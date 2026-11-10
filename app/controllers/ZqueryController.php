@@ -74,7 +74,7 @@ class ZqueryController extends Controller
         }
 
         // 安全校验：node_type 仅允许已知类型
-        $allowedTypes = ['article', 'product', 'page', 'faq', 'catalog'];
+        $allowedTypes = ['article', 'product', 'page', 'faq'];
         if (!empty($params['node_type'])) {
             $types = (array)$params['node_type'];
             foreach ($types as $t) {

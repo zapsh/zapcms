@@ -776,7 +776,7 @@ class ZQuery
         $cid = 'cat_' . $nodeId;
         if (!isset($cache[$cid])) {
             $cache[$cid] = DB::table('node_relation', 'nr')
-                ->leftJoin(['catalog', 'c'], 'nr.catalog_id=c.id')
+                ->leftJoin(['node', 'c'], 'nr.catalog_id=c.id')
                 ->where('nr.node_id', '=', $nodeId)
                 ->select('c.id AS catalog_id', 'c.title AS catalog_name', 'c.slug')
                 ->get(FETCH_ASSOC);

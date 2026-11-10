@@ -24,29 +24,8 @@ if (!empty($catalogPaths)) {
 
 <div class="container-fluid p-0">
     <div class="row g-3">
-        <!-- 左侧栏目导航 -->
-        <div class="col-lg-3">
-            <div class="card card-outline card-success">
-                <div class="card-header p-2">
-                    <h6 class="card-title mb-0">
-                        <i class="fa fa-sitemap me-1 text-success"></i>栏目导航
-                    </h6>
-                    <div class="card-tools">
-                        <a href="<?php echo Url::action("Node"); ?>"
-                           class="btn btn-tool <?php echo !$catalogId ? 'text-success' : ''; ?>" title="全部内容">
-                            <i class="fa fa-home"></i>
-                        </a>
-                    </div>
-                </div>
-                <div class="card-body p-0" style="max-height:calc(100vh - 260px);overflow-y:auto;">
-                    <?php include __DIR__ . '/../default/sidebar.php'; ?>
-                </div>
-            </div>
-        </div>
-        <!-- /左侧栏目导航 -->
-
-        <!-- 右侧内容区 -->
-        <div class="col-lg-9">
+        <!-- 右侧内容区（单页不按栏目分，去掉左侧栏目导航） -->
+        <div class="col-12">
             <div class="card card-outline card-success">
                 <!-- 工具栏 -->
                 <div class="card-header p-2">
@@ -115,7 +94,7 @@ if (!empty($catalogPaths)) {
                                 <tr>
                                     <td class="text-muted small"><?php echo e($row['id']); ?></td>
                                     <td>
-                                        <a href="<?php echo Url::action("Node@{$_controller}/edit/{$row['id']}", ['cid' => $catalogId]); ?>"
+                                        <a href="<?php echo Url::action("Node@{$_controller}/edit/{$row['id']}"); ?>"
                                            class="text-decoration-none fw-semibold">
                                             <?php echo htmlspecialchars($row['title']); ?>
                                         </a>
@@ -153,7 +132,7 @@ if (!empty($catalogPaths)) {
                                                 <i class="fa fa-eye"></i>
                                             </a>
                                             <?php endif; ?>
-                                            <a href="<?php echo Url::action("Node@{$_controller}/edit/{$row['id']}", ['cid' => $catalogId]); ?>"
+                                            <a href="<?php echo Url::action("Node@{$_controller}/edit/{$row['id']}"); ?>"
                                                class="btn btn-outline-primary" title="编辑">
                                                 <i class="fa fa-edit"></i>
                                             </a>

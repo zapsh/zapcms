@@ -130,7 +130,7 @@ class NodeController extends AdminController
     }
 
     /** 与框架内部/路由语义冲突的模型标识 */
-    private const RESERVED_TYPE_NAMES = ['catalog', 'node', 'link-url', 'default', 'system', 'admin', 'api', 'index'];
+    private const RESERVED_TYPE_NAMES = ['category', 'tag', 'node', 'link-url', 'default', 'system', 'admin', 'api', 'index'];
 
     /**
      * 通用发布表单：按内容模型渲染自定义字段 HTML（AJAX）
@@ -425,8 +425,8 @@ class NodeController extends AdminController
 
         // 已被内容/栏目引用的模型不允许删除，避免留下孤儿数据与失效的字段配置
         $typeName = (string)$row['type_name'];
-        $used = DB::table('node')->where('node_type', $typeName)->count()
-            + DB::table('catalog')->where('node_type', $typeName)->count();
+        $used = \zapcms\models\Node::where('node_type', $typeName)->count()
+            + \zapcms\models\Node::where('mime_type', $typeName)->count();
         if ($used > 0) {
             Response::json(['code' => 1, 'msg' => "模型「{$typeName}」下还有 {$used} 条内容/栏目，请先迁移或删除"]);
             return;
