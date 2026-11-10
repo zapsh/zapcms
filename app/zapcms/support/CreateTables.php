@@ -352,7 +352,6 @@ class CreateTables
 
             $table->addPrimaryKey('id');
             $table->addIndex('idx_option_name',['option_name']);
-            $table->addIndex('idx_option_name',['option_name']);
 
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });
