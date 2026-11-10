@@ -164,6 +164,8 @@ class AbstractNodeType
             Node::updateAll($node,['id'=>$id]);
             // 保存自定义字段（node_meta）
             Node::findById($id)->saveMeta(Request::post('meta', []));
+            // 保存标签（全量替换）
+            \zapcms\services\Tag::saveNodeTags($id, $this->parseTags(Request::post('tags', '')));
             // 保存多语言译文（translations）
             $this->saveTranslations($id);
             // 审计日志：编辑内容
@@ -213,7 +215,31 @@ class AbstractNodeType
             $catalogFilterType !== '' ? ['mime_type' => $catalogFilterType] : [],
             ['columns' => ['title', 'level']]
         );
+        $data['nodeTagTitles'] = \zapcms\services\Tag::getNodeTagTitles($id);
         $this->display($data,'form');
+    }
+
+    /**
+     * 解析提交的标签字符串（逗号/空格/顿号/换行分隔，去重、去空、trim）
+     *
+     * @param mixed $raw
+     * @return array
+     */
+    protected function parseTags($raw): array
+    {
+        if (is_array($raw)) {
+            $list = $raw;
+        } else {
+            $list = preg_split('/[\s,，、]+/u', (string)$raw);
+        }
+        $out = [];
+        foreach ($list as $t) {
+            $t = trim((string)$t);
+            if ($t !== '' && !in_array($t, $out, true)) {
+                $out[] = $t;
+            }
+        }
+        return $out;
     }
 
     public function add()
@@ -250,6 +276,8 @@ class AbstractNodeType
             $nodeModel = Node::create($node);
             // 保存自定义字段（node_meta）
             $nodeModel->saveMeta(Request::post('meta', []));
+            // 保存标签（全量替换）
+            \zapcms\services\Tag::saveNodeTags((int)$nodeModel->id, $this->parseTags(Request::post('tags', '')));
             // 保存多语言译文（translations）
             $this->saveTranslations((int) $nodeModel->id);
             // 栏目关联按内容模型过滤（服务端兜底，防止跨类型混选入库）
@@ -317,6 +345,7 @@ class AbstractNodeType
             ['mime_type'=>$this->nodeType],
             ['columns' => ['title', 'level']]
         );
+        $data['nodeTagTitles'] = [];
         $this->display($data,'form');
     }
 

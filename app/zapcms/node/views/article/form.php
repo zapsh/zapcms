@@ -257,6 +257,15 @@ if (empty($galleryArr)) {
                                           id="node_description" rows="3"
                                           placeholder="建议控制在150字以内，用于搜索引擎摘要"><?php echo e($node->description); ?></textarea>
                             </div>
+                            <div class="mb-2">
+                                <label for="node_tags" class="form-label">标签</label>
+                                <input type="text" class="form-control form-control-sm" name="tags" id="node_tags"
+                                       placeholder="多个标签用逗号分隔，如：PHP,CMS,教程"
+                                       value="<?php echo e(implode(',', $nodeTagTitles)); ?>"
+                                       list="tag-suggest-list" autocomplete="off"/>
+                                <datalist id="tag-suggest-list"></datalist>
+                                <div class="form-text">标签用于内容聚合与检索；发布后可在「内容管理 › 标签管理」统一维护。</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -375,6 +384,18 @@ $(function(){
         if (!$('#node_slug').val()) generateSlug();
     });
     updateSlugPreview();
+    // 标签联想（输入时补全已有标签）
+    $('#node_tags').on('input', function () {
+        var kw = $(this).val().split(/[,，、\s]+/).pop().trim();
+        if (kw.length < 1) { $('#tag-suggest-list').empty(); return; }
+        $.getJSON('<?php echo url_action('Tag@suggest'); ?>', {keyword: kw}, function (res) {
+            if (res.code !== 0 || !res.list) { return; }
+            var $list = $('#tag-suggest-list').empty();
+            $.each(res.list, function (i, t) {
+                $('<option>').val(t.title).text(t.title).appendTo($list);
+            });
+        });
+    });
 });
 </script>
 <?php

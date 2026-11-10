@@ -65,6 +65,7 @@ class CreateBaseData
                 ['id' => 26, 'title' => '小工具', 'pid' => 23, 'path' => '23,26,', 'level' => 2, 'icon' => 'fa-solid fa-shapes', 'link_to' => 'Widget', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(widget[/.]?.*)', 'show_position' => '1,2', 'sort_order' => 2, 'updated_at' => 1793395000, 'created_at' => 1793395000, 'i18n_key' => 'appearance_widgets'],
                 ['id' => 27, 'title' => '内容模型', 'pid' => 1, 'path' => '1,27,', 'level' => 2, 'icon' => 'fa fa-cubes', 'link_to' => 'Node@types', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(node[/.]?types.*)', 'show_position' => '1', 'sort_order' => 3, 'updated_at' => 1793395000, 'created_at' => 1793395000, 'i18n_key' => 'content_types'],
                 ['id' => 40, 'title' => '单页', 'pid' => 1, 'path' => '1,40,', 'level' => 2, 'icon' => 'far fa-file', 'link_to' => 'Node@page', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(node/page.*)', 'show_position' => '1', 'sort_order' => 2, 'updated_at' => 1794158589, 'created_at' => 1794158589, 'i18n_key' => 'content_pages'],
+                ['id' => 61, 'title' => '标签管理', 'pid' => 1, 'path' => '1,61,', 'level' => 2, 'icon' => 'fa fa-tags', 'link_to' => 'Tag', 'link_target' => '_self', 'link_type' => 'action', 'active_rule' => '(tag[/.]?.*)', 'show_position' => '1', 'sort_order' => 4, 'updated_at' => 1794158589, 'created_at' => 1794158589, 'i18n_key' => 'content_tags'],
             ], true);
         });
 
@@ -370,6 +371,7 @@ RewriteRule ^ index.php [QSA,PT,L]</pre><p><b>Nginx Rewrite</b></p><pre>location
                 ['perm_id' => 58, 'title' => '小工具', 'pid' => 40, 'path' => '40,,40', 'level' => 2, 'perm_key' => 'admin_menu_26', 'extras' => '{"delete":"删除","edit":"编辑","view":"查看"}', 'description' => '后台菜单：小工具', 'updated_at' => 1794212130, 'created_at' => 1794187661, 'sort_order' => 2],
                 ['perm_id' => 59, 'title' => '内容模型', 'pid' => 35, 'path' => '35,,35', 'level' => 2, 'perm_key' => 'admin_menu_27', 'extras' => '{"delete":"删除","edit":"编辑","view":"查看"}', 'description' => '后台菜单：内容模型', 'updated_at' => 1794212158, 'created_at' => 1794187661, 'sort_order' => 2],
                 ['perm_id' => 60, 'title' => '单页', 'pid' => 35, 'path' => '35,,35', 'level' => 2, 'perm_key' => 'admin_menu_40', 'extras' => '{"delete":"删除","edit":"编辑","view":"查看"}', 'description' => '后台菜单：单页', 'updated_at' => 1794212150, 'created_at' => 1794187661, 'sort_order' => 3],
+                ['perm_id' => 61, 'title' => '标签管理', 'pid' => 35, 'path' => '35,,35', 'level' => 2, 'perm_key' => 'admin_menu_61', 'extras' => '{"delete":"删除","edit":"编辑","add":"新增","view":"查看"}', 'description' => '后台菜单：标签管理', 'updated_at' => 1794212150, 'created_at' => 1794187661, 'sort_order' => 4],
             ], true);
         });
 
