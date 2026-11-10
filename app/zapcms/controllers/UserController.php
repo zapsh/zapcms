@@ -6,6 +6,7 @@ use zapcms\auth\RBAC;
 use zapcms\controllers\AdminController;
 use zapcms\auth\Permissions;
 use zapcms\services\Auth;
+use zapcms\services\ApiAuth;
 use zapcms\models\Admin;
 use zapcms\models\AdminLog;
 use zap\DB;
@@ -362,6 +363,24 @@ class UserController extends AdminController
         $logs     = $total > 0 ? AdminLog::getByUser($user['id'], $perPage, ($page - 1) * $perPage) : [];
         $totalPages = max(1, (int)ceil($total / $perPage));
 
+        // ──── API Token 管理（仅本账户）────
+        $apiTokens      = [];
+        $apiTokensReady = false;
+        try {
+            $apiTokens      = DB::table('api_tokens')
+                ->where('admin_id', (int)$user['id'])
+                ->orderBy('created_at DESC')
+                ->fetchAll();
+            $apiTokensReady = true;
+        } catch (\Throwable $e) {
+            // api_tokens 表未创建（迁移未执行）
+        }
+        // 创建后的一次性明文展示
+        $newApiToken = (string)session()->get('api_token_plaintext', '');
+        if ($newApiToken !== '') {
+            session()->remove('api_token_plaintext');
+        }
+
         $data = [
             'user'        => $user,
             'active_tab'  => $tab,
@@ -370,9 +389,68 @@ class UserController extends AdminController
             'log_page'    => $page,
             'log_total_pages' => $totalPages,
             'log_total'   => $total,
+            'api_tokens'      => $apiTokens,
+            'api_tokens_ready' => $apiTokensReady,
+            'new_api_token'   => $newApiToken,
         ];
 
         view('user.settings', $data);
+    }
+
+    // ========== API Token 管理 ==========
+
+    /**
+     * 创建 API Token（明文一次性存入 session，跳回 tokens 页展示）
+     */
+    public function createApiToken()
+    {
+        if (!Request::isPost()) {
+            Response::redirect(Url::action('User@profile', ['tab' => 'tokens']));
+        }
+
+        $ttlChoice = (string)Request::post('ttl', '30');
+        $ttlMap    = ['1' => 86400, '7' => 7 * 86400, '30' => 30 * 86400, '0' => 0];
+        $ttl       = $ttlMap[$ttlChoice] ?? (30 * 86400);
+
+        $token = ApiAuth::issue((int)Auth::user('id'), [], $ttl);
+        if ($token === null) {
+            Response::redirect(Url::action('User@profile', ['tab' => 'tokens']))
+                ->with('error', '创建失败：api_tokens 表不存在，请先执行迁移（php console zapcms:Migrate）');
+        }
+
+        session()->set('api_token_plaintext', $token);
+        AdminLog::info(
+            AdminLog::CATEGORY_USER,
+            '创建 API Token',
+            $ttl > 0 ? '有效期 ' . round($ttl / 86400) . ' 天' : '永不过期'
+        );
+        Response::redirect(Url::action('User@profile', ['tab' => 'tokens']))
+            ->with('success', 'Token 创建成功，请立即复制保存（仅显示一次）');
+    }
+
+    /**
+     * 吊销 API Token（仅限本账户的 Token）
+     */
+    public function revokeApiToken()
+    {
+        if (!Request::isPost()) {
+            Response::redirect(Url::action('User@profile', ['tab' => 'tokens']));
+        }
+
+        $id      = (int)Request::post('id', 0);
+        $adminId = (int)Auth::user('id');
+        $back    = Url::action('User@profile', ['tab' => 'tokens']);
+
+        if ($id <= 0) {
+            Response::redirect($back)->with('error', '参数错误');
+        }
+
+        $deleted = DB::delete('api_tokens', 'id=:id AND admin_id=:a', ['id' => $id, 'a' => $adminId]);
+        if ($deleted > 0) {
+            AdminLog::info(AdminLog::CATEGORY_USER, '吊销 API Token', "Token #{$id}");
+            Response::redirect($back)->with('success', 'Token 已吊销，使用它的客户端将立即失效');
+        }
+        Response::redirect($back)->with('error', 'Token 不存在或无权操作');
     }
 
     // ========== 个人资料更新 ==========

@@ -22,6 +22,10 @@ class ApiDispatch extends Controller
 {
     public function admin(string $any = ''): void
     {
+        // API 请求异常一律返回 JSON（debug 模式含 exception/file/line/trace），
+        // 避免 500 时输出 HTML 调试页
+        \zap\ErrorHandler::forceJson(true);
+
         $adminId = \zapcms\services\ApiAuth::resolve();
         if ($adminId === null) {
             $this->json(['code' => 401, 'msg' => '未认证'], 401);
@@ -33,6 +37,7 @@ class ApiDispatch extends Controller
 
     public function module(string $any = ''): void
     {
+        \zap\ErrorHandler::forceJson(true);
         $this->routeToController('module', $any);
     }
 

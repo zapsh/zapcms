@@ -150,7 +150,7 @@ class ZQuery
                 ->leftJoin(['node', 'n'], 'nr.node_id=n.id');
             $tableAlias = 'n';
         } else {
-            $this->query_builder = DB::table('node');
+            $this->query_builder = DB::table('node', 'node');
             $tableAlias = 'node';
         }
 

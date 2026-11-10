@@ -17,6 +17,10 @@
                        href="<?php echo \zap\facades\Url::action('User@profile', ['tab' => 'activity']); ?>">
                         <i class="fa fa-history me-2"></i> 操作记录
                     </a>
+                    <a class="list-group-item list-group-item-action d-flex align-items-center rounded-0 <?php echo $active_tab === 'tokens' ? 'active' : ''; ?>"
+                       href="<?php echo \zap\facades\Url::action('User@profile', ['tab' => 'tokens']); ?>">
+                        <i class="fa fa-key me-2"></i> API Token
+                    </a>
                 </div>
             </div>
         </div>
@@ -240,6 +244,141 @@
             </div>
             <?php endif; ?>
 
+            <!-- ==================== API Token ==================== -->
+            <?php if ($active_tab === 'tokens'): ?>
+            <div class="tab-pane fade show active">
+
+                <?php if (!empty($new_api_token)): ?>
+                <!-- 一次性明文展示 -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body border-start border-success border-4">
+                        <h5 class="card-title mb-2"><i class="fa fa-circle-check me-2 text-success"></i>Token 创建成功</h5>
+                        <p class="text-muted small mb-2">请立即复制保存，此明文仅显示这一次，离开页面后无法再次查看。</p>
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace bg-light" id="api-token-plaintext"
+                                   value="<?php echo htmlspecialchars($new_api_token); ?>" readonly>
+                            <button class="btn btn-outline-secondary" type="button" id="api-token-copy-btn">
+                                <i class="fa fa-copy me-1"></i>复制
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <?php if (!($api_tokens_ready ?? false)): ?>
+                <div class="alert alert-warning mb-0">
+                    api_tokens 表未创建，请先执行迁移：<code>php console zapcms:Migrate</code>
+                </div>
+                <?php else: ?>
+
+                <!-- 创建 Token -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-transparent border-bottom-0 pb-1">
+                        <h5 class="card-title mb-0"><i class="fa fa-plus me-2 text-primary"></i>创建 API Token</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-3">
+                            Token 等同于当前账户的 API 访问凭证，权限与你的账户一致。调用时放入请求头：
+                            <code>Authorization: Bearer &lt;token&gt;</code>，
+                            例如 <code>GET /api/admin/node/list</code>。
+                        </p>
+                        <form method="post" action="<?php echo \zap\facades\Url::action('User@createApiToken'); ?>"
+                              class="d-flex gap-2 align-items-end flex-wrap">
+                            <?php echo csrf_field(); ?>
+                            <div>
+                                <label class="form-label fw-semibold">有效期</label>
+                                <select name="ttl" class="form-select" style="min-width: 160px;">
+                                    <option value="1">1 天</option>
+                                    <option value="7">7 天</option>
+                                    <option value="30" selected>30 天</option>
+                                    <option value="0">永不过期</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-key me-1"></i>创建 Token
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Token 列表 -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="fa fa-key me-2 text-primary"></i>已创建的 Token</h5>
+                        <small class="text-muted">共 <?php echo count($api_tokens); ?> 个</small>
+                    </div>
+                    <div class="card-body p-0">
+                        <?php if (empty($api_tokens)): ?>
+                            <div class="text-center py-5 text-muted">
+                                <i class="fa fa-inbox fa-3x mb-2 d-block"></i>
+                                <p>暂无 Token，在上方创建一个</p>
+                            </div>
+                        <?php else: ?>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0 align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Token 标识</th>
+                                            <th>创建时间</th>
+                                            <th>过期时间</th>
+                                            <th>最近使用</th>
+                                            <th style="width: 90px;">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($api_tokens as $t): ?>
+                                        <?php $exp = (int)$t['expires_at']; ?>
+                                        <tr>
+                                            <td>
+                                                <code>#<?php echo (int)$t['id']; ?> · <?php echo htmlspecialchars(substr($t['token_hash'], 0, 10)); ?>…</code>
+                                            </td>
+                                            <td class="small text-muted"><?php echo date('Y-m-d H:i', (int)$t['created_at']); ?></td>
+                                            <td class="small text-muted">
+                                                <?php echo $exp > 0 ? date('Y-m-d H:i', $exp) : '永不过期'; ?>
+                                                <?php if ($exp > 0 && $exp < time()): ?>
+                                                    <span class="badge bg-secondary ms-1">已过期</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td class="small text-muted">
+                                                <?php echo !empty($t['last_used_at']) ? date('Y-m-d H:i', (int)$t['last_used_at']) : '从未使用'; ?>
+                                            </td>
+                                            <td>
+                                                <form method="post" action="<?php echo \zap\facades\Url::action('User@revokeApiToken'); ?>"
+                                                      onsubmit="return confirm('确定吊销该 Token？使用它的客户端将立即失效。');">
+                                                    <?php echo csrf_field(); ?>
+                                                    <input type="hidden" name="id" value="<?php echo (int)$t['id']; ?>">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        <i class="fa fa-trash me-1"></i>吊销
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+            </div>
+            <?php endif; ?>
+
         </div>
     </div>
 </div>
+
+<?php if ($active_tab === 'tokens' && !empty($new_api_token)): ?>
+<script>
+document.getElementById('api-token-copy-btn')?.addEventListener('click', function () {
+    const input = document.getElementById('api-token-plaintext');
+    const done = () => { this.innerHTML = '<i class="fa fa-check me-1"></i>已复制'; setTimeout(() => { this.innerHTML = '<i class="fa fa-copy me-1"></i>复制'; }, 1500); };
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(input.value).then(done);
+    } else {
+        input.select(); document.execCommand('copy'); done();
+    }
+});
+</script>
+<?php endif; ?>
