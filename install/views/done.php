@@ -23,8 +23,6 @@
                 </dd>
                 <dt>用户名</dt>
                 <dd><code><?= htmlspecialchars($username) ?></code></dd>
-                <dt>密码</dt>
-                <dd><code><?= htmlspecialchars($password) ?></code></dd>
             </dl>
         </div>
 
