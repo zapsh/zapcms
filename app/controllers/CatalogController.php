@@ -99,8 +99,14 @@ class CatalogController extends Controller
             BreadCrumb::instance()->add($catalog['title'],smart_node_url(['node_type' => 'category', 'slug' => $catalog['slug'] ?? '', 'id' => $catalog['id'] ?? 0]),$key === $lastKey);
         }
 
-        // 侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），只显示当前栏目所在分支
-        pageState()->subCatalogList = pageState()->getSidebarMenu('left');
+        // 侧边栏菜单：产品类栏目列表使用「栏目相关菜单」（栏目树）；
+        // 其余类型（article/faq/page 等）仍用后台「外观 > 菜单」的 left 位置菜单
+        if (pageState()->nodeMimeType === 'product') {
+            $catalogMenu = pageState()->getCatalogSidebarMenu();
+            pageState()->subCatalogList = $catalogMenu ?: pageState()->getSidebarMenu('left');
+        } else {
+            pageState()->subCatalogList = pageState()->getSidebarMenu('left');
+        }
         try{
             if(pageState()->nodeMimeType==='page') {
                 if ($this->renderPage(pageState()->nodeMimeType)) {

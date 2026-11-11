@@ -78,8 +78,10 @@ class NodeController extends Controller
         }
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);
 
-        //侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），只显示当前栏目所在分支
-        pageState()->subCatalogList = pageState()->getSidebarMenu('left');
+        // 侧边栏菜单：产品页使用「栏目相关菜单」（栏目树，定位到当前栏目所属顶级栏目）；
+        // 取不到栏目树时回退为后台「外观 > 菜单」的 left 位置菜单
+        $catalogMenu = pageState()->getCatalogSidebarMenu();
+        pageState()->subCatalogList = $catalogMenu ?: pageState()->getSidebarMenu('left');
         // 加载自定义字段（node_meta），如产品价格
         $nodeModel = Node::findById($node['id'] ?? 0);
         $node['meta'] = $nodeModel ? $nodeModel->loadMeta() : [];

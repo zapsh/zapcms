@@ -439,6 +439,55 @@ class PageState extends ArrayObject
     /**
      * 搜索页侧边栏：直接输出左侧菜单（menu_items），不再按栏目类型筛栏目树
      */
+    /**
+     * 侧边栏「栏目相关菜单」：返回栏目树（分类法），并定位到当前栏目所属顶级栏目，
+     * 使产品页等只展示其所在栏目的子栏目导航（而非后台「外观 > 菜单」的 left 位置菜单）。
+     *
+     * 返回结构与 getSidebarMenu 一致：单一虚拟根分支 [['title'=>..., 'children'=>[...]]]，
+     * 供模板（partials/_sidebar）直接渲染。
+     */
+    public function getCatalogSidebarMenu(): array
+    {
+        $tree = \zapcms\services\Catalog::instance()->getTreeArray();
+        if ($tree === []) {
+            return [];
+        }
+
+        // 优先定位到当前栏目所属顶级栏目（section），让侧栏只展示该栏目的子栏目
+        $paths = $this->catalogPaths ?? [];
+        $rootId = (int)($paths[0]['id'] ?? 0);
+        if ($rootId > 0) {
+            $branch = $this->findCatalogBranch($tree, $rootId);
+            if ($branch !== null) {
+                return [['title' => $branch['title'] ?? '', 'children' => $branch['children'] ?? []]];
+            }
+        }
+        // 兜底：展示全部顶级栏目
+        return [['title' => '', 'children' => $tree]];
+    }
+
+    /**
+     * 在栏目树中按 id 递归查找分支（含其 children）
+     */
+    protected function findCatalogBranch(array $items, int $id): ?array
+    {
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            if ((int)($item['id'] ?? 0) === $id) {
+                return $item;
+            }
+            if (!empty($item['children'])) {
+                $found = $this->findCatalogBranch($item['children'], $id);
+                if ($found !== null) {
+                    return $found;
+                }
+            }
+        }
+        return null;
+    }
+
     public function getSearchSidebarMenu(): array
     {
         return $this->getNavMenu('left');
