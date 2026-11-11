@@ -18,6 +18,7 @@ namespace app;
 use zapcms\helpers\ThumbHelper;
 use zap\DB;
 use zap\db\Query;
+use zap\db\Schema;
 
 class ZQuery
 {
@@ -108,6 +109,24 @@ class ZQuery
         'comment_count' => 'comment_count',
         'none'          => 'id',
     ];
+
+    /** @var bool|null 静态缓存：node 表是否含 is_top 列（探测一次） */
+    protected static ?bool $nodeHasIsTop = null;
+
+    /**
+     * node 表是否含 is_top 列（用于置顶排序，存量库可能尚未跑迁移）。
+     */
+    protected static function nodeHasIsTop(): bool
+    {
+        if (static::$nodeHasIsTop === null) {
+            try {
+                static::$nodeHasIsTop = Schema::hasColumn('node', 'is_top');
+            } catch (\Throwable $e) {
+                static::$nodeHasIsTop = false;
+            }
+        }
+        return static::$nodeHasIsTop;
+    }
 
     // ═══════════════════════════════════════════════════════════
     //  构造函数 + 查询执行
@@ -384,6 +403,12 @@ class ZQuery
         }
 
         $orderby = $qv['orderby'];
+
+        // 置顶优先：is_top=1 的内容排在最前（忽略置顶时跳过）。
+        // 用静态缓存探测列是否存在，避免存量库尚未跑迁移时整条查询报错。
+        if (!$qv['ignore_sticky'] && static::nodeHasIsTop()) {
+            $q->orderByRaw($tableAlias . '.is_top DESC');
+        }
 
         if (is_string($orderby) && str_contains($orderby, ',')) {
             foreach (explode(',', $orderby) as $part) {

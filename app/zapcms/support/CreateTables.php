@@ -259,6 +259,7 @@ class CreateTables
             $table->varchar('image',255)->nullable();
             $table->integer('hits')->nullable()->default('0');
             $table->integer('sort_order')->nullable()->default('0');
+            $table->integer('is_top')->default('0');
             $table->varchar('comment_status',255)->nullable();
             $table->integer('comment_count')->nullable()->default('0');
             $table->varchar('mime_type',255)->nullable();

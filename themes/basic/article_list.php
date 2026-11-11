@@ -21,7 +21,7 @@ $this->extend('layout/default');
                                 <img class="img-fluid" src="<?php echo \zapcms\helpers\ThumbHelper::thumb($node['image'], $imgW, $imgH); ?>" alt="<?php echo htmlspecialchars($node['title']); ?>" />
                             </a>
                             <div class="content-wrap">
-                                <h5><a href="<?php echo node_url($node['id'], $node['node_type']); ?>"><?php echo htmlspecialchars($node['title']); ?></a></h5>
+                                <h5><a href="<?php echo node_url($node['id'], $node['node_type']); ?>"><?php if (!empty($node['is_top'])): ?><span class="badge bg-warning text-dark me-1 align-middle" title="置顶">置顶</span><?php endif; ?><?php echo htmlspecialchars($node['title']); ?></a></h5>
                                 <?php $excerpt = trim(strip_tags((string)($node['excerpt'] ?? ''))); ?>
                                 <?php if ($excerpt !== ''): ?>
                                 <p class="card-excerpt"><?php echo htmlspecialchars(mb_substr($excerpt, 0, 80)); ?></p>

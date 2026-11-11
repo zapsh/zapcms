@@ -102,6 +102,7 @@ if (!empty($catalogPaths)) {
                                     <th style="width:120px">类型</th>
                                     <th style="width:100px">状态</th>
                                     <th style="width:140px">发布时间</th>
+                                    <th style="width:80px">置顶</th>
                                     <?php foreach (($list_columns ?? []) as $lc): ?>
                                     <th><?php echo htmlspecialchars($lc['field_label']); ?></th>
                                     <?php endforeach; ?>
@@ -132,6 +133,17 @@ if (!empty($catalogPaths)) {
                                     </td>
                                     <td class="text-muted small">
                                         <?php echo date('Y-m-d H:i', $row['pub_time'] ?? $row['add_time'] ?? 0); ?>
+                                    </td>
+                                    <td class="text-center">
+                                        <?php if (!empty($row['is_top'])): ?>
+                                        <span class="badge bg-warning text-dark d-block mb-1" title="已置顶">置顶</span>
+                                        <?php endif; ?>
+                                        <button type="button"
+                                                class="btn btn-sm <?php echo !empty($row['is_top']) ? 'btn-warning' : 'btn-outline-secondary'; ?>"
+                                                title="切换置顶"
+                                                onclick="toggleTop(<?php echo e($row['id']); ?>, <?php echo !empty($row['is_top']) ? 1 : 0; ?>)">
+                                            <i class="fa fa-thumbtack"></i>
+                                        </button>
                                     </td>
                                     <?php foreach (($list_columns ?? []) as $lc): ?>
                                     <?php
@@ -230,5 +242,27 @@ function deleteNode(id, title) {
             }
         }).always(function(){ load.dispose(); });
     });
+}
+
+// 快捷置顶 / 取消置顶
+function toggleTop(id, current) {
+    var next = current ? 0 : 1;
+    var load = Zap.loading('正在保存...');
+    $.ajax({
+        url: '<?php echo Url::action("Node@{$_controller}/top"); ?>',
+        method: 'post',
+        data: {id: id, is_top: next},
+        dataType: 'json',
+        success: function(res) {
+            if (res.code === 0) {
+                location.reload();
+            } else {
+                Swal.fire({title:'操作失败', text:res.msg||'操作失败', icon:'error'});
+            }
+        },
+        error: function() {
+            Swal.fire({title:'操作失败', text:'网络异常，请稍后重试', icon:'error'});
+        }
+    }).always(function(){ load.dispose(); });
 }
 </script>

@@ -243,6 +243,16 @@ if (empty($galleryArr)) {
                                                value="<?php echo e($node->sort_order ?? 0); ?>">
                                     </div>
                                 </div>
+                                <div class="col-md-4">
+                                    <div class="mb-2">
+                                        <label class="form-label d-block">列表置顶</label>
+                                        <input type="hidden" name="node[is_top]" value="0">
+                                        <div class="form-check form-switch mt-1">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="node_is_top" name="node[is_top]" value="1"<?php echo !empty($node->is_top) ? ' checked' : ''; ?>>
+                                            <label class="form-check-label small" for="node_is_top">在列表中置顶显示</label>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="tab-pane" id="tab2">

@@ -9,6 +9,7 @@ use zapcms\services\BreadCrumb;
 use zapcms\services\Catalog;
 use zapcms\services\NodeMeta;
 use zap\DB;
+use zap\db\Schema;
 use zap\exception\ViewNotFoundException;
 use zap\helpers\Pagination;
 use zap\http\Controller;
@@ -135,6 +136,17 @@ class CatalogController extends Controller
                 if(pageState()->nodeMimeType === 'faq'){
                     $query->addSelect('n.content');
                 }
+                // 置顶优先（is_top 列由迁移新增，存量库尚未迁移时跳过，避免报错）
+                static $hasTop = null;
+                if ($hasTop === null) {
+                    try { $hasTop = Schema::hasColumn('node', 'is_top'); }
+                    catch (\Throwable $e) { $hasTop = false; }
+                }
+                if ($hasTop) {
+                    $query->addSelect('n.is_top');
+                    $query->orderByRaw('n.is_top DESC');
+                }
+                $query->orderBy('n.pub_time','DESC');
                 $view->page = $page->setTotal($query->count('n.id'));
                 $query->limit($page->getLimit())->offset($page->getOffset());
                 $nodes = $query->get(FETCH_ASSOC);

@@ -84,7 +84,7 @@ class AbstractNodeType
         $perPage = max(1, (int)NodeType::getConfig((string)$this->nodeType, 'list_per_page', 20));
         $page = $this->usePageHelper($this->getTotalRows($conditions), 'page', $perPage);
         // ── 排序：白名单校验 + n. 前缀（cid 时 join 两表都有 id 列，裸写会歧义）──
-        $conditions['orderBy'] = $this->resolveOrderBy((string)Request::get('sort', ''));
+        $conditions['orderBy'] = $this->stickyOrderByPrefix() . $this->resolveOrderBy((string)Request::get('sort', ''));
         $conditions['limit'] = [$page->getLimit(),$page->getOffset()];
         $conditions = apply_filters('node_get_all_conditions',$conditions);
         $data['data'] = $this->getAll($conditions);
@@ -140,6 +140,10 @@ class AbstractNodeType
 
         if(Request::isPost()){
             $node = Request::post('node');
+            // is_top 由迁移新增；存量库尚未迁移时去掉该字段，避免 updateAll 因列不存在报错
+            if (!static::nodeHasIsTopColumn()) {
+                unset($node['is_top']);
+            }
             $catalogArray = Request::post('catalog',[]);
             $node['update_time'] = time();
             $node['pub_time'] = strtotime($node['pub_time']) ?: time();
@@ -246,6 +250,10 @@ class AbstractNodeType
     {
         if(Request::isPost()){
             $node = Request::post('node');
+            // is_top 由迁移新增；存量库尚未迁移时去掉该字段，避免 Node::create 因列不存在报错
+            if (!static::nodeHasIsTopColumn()) {
+                unset($node['is_top']);
+            }
             $catalogArray = Request::post('catalog',[]);
             // 通用发布表单（node/default/add）允许显式指定内容模型；
             // 仅接受已存在且非虚拟的模型，防止任意类型入库
@@ -503,6 +511,40 @@ class AbstractNodeType
     }
 
     /**
+     * 置顶排序前缀：is_top=1 的内容排在前面（列不存在时回退空串）。
+     * 列存在性做一次静态缓存，避免每个请求重复探测。
+     */
+    protected function stickyOrderByPrefix(): string
+    {
+        static $has = null;
+        if ($has === null) {
+            try {
+                $has = \zap\db\Schema::hasColumn('node', 'is_top');
+            } catch (\Throwable $e) {
+                $has = false;
+            }
+        }
+        return $has ? 'n.is_top DESC, ' : '';
+    }
+
+    /**
+     * node 表是否含 is_top 列（由迁移新增；存量库可能尚未迁移）。
+     * 静态缓存一次，避免每个请求重复探测。
+     */
+    protected static function nodeHasIsTopColumn(): bool
+    {
+        static $has = null;
+        if ($has === null) {
+            try {
+                $has = \zap\db\Schema::hasColumn('node', 'is_top');
+            } catch (\Throwable $e) {
+                $has = false;
+            }
+        }
+        return $has;
+    }
+
+    /**
      * 批量操作：发布 / 下架(转草稿) / 删除 / 移动到栏目
      *
      * POST: batch_action=publish|draft|delete|move, ids=[...], catalog_id(仅 move)
@@ -586,6 +628,31 @@ class AbstractNodeType
         }
 
         Response::json(['code' => 1, 'msg' => '未知的批量操作']);
+    }
+
+    /**
+     * 快捷置顶 / 取消置顶（后台列表开关调用）
+     * POST: id, is_top(0|1)
+     */
+    public function top()
+    {
+        if (!Request::isPost()) {
+            Response::json(['code' => 1, 'msg' => '非法请求']);
+            return;
+        }
+        $id = (int)Request::post('id', 0);
+        if ($id <= 0) {
+            Response::json(['code' => 1, 'msg' => '参数错误']);
+            return;
+        }
+        if (!static::nodeHasIsTopColumn()) {
+            Response::json(['code' => 1, 'msg' => '请先执行数据库迁移：php console zapcms:Migrate']);
+            return;
+        }
+        $val = Request::post('is_top') ? 1 : 0;
+        Node::updateAll(['is_top' => $val], ['id' => $id]);
+        AdminLog::info(AdminLog::CATEGORY_CONTENT, '置顶' . $this->title, 'ID: ' . $id . ' → ' . $val);
+        Response::json(['code' => 0, 'msg' => '操作成功', 'is_top' => $val]);
     }
 
     protected function usePageHelper($total,$pageKeyName = 'page',$limit = 20 , $query = null): Pagination
