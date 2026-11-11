@@ -3,6 +3,7 @@
 namespace zapcms\services;
 
 use zap\DB;
+use zapcms\support\HtmlXss;
 
 /**
  * 内容翻译存储服务。
@@ -90,7 +91,13 @@ class Translator
 
         $row = ['update_time' => time()];
         foreach (static::fields() as $field) {
-            $row[$field] = array_key_exists($field, $data) ? trim((string) $data[$field]) : '';
+            $value = array_key_exists($field, $data) ? (string) $data[$field] : '';
+            // 正文（content）走富文本编辑器，提交的是 HTML，需与主内容保持一致做 XSS 清洗
+            if ($field === 'content') {
+                $row[$field] = HtmlXss::clean($value);
+            } else {
+                $row[$field] = trim($value);
+            }
         }
 
         // 只保留主键外的有效字段用于判空

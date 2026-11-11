@@ -23,6 +23,15 @@ use \zap\facades\Url;
     </script>
     <link href="<?php echo \zapcms\support\Vite::css('zap-admin'); ?>" rel="stylesheet">
     <style>
+        /* 编辑页卡片头右上角「取消/关闭」按钮：避免紧贴右边角，并增加 hover 反馈 */
+        .card-header .card-tools .btn-tool {
+            margin-right: .25rem;
+            border-radius: .375rem;
+        }
+        .card-header .card-tools .btn-tool:hover {
+            background-color: rgba(0, 0, 0, .06);
+        }
+
         /* 顶部右侧图标小按钮：收紧左右内边距，避免图标之间间距过宽 */
         .app-header .nav-icon-btn {
             padding-left: .4rem !important;

@@ -67,7 +67,7 @@ if (empty($galleryArr)) {
 
         <div class="col-lg-9">
             <div class="card card-outline card-success">
-                <div class="card-header d-flex align-items-center ps-3 pt-0 pb-0 pe-0">
+                <div class="card-header d-flex align-items-center ps-3 pt-0 pb-0 pe-3">
                     <ul class="nav nav-underline me-auto" role="tablist">
                         <li class="nav-item">
                             <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab1" type="button">

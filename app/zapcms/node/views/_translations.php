@@ -102,7 +102,7 @@ $locales      = array_values(array_filter(Locale::all(), static function ($item)
 
                                 <div class="mb-2">
                                     <label class="form-label" for="<?php echo $anchor; ?>-content">正文</label>
-                                    <textarea class="form-control form-control-sm" rows="8"
+                                    <textarea class="form-control form-control-sm summernote" rows="8"
                                               id="<?php echo $anchor; ?>-content"
                                               name="<?php echo $field; ?>[content]"
                                               placeholder="支持 HTML"><?php echo e($row['content'] ?? ''); ?></textarea>
