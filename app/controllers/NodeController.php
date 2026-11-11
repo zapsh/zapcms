@@ -105,8 +105,9 @@ class NodeController extends Controller
     }
 
     private function getCatalogPathByNodeId(int $node_id){
-        $rows = NodeRelation::where('node_id',$node_id)->orderBy('level ASC')
+        $rows = NodeRelation::where('node_id',$node_id)
             ->leftJoin(['node','n'],'node_relation.catalog_id=n.id')
+            ->orderByRaw('{node_relation}.level ASC')
             ->select('n.title,n.id,n.slug')
             ->get(FETCH_ASSOC);
 
