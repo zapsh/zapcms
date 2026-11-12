@@ -145,7 +145,7 @@ $fieldGroups  = array_column($groups, 'name');
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <h6 class="mb-0"><i class="fa fa-list"></i> 自定义字段</h6>
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="expandAllRows(true)">
+                            <button type="button" class="btn btn-outline-secondary btn-sm expand-all-btn" onclick="expandAllRows()">
                                 <i class="fa fa-arrows-up-down"></i> 全部展开
                             </button>
                             <button type="button" class="btn btn-outline-primary btn-sm" onclick="addFieldRow()">
@@ -387,8 +387,17 @@ $fieldGroups  = array_column($groups, 'name');
         if (icon) { icon.className = collapsed ? 'fa fa-chevron-down' : 'fa fa-chevron-up'; }
     }
 
-    window.expandAllRows = function (expand) {
-        document.querySelectorAll('.field-row').forEach(function (row) {
+    window.expandAllRows = function () {
+        var rows = document.querySelectorAll('.field-row');
+        if (!rows.length) { return; }
+        // 根据当前是否有展开的行决定全展开还是全收起（按钮文案同步切换）
+        var anyExpanded = false;
+        rows.forEach(function (row) {
+            var body = row.querySelector('.field-row-body');
+            if (body && body.style.display !== 'none') { anyExpanded = true; }
+        });
+        var expand = !anyExpanded;
+        rows.forEach(function (row) {
             var body = row.querySelector('.field-row-body');
             var btn = row.querySelector('.field-toggle');
             if (body) { body.style.display = expand ? '' : 'none'; }
@@ -397,6 +406,12 @@ $fieldGroups  = array_column($groups, 'name');
                 if (icon) { icon.className = expand ? 'fa fa-chevron-down' : 'fa fa-chevron-up'; }
             }
         });
+        var allBtn = document.querySelector('.expand-all-btn');
+        if (allBtn) {
+            allBtn.innerHTML = expand
+                ? '<i class="fa fa-arrows-up-down"></i> 全部收起'
+                : '<i class="fa fa-arrows-up-down"></i> 全部展开';
+        }
     };
 
     // 分组输入变化时同步字段行下拉

@@ -62,6 +62,10 @@ class NodeController extends Controller
         }
         BreadCrumb::instance()->add(pageState()->node['title'],smart_node_url(pageState()->node),true);
 
+        // 加载自定义字段（node_meta），如新闻来源 / 图片版权
+        $nodeModel = Node::findById($node['id'] ?? 0);
+        $node['meta'] = $nodeModel ? $nodeModel->loadMeta() : [];
+
         //侧边栏菜单：使用后台「外观 > 菜单」的 MenuItem（left 位置），只显示当前栏目所在分支
         pageState()->subCatalogList = pageState()->getSidebarMenu('left');
         $this->renderNode($node, 'article');

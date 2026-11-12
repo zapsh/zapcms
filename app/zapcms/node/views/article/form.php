@@ -35,6 +35,46 @@ if ($galleryRaw !== '' && $galleryRaw !== null) {
 if (empty($galleryArr)) {
     $galleryArr = [''];
 }
+
+// ===== 自定义字段：按文章动态选字段（字段库 = 模型字段；节点显示字段存 node_meta._meta_fields）=====
+$allMetaFields = \zapcms\services\NodeType::getFields('article');
+$fieldMap = [];
+foreach ($allMetaFields as $mf) {
+    $fieldMap[$mf['field_name']] = $mf;
+}
+$savedSelectedRaw = $node->get_node_meta('_meta_fields');
+$savedSelected = ($savedSelectedRaw !== '' && $savedSelectedRaw !== null) ? json_decode((string)$savedSelectedRaw, true) : null;
+if ($savedSelected === null) {
+    // 从未保存过组合：初始不显示任何自定义字段，由「添加属性」按需添加
+    $selectedNames = [];
+} else {
+    // 已保存过：以保存的为准（兼容旧 source 重命名为 article_copyright）
+    $selectedNames = array_values($savedSelected);
+    $selectedNames = array_map(fn($n) => $n === 'source' ? 'article_copyright' : $n, $selectedNames);
+}
+foreach ($allMetaFields as $mf) {
+    if (!empty($mf['required']) && !in_array($mf['field_name'], $selectedNames, true)) {
+        $selectedNames[] = $mf['field_name'];
+    }
+}
+$selectedNames = array_values(array_filter($selectedNames, fn($n) => isset($fieldMap[$n])));
+
+// 单个字段的渲染外壳（含移除按钮；控件复用 _meta_fields.php）
+$renderMetaFieldItem = function (array $mf) use ($node) {
+    ?>
+    <div class="meta-field-item position-relative border rounded p-2 pt-3 mb-2" data-field="<?php echo e($mf['field_name']); ?>">
+        <?php if (empty($mf['required'])): ?>
+        <button type="button" class="btn-close btn-sm position-absolute top-0 end-0 m-1 meta-field-remove" title="移除该属性" aria-label="移除"></button>
+        <?php endif; ?>
+        <?php
+        $node_fields = [$mf];
+        $meta_show_header = false;
+        include __DIR__ . '/../_meta_fields.php';
+        unset($node_fields, $meta_show_header);
+        ?>
+    </div>
+    <?php
+};
 ?>
 <form id="zapForm" method="post">
     <input type="hidden" value="<?php echo e($node->id); ?>" name="node_id">
@@ -254,6 +294,72 @@ if (empty($galleryArr)) {
                                     </div>
                                 </div>
                             </div>
+                            <div class="mt-3" id="meta-fields-section">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <h6 class="text-muted small mb-0"><i class="fa fa-list-alt me-1"></i>自定义字段</h6>
+                                    <div class="position-relative">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" id="meta-field-add-btn">
+                                            <i class="fa fa-plus me-1"></i>添加属性
+                                        </button>
+                                        <div class="card shadow position-absolute end-0 mt-1 p-2 d-none" id="meta-field-panel"
+                                             style="width:360px;max-height:400px;overflow-y:auto;z-index:1050;">
+                                            <input type="text" class="form-control form-control-sm mb-1" id="meta-field-search"
+                                                   placeholder="搜索属性名称 / 标识…" autocomplete="off">
+                                            <div id="meta-field-panel-list">
+                                                <?php
+                                                $currentGroup = null;
+                                                foreach ($allMetaFields as $mf):
+                                                    $mfg = (string)($mf['group_name'] ?? '');
+                                                    if ($mfg !== $currentGroup):
+                                                        $currentGroup = $mfg; ?>
+                                                        <div class="d-flex align-items-center justify-content-between meta-field-group mt-2 mb-1" data-group="<?php echo e($mfg); ?>">
+                                                            <span class="text-muted small fw-bold"><?php echo $mfg !== '' ? e($mfg) : '未分组'; ?></span>
+                                                            <button type="button" class="btn btn-outline-secondary btn-sm py-0 meta-field-add-group" data-group="<?php echo e($mfg); ?>">
+                                                                <i class="fa fa-plus me-1"></i>整组添加
+                                                            </button>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                        <div class="d-flex align-items-center justify-content-between py-1 meta-field-option"
+                                                             data-field="<?php echo e($mf['field_name']); ?>" data-group="<?php echo e($mfg); ?>"
+                                                             data-search="<?php echo e(($mf['field_label'] ?: $mf['field_name']) . ' ' . $mf['field_name'] . ' ' . $mfg); ?>">
+                                                            <div class="small text-truncate me-2">
+                                                                <?php echo e($mf['field_label'] ?: $mf['field_name']); ?>
+                                                                <code class="text-muted small ms-1"><?php echo e($mf['field_name']); ?></code>
+                                                                <span class="badge text-bg-light ms-1"><?php echo e($mf['type'] ?? 'text'); ?></span>
+                                                            </div>
+                                                            <button type="button" class="btn btn-outline-primary btn-sm py-0 meta-field-add"
+                                                                    data-field="<?php echo e($mf['field_name']); ?>">添加</button>
+                                                        </div>
+                                                <?php endforeach; ?>
+                                            </div>
+                                            <div class="text-muted small text-center py-2 d-none" id="meta-field-empty">未找到匹配的属性</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="meta-field-list">
+                                    <?php
+                                    $lastGroup = null;
+                                    foreach ($selectedNames as $sname):
+                                        $smf = $fieldMap[$sname];
+                                        if (($smf['group_name'] ?? '') !== $lastGroup) {
+                                            $lastGroup = (string)($smf['group_name'] ?? '');
+                                            if ($lastGroup !== '') {
+                                                echo '<h6 class="text-muted small mb-2 mt-2"><i class="fa fa-tags me-1"></i>' . e($lastGroup) . '</h6>';
+                                            }
+                                        }
+                                        $renderMetaFieldItem($smf);
+                                    endforeach;
+                                    ?>
+                                    <div class="text-muted small py-3 text-center d-none" id="meta-field-none">暂无自定义属性，点击右上角「添加属性」从字段库中选择。</div>
+                                </div>
+                                <input type="hidden" name="meta[_meta_fields]" id="meta_selected_input"
+                                       value="<?php echo e(json_encode($selectedNames, JSON_UNESCAPED_UNICODE)); ?>">
+                            </div>
+                            <div class="d-none" id="meta-field-templates">
+                                <?php foreach ($allMetaFields as $mf): ?>
+                                    <template data-field="<?php echo e($mf['field_name']); ?>"><?php $renderMetaFieldItem($mf); ?></template>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
                         <div class="tab-pane" id="tab2">
                             <div class="mb-2">
@@ -405,6 +511,73 @@ $(function(){
                 $('<option>').val(t.title).text(t.title).appendTo($list);
             });
         });
+    });
+});
+
+// ---- 自定义字段：按文章组合（搜索添加 / 分组批量添加）----
+var metaSelected = [];
+function metaSync() {
+    $('#meta_selected_input').val(JSON.stringify(metaSelected));
+    $('#meta-field-panel .meta-field-option').each(function () {
+        var added = metaSelected.indexOf(String($(this).data('field'))) !== -1;
+        $(this).find('.meta-field-add').prop('disabled', added).text(added ? '已添加' : '添加');
+    });
+    $('#meta-field-none').toggleClass('d-none', metaSelected.length > 0);
+}
+function metaBindPickers($scope) {
+    if (!$scope) { return; }
+    $scope.find('.datetimepicker').each(function () {
+        $(this).datetimepicker({ format: $(this).data('format') || 'Y-m-d H:i:s' });
+    });
+}
+function metaAdd(name) {
+    name = String(name);
+    if (metaSelected.indexOf(name) !== -1) return;
+    var tpl = document.querySelector('#meta-field-templates template[data-field="' + name + '"]');
+    if (!tpl) return;
+    metaSelected.push(name);
+    var $item = $(tpl.content.cloneNode(true)).appendTo('#meta-field-list');
+    metaBindPickers($item);
+    metaSync();
+}
+function metaAddGroup(group) {
+    document.querySelectorAll('#meta-field-panel .meta-field-option[data-group="' + group + '"]').forEach(function (el) {
+        metaAdd(el.getAttribute('data-field'));
+    });
+}
+$(function () {
+    try { metaSelected = JSON.parse($('#meta_selected_input').val() || '[]'); } catch (e) { metaSelected = []; }
+    metaSync();
+    $('#meta-field-add-btn').on('click', function (e) {
+        e.stopPropagation();
+        $('#meta-field-panel').toggleClass('d-none');
+        $('#meta-field-search').trigger('input');
+    });
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('#meta-field-panel, #meta-field-add-btn').length) {
+            $('#meta-field-panel').addClass('d-none');
+        }
+    });
+    $('#meta-field-search').on('input', function () {
+        var kw = $(this).val().trim().toLowerCase(), any = false;
+        $('#meta-field-panel .meta-field-option').each(function () {
+            var hit = !kw || String($(this).data('search')).toLowerCase().indexOf(kw) !== -1;
+            $(this).toggleClass('d-none', !hit);
+            if (hit) any = true;
+        });
+        $('#meta-field-panel .meta-field-group').each(function () {
+            var $items = $('#meta-field-panel .meta-field-option[data-group="' + $(this).data('group') + '"]:not(.d-none)');
+            $(this).toggleClass('d-none', kw !== '' && $items.length === 0);
+        });
+        $('#meta-field-empty').toggleClass('d-none', any || kw === '');
+    });
+    $(document).on('click', '.meta-field-add', function () { metaAdd($(this).data('field')); });
+    $(document).on('click', '.meta-field-add-group', function () { metaAddGroup(String($(this).data('group'))); });
+    $(document).on('click', '.meta-field-remove', function () {
+        var $item = $(this).closest('.meta-field-item'), name = String($item.data('field'));
+        $item.remove();
+        metaSelected = metaSelected.filter(function (n) { return n !== name; });
+        metaSync();
     });
 });
 </script>

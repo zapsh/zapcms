@@ -110,11 +110,6 @@ if (empty($galleryArr)) {
                     </button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-meta" type="button">
-                        <i class="fa fa-list-alt me-1"></i>自定义字段
-                    </button>
-                </li>
-                <li class="nav-item">
                     <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-attr" type="button">
                         <i class="fa fa-cog me-1"></i>属性
                     </button>
@@ -176,74 +171,6 @@ if (empty($galleryArr)) {
                     </div>
 
                 </div><!-- /#tab1 -->
-                <div class="tab-pane" id="tab-meta">
-                    <div class="mt-3" id="meta-fields-section">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <h6 class="text-muted small mb-0"><i class="fa fa-list-alt me-1"></i>自定义字段</h6>
-                            <div class="position-relative">
-                                <button type="button" class="btn btn-outline-primary btn-sm" id="meta-field-add-btn">
-                                    <i class="fa fa-plus me-1"></i>添加属性
-                                </button>
-                                <div class="card shadow position-absolute end-0 mt-1 p-2 d-none" id="meta-field-panel"
-                                     style="width:360px;max-height:400px;overflow-y:auto;z-index:1050;">
-                                    <input type="text" class="form-control form-control-sm mb-1" id="meta-field-search"
-                                           placeholder="搜索属性名称 / 标识…" autocomplete="off">
-                                    <div id="meta-field-panel-list">
-                                        <?php
-                                        $currentGroup = null;
-                                        foreach ($allMetaFields as $mf):
-                                            $mfg = (string)($mf['group_name'] ?? '');
-                                            if ($mfg !== $currentGroup):
-                                                $currentGroup = $mfg; ?>
-                                                <div class="d-flex align-items-center justify-content-between meta-field-group mt-2 mb-1" data-group="<?php echo e($mfg); ?>">
-                                                    <span class="text-muted small fw-bold"><?php echo $mfg !== '' ? e($mfg) : '未分组'; ?></span>
-                                                    <button type="button" class="btn btn-outline-secondary btn-sm py-0 meta-field-add-group" data-group="<?php echo e($mfg); ?>">
-                                                        <i class="fa fa-plus me-1"></i>整组添加
-                                                    </button>
-                                                </div>
-                                        <?php endif; ?>
-                                            <div class="d-flex align-items-center justify-content-between py-1 meta-field-option"
-                                                 data-field="<?php echo e($mf['field_name']); ?>" data-group="<?php echo e($mfg); ?>"
-                                                 data-search="<?php echo e(($mf['field_label'] ?: $mf['field_name']) . ' ' . $mf['field_name'] . ' ' . $mfg); ?>">
-                                                <div class="small text-truncate me-2">
-                                                    <?php echo e($mf['field_label'] ?: $mf['field_name']); ?>
-                                                    <code class="text-muted small ms-1"><?php echo e($mf['field_name']); ?></code>
-                                                    <span class="badge text-bg-light ms-1"><?php echo e($mf['type'] ?? 'text'); ?></span>
-                                                </div>
-                                                <button type="button" class="btn btn-outline-primary btn-sm py-0 meta-field-add"
-                                                        data-field="<?php echo e($mf['field_name']); ?>">添加</button>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                    <div class="text-muted small text-center py-2 d-none" id="meta-field-empty">未找到匹配的属性</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="meta-field-list">
-                            <?php
-                            $lastGroup = null;
-                            foreach ($selectedNames as $sname):
-                                $smf = $fieldMap[$sname];
-                                if (($smf['group_name'] ?? '') !== $lastGroup) {
-                                    $lastGroup = (string)($smf['group_name'] ?? '');
-                                    if ($lastGroup !== '') {
-                                        echo '<h6 class="text-muted small mb-2 mt-2"><i class="fa fa-tags me-1"></i>' . e($lastGroup) . '</h6>';
-                                    }
-                                }
-                                $renderMetaFieldItem($smf);
-                            endforeach;
-                            ?>
-                            <div class="text-muted small py-3 text-center d-none" id="meta-field-none">暂无自定义属性，点击右上角「添加属性」从字段库中选择。</div>
-                        </div>
-                        <input type="hidden" name="meta[_meta_fields]" id="meta_selected_input"
-                               value="<?php echo e(json_encode($selectedNames, JSON_UNESCAPED_UNICODE)); ?>">
-                    </div>
-                    <div class="d-none" id="meta-field-templates">
-                        <?php foreach ($allMetaFields as $mf): ?>
-                            <template data-field="<?php echo e($mf['field_name']); ?>"><?php $renderMetaFieldItem($mf); ?></template>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
                 <div class="tab-pane" id="tab-attr">
                     <div class="mb-2">
                         <label class="form-label">产品分类</label>
@@ -310,6 +237,72 @@ if (empty($galleryArr)) {
                                        value="<?php echo e($node->sort_order ?? 0); ?>">
                             </div>
                         </div>
+                    </div>
+                    <div class="mt-3" id="meta-fields-section">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <h6 class="text-muted small mb-0"><i class="fa fa-list-alt me-1"></i>自定义字段</h6>
+                            <div class="position-relative">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="meta-field-add-btn">
+                                    <i class="fa fa-plus me-1"></i>添加属性
+                                </button>
+                                <div class="card shadow position-absolute end-0 mt-1 p-2 d-none" id="meta-field-panel"
+                                     style="width:360px;max-height:400px;overflow-y:auto;z-index:1050;">
+                                    <input type="text" class="form-control form-control-sm mb-1" id="meta-field-search"
+                                           placeholder="搜索属性名称 / 标识…" autocomplete="off">
+                                    <div id="meta-field-panel-list">
+                                        <?php
+                                        $currentGroup = null;
+                                        foreach ($allMetaFields as $mf):
+                                            $mfg = (string)($mf['group_name'] ?? '');
+                                            if ($mfg !== $currentGroup):
+                                                $currentGroup = $mfg; ?>
+                                                <div class="d-flex align-items-center justify-content-between meta-field-group mt-2 mb-1" data-group="<?php echo e($mfg); ?>">
+                                                    <span class="text-muted small fw-bold"><?php echo $mfg !== '' ? e($mfg) : '未分组'; ?></span>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm py-0 meta-field-add-group" data-group="<?php echo e($mfg); ?>">
+                                                        <i class="fa fa-plus me-1"></i>整组添加
+                                                    </button>
+                                                </div>
+                                        <?php endif; ?>
+                                            <div class="d-flex align-items-center justify-content-between py-1 meta-field-option"
+                                                 data-field="<?php echo e($mf['field_name']); ?>" data-group="<?php echo e($mfg); ?>"
+                                                 data-search="<?php echo e(($mf['field_label'] ?: $mf['field_name']) . ' ' . $mf['field_name'] . ' ' . $mfg); ?>">
+                                                <div class="small text-truncate me-2">
+                                                    <?php echo e($mf['field_label'] ?: $mf['field_name']); ?>
+                                                    <code class="text-muted small ms-1"><?php echo e($mf['field_name']); ?></code>
+                                                    <span class="badge text-bg-light ms-1"><?php echo e($mf['type'] ?? 'text'); ?></span>
+                                                </div>
+                                                <button type="button" class="btn btn-outline-primary btn-sm py-0 meta-field-add"
+                                                        data-field="<?php echo e($mf['field_name']); ?>">添加</button>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <div class="text-muted small text-center py-2 d-none" id="meta-field-empty">未找到匹配的属性</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="meta-field-list">
+                            <?php
+                            $lastGroup = null;
+                            foreach ($selectedNames as $sname):
+                                $smf = $fieldMap[$sname];
+                                if (($smf['group_name'] ?? '') !== $lastGroup) {
+                                    $lastGroup = (string)($smf['group_name'] ?? '');
+                                    if ($lastGroup !== '') {
+                                        echo '<h6 class="text-muted small mb-2 mt-2"><i class="fa fa-tags me-1"></i>' . e($lastGroup) . '</h6>';
+                                    }
+                                }
+                                $renderMetaFieldItem($smf);
+                            endforeach;
+                            ?>
+                            <div class="text-muted small py-3 text-center d-none" id="meta-field-none">暂无自定义属性，点击右上角「添加属性」从字段库中选择。</div>
+                        </div>
+                        <input type="hidden" name="meta[_meta_fields]" id="meta_selected_input"
+                               value="<?php echo e(json_encode($selectedNames, JSON_UNESCAPED_UNICODE)); ?>">
+                    </div>
+                    <div class="d-none" id="meta-field-templates">
+                        <?php foreach ($allMetaFields as $mf): ?>
+                            <template data-field="<?php echo e($mf['field_name']); ?>"><?php $renderMetaFieldItem($mf); ?></template>
+                        <?php endforeach; ?>
                     </div>
                 </div>
                 <div class="tab-pane" id="tab-image">

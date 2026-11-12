@@ -21,11 +21,15 @@ $nodeType = $node['node_type'] ?? 'article';
                                     <ul class="entry-meta">
                                         <li><i class="fa fa-calendar"></i> <?php echo date('Y-m-d', intval($node['pub_time'] ?? 0) ?: time()); ?></li>
                                         <li><i class="fa fa-eye"></i> <?php echo intval($node['hits'] ?? 0); ?> 次浏览</li>
+                                        <?php if (!empty(($node['meta'] ?? [])['article_copyright'])): ?><li><i class="fa fa-copyright"></i> 版权：<?php echo htmlspecialchars(($node['meta'] ?? [])['article_copyright']); ?></li><?php endif; ?>
                                     </ul>
                                 </header><!-- /.entry-header -->
                                 <?php if (!empty($node['image'])): ?>
                                 <div class="post-thumbnail">
                                     <img src="<?php echo \zapcms\helpers\ThumbHelper::thumb($node['image'], (int)\zapcms\services\NodeType::getConfig($nodeType, 'detail_image_width', 750), (int)\zapcms\services\NodeType::getConfig($nodeType, 'detail_image_height', 480)); ?>" class="img-fluid" alt="<?php echo htmlspecialchars($node['title']); ?>">
+                                    <?php if (!empty(($node['meta'] ?? [])['image_copyright'])): ?>
+                                    <div class="image-copyright text-muted small mt-1"><i class="fa fa-copyright"></i> <?php echo htmlspecialchars(($node['meta'] ?? [])['image_copyright']); ?></div>
+                                    <?php endif; ?>
                                 </div><!-- /.post-thumbnail -->
                                 <?php endif; ?>
                                 <div class="entry-content">
