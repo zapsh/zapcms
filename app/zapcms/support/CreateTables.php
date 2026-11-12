@@ -245,6 +245,24 @@ class CreateTables
             $table->setTableEngine(TableSchema::ENGINE_INNODB);
         });
 
+        Schema::dropIfExists('jobs');
+        Schema::create('jobs',function(TableSchema $table){
+            $table->integer('id')->autoIncrement();
+            $table->varchar('queue',255)->default('default');
+            $table->text('payload');
+            $table->integer('attempts')->default(0);
+            $table->integer('reserved_at')->default(0);
+            $table->integer('available_at')->default(0);
+            $table->varchar('status',20)->default('pending');
+            $table->integer('created_at');
+            $table->integer('updated_at');
+
+            $table->addPrimaryKey('id');
+            $table->addIndex('idx_queue',['queue','status','available_at']);
+
+            $table->setTableEngine(TableSchema::ENGINE_INNODB);
+        });
+
         Schema::dropIfExists('node');
         Schema::create('node',function(TableSchema $table){
             $table->integer('id')->autoIncrement();
