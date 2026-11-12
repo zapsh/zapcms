@@ -140,6 +140,13 @@ class AbstractNodeType
 
         if(Request::isPost()){
             $node = Request::post('node');
+            // 所有者（author_id）是创建者，编辑时禁止被表单/请求改写，固定为原值
+            if ($id > 0) {
+                $origAuthor = DB::table('node')->select('author_id')->where('id', $id)->fetchColumn();
+                if ($origAuthor !== null) {
+                    $node['author_id'] = (int) $origAuthor;
+                }
+            }
             // is_top 由迁移新增；存量库尚未迁移时去掉该字段，避免 updateAll 因列不存在报错
             if (!static::nodeHasIsTopColumn()) {
                 unset($node['is_top']);

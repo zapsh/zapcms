@@ -80,7 +80,7 @@ $renderMetaFieldItem = function (array $mf) use ($node) {
     <input type="hidden" value="<?php echo e($node->id); ?>" name="node_id">
     <input type="hidden" name="node[pub_time]" value="<?php echo $node->getPubTimeToDate(); ?>" />
     <input name="node[status]" id="node_status" type="hidden" value="<?php echo $node->status ?: \zapcms\models\Node::STATUS_PUBLISH;?>" />
-    <input type="hidden" id="node_author_id" name="node[author_id]" value="<?php echo \zapcms\services\Auth::user('id') ?>">
+    <input type="hidden" id="node_author_id" name="node[author_id]" value="<?php echo ((int)($node->author_id ?? 0) ?: \zapcms\services\Auth::user('id')); ?>">
 
     <div class="row g-3">
         <!-- 左侧栏目导航 -->
@@ -266,7 +266,7 @@ $renderMetaFieldItem = function (array $mf) use ($node) {
                                 <div class="col-md-4">
                                     <div class="mb-2">
                                         <label class="form-label">发布人</label>
-                                        <input type="text" class="form-control form-control-sm form-control-plaintext" readonly value="<?php echo \zapcms\services\Auth::user('full_name') ?>">
+                                        <input type="text" class="form-control form-control-sm form-control-plaintext" readonly value="<?php echo e(($node->author_id ? (string)(\zap\DB::table('admin')->select('full_name')->where('id',(int)$node->author_id)->fetchColumn() ?? '') : '') ?: \zapcms\services\Auth::user('full_name')); ?>">
                                     </div>
                                 </div>
                                 <div class="col-md-4">
