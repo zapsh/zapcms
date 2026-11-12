@@ -362,6 +362,33 @@ ul.list-inline.post-meta li i { color: #1e6bff; }
     background: #e8f0ff;
     color: #1e6bff;
 }
+
+/* ─── 产品详情：多图画廊 ─── */
+.product-gallery .main-image-wrap {
+    border: 1px solid var(--bs-border-color, #eee);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+}
+.product-gallery .product-detail-img {
+    min-height: 260px;
+    object-fit: cover;
+}
+.product-gallery .product-thumb {
+    border-radius: 8px;
+    overflow: hidden;
+    opacity: 0.7;
+    transition: opacity .2s, box-shadow .2s, transform .2s;
+    line-height: 0;
+}
+.product-gallery .product-thumb:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+}
+.product-gallery .product-thumb.border-primary {
+    opacity: 1;
+    box-shadow: 0 0 0 2px #1e6bff;
+}
 .sidebar .widget ul li.current-ancestor > a:hover {
     background: linear-gradient(135deg, #1e6bff 0%, #0a3fa8 100%);
     color: #fff;

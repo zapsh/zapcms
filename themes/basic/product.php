@@ -21,8 +21,56 @@ $imageUrl = \zapcms\helpers\ThumbHelper::thumb($node['image'] ?? '', $detailW, $
                     <div class="product-detail">
                         <div class="row">
                             <div class="col-sm-6">
-                                <div class="product-gallery text-center">
-                                    <img src="<?php echo $imageUrl; ?>" class="product-detail-img img-fluid" alt="<?php echo htmlspecialchars($node['title'] ?? ''); ?>">
+                                <?php
+                                // 多图画廊：主图 + node_meta.gallery 附加图（与后台 product/form.php 解析保持一致）
+                                $galleryImgs = [];
+                                if (!empty($node['image'])) {
+                                    $galleryImgs[] = $node['image'];
+                                }
+                                $galleryRaw = $node['meta']['gallery'] ?? '';
+                                if ($galleryRaw !== '' && $galleryRaw !== null) {
+                                    $galleryDecoded = json_decode((string) $galleryRaw, true);
+                                    if (is_array($galleryDecoded)) {
+                                        foreach (array_filter($galleryDecoded, static fn($v) => $v !== '') as $gi) {
+                                            $galleryImgs[] = $gi;
+                                        }
+                                    } elseif ((string) $galleryRaw !== '') {
+                                        $galleryImgs[] = (string) $galleryRaw;
+                                    }
+                                }
+                                $galleryImgs = array_values(array_unique($galleryImgs));
+                                $mainImg   = $galleryImgs[0] ?? '';
+                                $mainThumb = \zapcms\helpers\ThumbHelper::thumb($mainImg, $detailW, $detailH);
+                                $hasThumbs = count($galleryImgs) > 1;
+                                ?>
+                                <div class="product-gallery">
+                                    <div class="position-relative main-image-wrap">
+                                        <img src="<?php echo htmlspecialchars($mainThumb, ENT_QUOTES); ?>" class="product-detail-img img-fluid w-100"
+                                             id="productMainImg"
+                                             data-original="<?php echo htmlspecialchars($mainImg, ENT_QUOTES); ?>"
+                                             alt="<?php echo htmlspecialchars($node['title'] ?? '', ENT_QUOTES); ?>"
+                                             style="cursor: zoom-in;">
+                                        <button type="button" class="btn btn-light btn-sm shadow-sm position-absolute top-0 end-0 m-2"
+                                                id="productZoomBtn" title="放大查看">
+                                            <i class="fa fa-search-plus"></i>
+                                        </button>
+                                    </div>
+                                    <?php if ($hasThumbs): ?>
+                                    <div class="product-thumbs d-flex flex-wrap gap-2 mt-3" id="productThumbs">
+                                        <?php foreach ($galleryImgs as $gi => $g):
+                                            $tUrl = \zapcms\helpers\ThumbHelper::thumb($g, 90, 90);
+                                        ?>
+                                        <button type="button"
+                                                class="btn p-0 product-thumb <?php echo $gi === 0 ? 'border border-primary' : 'border'; ?>"
+                                                data-thumb="<?php echo htmlspecialchars($tUrl, ENT_QUOTES); ?>"
+                                                data-full="<?php echo htmlspecialchars($g, ENT_QUOTES); ?>"
+                                                title="点击切换">
+                                            <img src="<?php echo htmlspecialchars($tUrl, ENT_QUOTES); ?>" class="img-fluid"
+                                                 style="width:72px;height:72px;object-fit:cover;display:block;" alt="">
+                                        </button>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <div class="col-sm-6">
@@ -62,4 +110,54 @@ $imageUrl = \zapcms\helpers\ThumbHelper::thumb($node['image'] ?? '', $detailW, $
             </div>
         </div>
     </div>
+<!-- 产品图片放大灯箱 -->
+<div class="modal fade" id="productZoomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content bg-transparent border-0 shadow-none">
+            <div class="modal-body p-0 text-center position-relative">
+                <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="关闭"></button>
+                <img id="productZoomImg" src="" alt="" class="img-fluid rounded" style="max-height:85vh;cursor:zoom-in;">
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    var main = document.getElementById('productMainImg');
+    var thumbs = document.querySelectorAll('#productThumbs .product-thumb');
+    thumbs.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var thumb = btn.getAttribute('data-thumb');
+            var full  = btn.getAttribute('data-full');
+            main.setAttribute('src', thumb);
+            main.setAttribute('data-original', full);
+            thumbs.forEach(function (b) { b.classList.remove('border-primary'); b.classList.add('border'); });
+            btn.classList.add('border-primary');
+            btn.classList.remove('border');
+        });
+    });
+    function openZoom() {
+        var full = main.getAttribute('data-original') || main.getAttribute('src');
+        var zImg = document.getElementById('productZoomImg');
+        zImg.setAttribute('src', full);
+        zImg.style.transform = 'scale(1)';
+        zImg.style.cursor = 'zoom-in';
+        zImg.dataset.zoomed = '0';
+        zImg.onclick = function () {
+            var zoomed = zImg.dataset.zoomed === '1';
+            zImg.style.transform = zoomed ? 'scale(1)' : 'scale(2)';
+            zImg.style.cursor = zoomed ? 'zoom-in' : 'zoom-out';
+            zImg.dataset.zoomed = zoomed ? '0' : '1';
+        };
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('productZoomModal')).show();
+    }
+    if (main) {
+        main.addEventListener('click', openZoom);
+    }
+    var zoomBtn = document.getElementById('productZoomBtn');
+    if (zoomBtn) {
+        zoomBtn.addEventListener('click', openZoom);
+    }
+})();
+</script>
 <?php $this->endBlock(); ?>
