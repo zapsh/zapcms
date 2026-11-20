@@ -8,7 +8,7 @@
  *
  */
 
-const ZAP_CMS_VERSION = '2.0.5';
+const ZAP_CMS_VERSION = '2.0.6';
 const ZAP_CMS_RELEASE_DATE = '2026-11-20';
 
 define('APP_ROOT', dirname(__DIR__));
