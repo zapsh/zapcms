@@ -45,13 +45,25 @@ class Sitemap
     ];
 
     /**
-     * 获取带表前缀的 node 表名
+     * 获取可直接拼进 SQL 的 node 表名
+     *
+     * 原生 SQL（DB::fetch / DB::fetchAll）不经过 Query 构建器，
+     * 拼 {table} 占位符要多绕一层；这里直接取 quoteTable() 的结果，
+     * 已包含表前缀与当前驱动对应的引号（MySQL 反引号 / SQLite 原样）。
      *
      * 说明：用 static:: 调用，子类也可能需要访问，因此不能是 private
      */
     protected static function nodeTable(): string
     {
-        return Node::tableName();
+        return DB::getPDO()->quoteTable(Node::tableName());
+    }
+
+    /**
+     * 获取可直接拼进 SQL 的 menu_items 表名（同上，已带前缀与引号）
+     */
+    protected static function menuItemsTable(): string
+    {
+        return DB::getPDO()->quoteTable('menu_items');
     }
 
     // ==================== 对外 API ====================
@@ -290,7 +302,7 @@ class Sitemap
     protected function getNewestPubTime(string $nodeType): int
     {
         $table = static::nodeTable();
-        $sql = "SELECT MAX(COALESCE(update_time, pub_time, add_time)) AS t FROM {{$table}}"
+        $sql = "SELECT MAX(COALESCE(update_time, pub_time, add_time)) AS t FROM {$table}"
              . " WHERE node_type = ? AND status = ?";
         $row = DB::fetch($sql, [$nodeType, Node::STATUS_PUBLISH]);
         return (int) ($row['t'] ?? 0);
@@ -344,9 +356,10 @@ class Sitemap
             // 前台导航由 menu_items 驱动：只收录出现在任一菜单中的分类项（导航可达），
             // 未挂菜单的分类项访问者无法发现，不纳入 sitemap。
             // level 已合并到 node 表
+            $menuTable = static::menuItemsTable();
             $sql = "SELECT n.id, n.slug, n.node_type, n.mime_type, n.level, n.add_time, n.pub_time, n.update_time"
-                 . " FROM {{$table}} n"
-                 . " INNER JOIN {{menu_items}} mi ON mi.item_type = 'node' AND mi.ref_id = n.id"
+                 . " FROM {$table} n"
+                 . " INNER JOIN {$menuTable} mi ON mi.item_type = 'node' AND mi.ref_id = n.id"
                  . " WHERE n.node_type = ? AND n.status = ?"
                  . " AND n.slug IS NOT NULL AND n.slug != ''"
                  . " GROUP BY n.id"
@@ -354,7 +367,7 @@ class Sitemap
                  . " LIMIT " . (int) $limit;
         } else {
             $sql = "SELECT id, slug, node_type, mime_type, add_time, pub_time, update_time"
-                 . " FROM {{$table}}"
+                 . " FROM {$table}"
                  . " WHERE node_type = ? AND status = ?"
                  . " ORDER BY COALESCE(update_time, pub_time, add_time) DESC"
                  . " LIMIT " . (int) $limit;
@@ -368,16 +381,17 @@ class Sitemap
         $table = static::nodeTable();
         if ($nodeType === 'category') {
             // 与 fetchPublishedByType 对齐：仅统计菜单可达的分类项
+            $menuTable = static::menuItemsTable();
             $row = DB::fetch(
-                "SELECT COUNT(DISTINCT n.id) AS c FROM {{$table}} n"
-                . " INNER JOIN {{menu_items}} mi ON mi.item_type = 'node' AND mi.ref_id = n.id"
+                "SELECT COUNT(DISTINCT n.id) AS c FROM {$table} n"
+                . " INNER JOIN {$menuTable} mi ON mi.item_type = 'node' AND mi.ref_id = n.id"
                 . " WHERE n.node_type = ? AND n.status = ?",
                 [$nodeType, Node::STATUS_PUBLISH]
             );
             return (int) ($row['c'] ?? 0);
         }
         $row = DB::fetch(
-            "SELECT COUNT(*) AS c FROM {{$table}} WHERE node_type = ? AND status = ?",
+            "SELECT COUNT(*) AS c FROM {$table} WHERE node_type = ? AND status = ?",
             [$nodeType, Node::STATUS_PUBLISH]
         );
         return (int) ($row['c'] ?? 0);
