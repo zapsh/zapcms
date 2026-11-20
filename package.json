@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "ZAP CMS 前端资源构建（Vite + SCSS）",
+  "license": "MIT",
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "vite build",
