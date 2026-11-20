@@ -1,0 +1,35 @@
+{
+    "name": "basic",
+    "label": "默认主题",
+    "version": "1.3.0",
+    "description": "Basic 是 ZAP CMS 内置的默认主题，蓝色科技风格，基于 Bootstrap 5 构建，适合企业官网、产品展示等场景。",
+    "author": "ZAP CMS",
+    "options": {
+        "basic_home.slide": "",
+        "basic_home.service_title": "服务项目",
+        "basic_home.service_subtitle": "SERVICES",
+        "basic_home.service1_icon": "fa fa-code",
+        "basic_home.service1_title": "软件开发与定制服务",
+        "basic_home.service1_content": "",
+        "basic_home.service2_icon": "fa fa-cubes",
+        "basic_home.service2_title": "移动应用开发",
+        "basic_home.service2_content": "",
+        "basic_home.service3_icon": "fa fa-television",
+        "basic_home.service3_title": "网站设计与开发",
+        "basic_home.service3_content": "",
+        "basic_home.service4_icon": "fa fa-cloud",
+        "basic_home.service4_title": "云计算与数据管理",
+        "basic_home.service4_content": "",
+        "basic_home.service5_icon": "fa fa-graduation-cap",
+        "basic_home.service5_title": "人工智能与机器学习",
+        "basic_home.service5_content": "",
+        "basic_home.service6_icon": "fa fa-diamond",
+        "basic_home.service6_title": "安全与隐私保护",
+        "basic_home.service6_content": "",
+        "basic_home.about_us": ""
+    },
+    "widget_areas": {
+        "sidebar":"侧边栏"
+    },
+    "screenshot": "screenshot.png"
+}

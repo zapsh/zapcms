@@ -1,0 +1,46 @@
+{
+  "repositories": [
+        {
+            "type": "path",
+            "url": "../zap-php-framework"
+        }
+  ],
+  "name": "zapsh/zapcms",
+  "description": "A simple CMS",
+  "type": "project",
+  "support": {
+    "email": "zapcms@zap.cn",
+    "docs": "https://zap.cn/docs/zapcms"
+  },
+  "require": {
+    "php": ">=8.2",
+    "zapsh/zap-php-framework": "dev-main",
+    "ext-pdo": "*",
+    "ext-gd": "*",
+    "ext-json": "*",
+    "ezyang/htmlpurifier": "^4.0",
+    "phpmailer/phpmailer": "^7.0",
+    "overtrue/pinyin": "^3.0",
+    "twig/twig": "3.*",
+    "monolog/monolog": "^3.12",
+    "predis/predis": "^3.7"
+  },
+  "autoload": {
+    "files":[
+      "app/zapcms/functions.php"
+    ],
+    "psr-4":{
+      "app\\" :"app/",
+      "zapcms\\" :"app/zapcms/",
+      "mods\\" :"mods/"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "require-dev": {
+    "phpstan/phpstan": "^2.3"
+  },
+  "scripts": {
+    "analyse": "@php vendor/phpstan/phpstan/phpstan analyse --memory-limit=1G"
+  }
+}

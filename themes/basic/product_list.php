@@ -1,0 +1,59 @@
+<?php
+defined('IN_ZAPCMS') or die('No permission to access');
+$this->extend('layout/default');
+$this->beginBlock('content');
+?>
+    <?php echo $this->partial('partials/_breadcrumb'); ?>
+    <div class="container">
+        <div class="row">
+            <?php echo $this->partial('partials/_sidebar'); ?>
+            <div class="col-sm-9">
+                <div class="content-wrap">
+                    <?php
+                    // mall 高级搜索集成：mall 启用且注册 mall_product_list 时，由其渲染
+                    // 规格/价格/库存/分类筛选 + 结果网格；否则回退到核心默认列表。
+                    $pageNode = pageState()->node ?: [];
+                    $currentCatalog = (($pageNode['node_type'] ?? '') === 'catalog')
+                        ? (int) $pageNode['id']
+                        : (int) ($catalogId ?? ($_GET['cid'] ?? 0));
+                    $adv = \zapcms\Hook::fire('mall_product_list', $currentCatalog);
+                    if (trim($adv) !== '') {
+                        echo $adv;
+                    } else {
+                    ?>
+                    <div class="row">
+                        <?php if (empty($nodes)): ?>
+                        <div class="col-sm-12">
+                            <p><?php echo __t('front.no_content', '暂无内容'); ?></p>
+                        </div>
+                        <?php else: foreach ($nodes as $node): $imgW = \zapcms\services\NodeType::getConfig($node['node_type'] ?? 'article', 'list_image_width', 270); $imgH = \zapcms\services\NodeType::getConfig($node['node_type'] ?? 'article', 'list_image_height', 210); ?>
+                        <div class="col-sm-4">
+                            <div class="post-content">
+                                <a href="<?php echo smart_node_url($node); ?>" class="zap-list-img-link">
+                                    <img class="zap-list-img" src="<?php echo \zapcms\helpers\ThumbHelper::thumb($node['image'], $imgW, $imgH); ?>" alt="<?php echo htmlspecialchars($node['title']); ?>" loading="lazy" />
+                                </a>
+                                <div class="content-wrap">
+                                    <h5><a href="<?php echo smart_node_url($node); ?>"><?php echo htmlspecialchars($node['title']); ?></a></h5>
+                                    <?php if (!empty($node['meta']['price'])): ?>
+                                    <div class="product-price">
+                                        <span class="product-price-currency">¥</span>
+                                        <span class="product-price-value"><?php echo number_format(floatval($node['meta']['price']), 2); ?></span>
+                                    </div>
+                                    <?php endif; ?>
+                                    <!-- <ul class="list-inline post-meta">
+                                        <li><i class="fa fa-calendar"></i> <?php echo date('Y-m-d', intval($node['pub_time'] ?: 0)); ?></li>
+                                    </ul> -->
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; endif; ?>
+                    </div>
+                    <?php echo $this->partial('partials/_pagination', ['page' => $page ?? null]); ?>
+                    <?php
+                    }
+                    ?>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php $this->endBlock(); ?>

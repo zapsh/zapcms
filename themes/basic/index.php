@@ -1,0 +1,145 @@
+<?php
+defined('IN_ZAPCMS') or die('No permission to access');
+$this->extend('layout/default');
+
+// 轮播数据来自「外观 > 链接管理」中 code 为 home_slide 的分组（系统 options 表，支持分组/定时上下线）；
+// 未配置时回退到主题内置默认图，避免升级后首页空白。
+$defaultSlides = [
+    ['img_path' => '/themes/basic/img/banner1.png', 'link' => '#', 'target' => '_blank'],
+    ['img_path' => '/themes/basic/img/banner2.png', 'link' => '#', 'target' => '_blank'],
+];
+$banners = ad_items('home_slide');
+if (empty($banners)) {
+    $banners = $defaultSlides;
+}
+$latestNews = pageState()->getLatestNews();
+
+?>
+<main class="site-main">
+    <!-- Slider main container -->
+    <div class="blaze-slider home-slider">
+        <div class="blaze-container">
+            <div class="blaze-track-container">
+                <div class="blaze-track">
+                    <?php foreach($banners as $banner){ ?>
+                    <div class="blaze-slide">
+                        <?php $slideTarget = (($banner['target'] ?? '_self') === '_blank') ? '_blank' : '_self'; ?>
+                        <a href="<?php echo $banner['link'] ?? '#';?>" target="<?php echo $slideTarget; ?>" <?php echo $slideTarget === '_blank' ? 'rel="noopener"' : ''; ?> style="background: url('<?php echo $banner['img_path'];?>') no-repeat center center; background-size: cover; ">
+                        </a>
+                    </div>
+                    <?php } ?>
+                </div>
+            </div>
+
+            <div class="blaze-pagination"></div>
+            <button class="blaze-prev" type="button" aria-label="<?php echo __t('front.prev_image', '上一张'); ?>"><i class="fa fa-chevron-left"></i></button>
+            <button class="blaze-next" type="button" aria-label="<?php echo __t('front.next_image', '下一张'); ?>"><i class="fa fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <?php if(option("basic_home.about_us")): ?>
+    <section class="about-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-12 text-center">
+                    <h2 class="section-title"><?php echo __t('front.about_us', '关于我们'); ?></h2>
+                    <p class="desc">About Us</p>
+                    <div class="about-content">
+                        <?php echo option("basic_home.about_us"); ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <?php if(option('basic_home.service_title')): ?>
+    <section class="services">
+        <div class="container">
+            <h2 class="section-title"><?php echo option('basic_home.service_title'); ?></h2>
+            <p class="desc"><?php echo option('basic_home.service_subtitle'); ?></p>
+            <div class="row">
+                <?php 
+                $serviceCount = 0;
+                for ($i = 1; $i < 7; $i++) { 
+                    if(option("basic_home.service{$i}_title")) {
+                        $serviceCount++;
+                    }
+                }
+                $colClass = $serviceCount <= 3 ? 4 : ($serviceCount <= 4 ? 3 : 4);
+                ?>
+                <?php for ($i = 1; $i < 7; $i++) { 
+                    if(!option("basic_home.service{$i}_title")) continue;
+                ?>
+                <div class="col-lg-<?php echo $colClass; ?> col-md-6 col-sm-12">
+                    <div class="service-card">
+                        <?php if(option("basic_home.service{$i}_icon")): ?>
+                        <div class="service-icon">
+                            <i class="<?php echo option("basic_home.service{$i}_icon"); ?>"></i>
+                        </div>
+                        <?php endif; ?>
+                        <h3 class="service-title"><?php echo option("basic_home.service{$i}_title"); ?></h3>
+                        <p class="service-desc"><?php echo option("basic_home.service{$i}_content"); ?></p>
+                    </div>
+                </div>
+                <?php } ?>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
+    
+    <?php if(!empty($latestNews)): ?>
+    <section class="home-area">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="sub_title"><?php echo __t('front.latest_news', '最新动态'); ?></h2>
+                <p class="section-desc">Latest News</p>
+            </div>
+            <div class="home_list">
+                <div class="row">
+                    <?php foreach ($latestNews as $news){ ?>
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="news-card">
+                            <a href="<?php echo smart_node_url($news); ?>" class="news-link">
+                                <div class="news-image">
+                                    <img src="<?php echo \zapcms\helpers\ThumbHelper::thumb($news['image'], (int)\zapcms\services\NodeType::getConfig($news['node_type'] ?? 'article', 'list_image_width', 400), (int)\zapcms\services\NodeType::getConfig($news['node_type'] ?? 'article', 'list_image_height', 300)); ?>" alt="<?php echo $news['title']; ?>">
+                                    <div class="news-overlay">
+                                        <i class="fa fa-link"></i>
+                                    </div>
+                                </div>
+                                <div class="news-content">
+                                    <h3 class="news-title"><?php echo $news['title']; ?></h3>
+                                    <p class="news-excerpt"><?php echo \zap\util\Str::truncate(strip_tags($news['content']),80); ?></p>
+                                    <span class="news-date"><i class="fa fa-calendar"></i> <?php echo date('Y-m-d', $news['pub_time']); ?></span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    <?php } ?>
+                </div>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
+</main>
+
+<script>
+    (function () {
+        var sliderEl = document.querySelector('.home-slider');
+        if (!sliderEl || typeof BlazeSlider === 'undefined') return;
+        new BlazeSlider(sliderEl, {
+            all: {
+                slidesToShow: 1,
+                slidesToScroll: 1,
+                loop: true,
+                enableAutoplay: true,
+                autoplayInterval: 5000,
+                autoplayDirection: 'to left',
+                transitionDuration: 1000,
+                transitionTimingFunction: 'ease',
+                enablePagination: true,
+                draggable: true,
+            },
+        });
+    })();
+</script>

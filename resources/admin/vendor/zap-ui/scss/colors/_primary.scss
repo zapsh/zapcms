@@ -1,0 +1,284 @@
+@use "sass:map";
+
+//
+// Colors: `primary` as a theme colour
+// --------------------------------------------------------
+// Bootstrap bakes `$primary` into components at build time — `.btn-primary`
+// carries `--bs-btn-bg: #0d6efd`, not `var(--bs-primary)` — so overriding
+// `--bs-primary` alone repaints utilities and leaves buttons blue.
+//
+// This block rewires those components to variables, then points the variables
+// at a palette colour per `data-zui-primary` value:
+//
+//   <html lang="en" data-zui-primary="teal">
+//
+// Nothing applies without the attribute, and it works on any container, so a
+// section of a page can carry its own primary. Requested in #6107.
+//
+
+// Which way a state moves: Bootstrap darkens a colour that carries white text
+// and lightens one that carries dark text (see its button-variant mixin).
+@function zui-primary-state($color, $shade, $tint, $text) {
+  @if $text == $color-contrast-light or $text == $zui-palette-yiq-text-light {
+    @return zui-hex(shade-color($color, $shade));
+  }
+
+  @return zui-hex(tint-color($color, $tint));
+}
+
+// Defaults, so `data-zui-primary` also works with a hand-written
+// `--bs-primary` (a brand colour that is not in the palette).
+[data-zui-primary] {
+  --#{$prefix}focus-ring-color: rgba(var(--#{$prefix}primary-rgb), #{$focus-ring-opacity});
+  --#{$zui-prefix}primary-color: #{$color-contrast-light};
+  --#{$zui-prefix}primary-color-rgb: #{to-rgb($color-contrast-light)};
+  --#{$zui-prefix}primary-hover: var(--#{$prefix}primary);
+  --#{$zui-prefix}primary-hover-border: var(--#{$prefix}primary);
+  --#{$zui-prefix}primary-active: var(--#{$prefix}primary);
+  --#{$zui-prefix}primary-active-border: var(--#{$prefix}primary);
+}
+
+// Shade the hover / active states of a hand-written colour where the browser
+// can do the maths. Guarded: without the guard, older browsers would resolve
+// the variable to nothing and paint a transparent button.
+@supports (color: color-mix(in srgb, red 50%, black)) {
+  [data-zui-primary] {
+    --#{$zui-prefix}primary-hover: color-mix(in srgb, var(--#{$prefix}primary) 85%, #{$black});
+    --#{$zui-prefix}primary-hover-border: color-mix(in srgb, var(--#{$prefix}primary) 80%, #{$black});
+    --#{$zui-prefix}primary-active: color-mix(in srgb, var(--#{$prefix}primary) 80%, #{$black});
+    --#{$zui-prefix}primary-active-border: color-mix(in srgb, var(--#{$prefix}primary) 75%, #{$black});
+  }
+}
+
+// The presets: every palette colour, plus Bootstrap's own theme colours, so
+// `data-zui-primary="danger"` works without the palette being involved. The
+// tokens are aliases — dark mode is already handled where they are defined.
+@each $name, $value in map.merge($theme-colors, $zui-palette) {
+  @if $name != "primary" {
+    $link-hover: shift-color($value, $link-shade-percentage);
+    // Palette colours follow this sheet's contrast rule; Bootstrap's own theme
+    // colours keep Bootstrap's, so `data-zui-primary="info"` agrees with
+    // `.btn-info` and `.text-bg-info` on the same page rather than taking the
+    // v3 YIQ rule's white text on cyan (1.96:1).
+    $text: color-contrast($value);
+
+    @if map.has-key($zui-palette, $name) {
+      $text: zui-contrast($value);
+    }
+
+    [data-zui-primary="#{$name}"] {
+      --#{$prefix}primary: var(--#{$prefix}#{$name});
+      --#{$prefix}primary-rgb: var(--#{$prefix}#{$name}-rgb);
+      --#{$prefix}primary-text-emphasis: var(--#{$prefix}#{$name}-text-emphasis);
+      --#{$prefix}primary-bg-subtle: var(--#{$prefix}#{$name}-bg-subtle);
+      --#{$prefix}primary-border-subtle: var(--#{$prefix}#{$name}-border-subtle);
+      --#{$prefix}link-color: var(--#{$prefix}#{$name});
+      --#{$prefix}link-color-rgb: var(--#{$prefix}#{$name}-rgb);
+      --#{$prefix}link-hover-color: #{zui-hex($link-hover)};
+      --#{$prefix}link-hover-color-rgb: #{to-rgb($link-hover)};
+      --#{$zui-prefix}primary-hover: #{zui-primary-state($value, $btn-hover-bg-shade-amount, $btn-hover-bg-tint-amount, $text)};
+      --#{$zui-prefix}primary-hover-border: #{zui-primary-state($value, $btn-hover-border-shade-amount, $btn-hover-border-tint-amount, $text)};
+      --#{$zui-prefix}primary-active: #{zui-primary-state($value, $btn-active-bg-shade-amount, $btn-active-bg-tint-amount, $text)};
+      --#{$zui-prefix}primary-active-border: #{zui-primary-state($value, $btn-active-border-shade-amount, $btn-active-border-tint-amount, $text)};
+
+      // The shared block above already says white; only the light colours,
+      // which carry dark text, need to say otherwise
+      @if $text != $color-contrast-light {
+        --#{$zui-prefix}primary-color: #{$text};
+        --#{$zui-prefix}primary-color-rgb: #{to-rgb($text)};
+      }
+    }
+  }
+}
+
+// Links carry Bootstrap's dark-mode tint, as they do for the default primary.
+@if $enable-dark-mode {
+  @include color-mode(dark, true) {
+    @each $name, $value in map.merge($theme-colors, $zui-palette) {
+      @if $name != "primary" {
+        $link-dark: tint-color($value, 40%);
+        $link-dark-hover: tint-color($link-dark, 20%);
+
+        // Both selectors: `data-bs-theme` and `data-zui-primary` usually sit on
+        // the same <html> element, which a descendant combinator would miss.
+        &[data-zui-primary="#{$name}"],
+        [data-zui-primary="#{$name}"] {
+          --#{$prefix}link-color: #{zui-hex($link-dark)};
+          --#{$prefix}link-color-rgb: #{to-rgb($link-dark)};
+          --#{$prefix}link-hover-color: #{zui-hex($link-dark-hover)};
+          --#{$prefix}link-hover-color-rgb: #{to-rgb($link-dark-hover)};
+        }
+      }
+    }
+  }
+}
+
+// `data-zui-contrast="aa"` for the primary text colour, same rule as the
+// utilities: flip only where the palette's own pick misses AA (#6110).
+@each $name, $value in map.merge($theme-colors, $zui-palette) {
+  @if $name != "primary" {
+    $aa: zui-contrast-aa($value);
+    $text: color-contrast($value);
+
+    @if map.has-key($zui-palette, $name) {
+      $text: zui-contrast($value);
+    }
+
+    @if zui-needs-aa($value, $text) {
+      // `data-zui-contrast` and `data-zui-primary` are usually the same element
+      [data-zui-contrast="aa"][data-zui-primary="#{$name}"],
+      [data-zui-contrast="aa"] [data-zui-primary="#{$name}"] {
+        --#{$zui-prefix}primary-color: #{$aa};
+        --#{$zui-prefix}primary-color-rgb: #{to-rgb($aa)};
+      }
+    }
+  }
+}
+
+// The components that bake the colour
+// --------------------------------------------------------
+// Deliberately a second `[data-zui-primary]` block: the variable defaults above
+// have to be declared before the per-colour presets (same specificity), and the
+// component rules have to come after them.
+/* stylelint-disable-next-line no-duplicate-selectors */
+[data-zui-primary] {
+  .btn-primary {
+    --#{$prefix}btn-color: var(--#{$zui-prefix}primary-color);
+    --#{$prefix}btn-bg: var(--#{$prefix}primary);
+    --#{$prefix}btn-border-color: var(--#{$prefix}primary);
+    --#{$prefix}btn-hover-color: var(--#{$zui-prefix}primary-color);
+    --#{$prefix}btn-hover-bg: var(--#{$zui-prefix}primary-hover);
+    --#{$prefix}btn-hover-border-color: var(--#{$zui-prefix}primary-hover-border);
+    --#{$prefix}btn-focus-shadow-rgb: var(--#{$prefix}primary-rgb);
+    --#{$prefix}btn-active-color: var(--#{$zui-prefix}primary-color);
+    --#{$prefix}btn-active-bg: var(--#{$zui-prefix}primary-active);
+    --#{$prefix}btn-active-border-color: var(--#{$zui-prefix}primary-active-border);
+    --#{$prefix}btn-disabled-color: var(--#{$zui-prefix}primary-color);
+    --#{$prefix}btn-disabled-bg: var(--#{$prefix}primary);
+    --#{$prefix}btn-disabled-border-color: var(--#{$prefix}primary);
+  }
+
+  .btn-outline-primary {
+    --#{$prefix}btn-color: var(--#{$prefix}primary);
+    --#{$prefix}btn-border-color: var(--#{$prefix}primary);
+    --#{$prefix}btn-hover-color: var(--#{$zui-prefix}primary-color);
+    --#{$prefix}btn-hover-bg: var(--#{$prefix}primary);
+    --#{$prefix}btn-hover-border-color: var(--#{$prefix}primary);
+    --#{$prefix}btn-focus-shadow-rgb: var(--#{$prefix}primary-rgb);
+    --#{$prefix}btn-active-color: var(--#{$zui-prefix}primary-color);
+    --#{$prefix}btn-active-bg: var(--#{$prefix}primary);
+    --#{$prefix}btn-active-border-color: var(--#{$prefix}primary);
+    --#{$prefix}btn-disabled-color: var(--#{$prefix}primary);
+    --#{$prefix}btn-disabled-border-color: var(--#{$prefix}primary);
+  }
+
+  .btn-link {
+    --#{$prefix}btn-focus-shadow-rgb: var(--#{$prefix}primary-rgb);
+  }
+
+  // `.text-bg-primary` hard-codes white; the rest of it already reads the token
+  .text-bg-primary {
+    color: var(--#{$zui-prefix}primary-color) !important;
+  }
+
+  .link-primary {
+    &:hover,
+    &:focus {
+      color: RGBA(var(--#{$prefix}link-hover-color-rgb), var(--#{$prefix}link-opacity, 1)) !important;
+      text-decoration-color: RGBA(var(--#{$prefix}link-hover-color-rgb), var(--#{$prefix}link-underline-opacity, 1)) !important;
+    }
+  }
+
+  .dropdown-menu {
+    --#{$prefix}dropdown-link-active-color: var(--#{$zui-prefix}primary-color);
+    --#{$prefix}dropdown-link-active-bg: var(--#{$prefix}primary);
+  }
+
+  .nav-pills {
+    --#{$prefix}nav-pills-link-active-color: var(--#{$zui-prefix}primary-color);
+    --#{$prefix}nav-pills-link-active-bg: var(--#{$prefix}primary);
+  }
+
+  .pagination {
+    --#{$prefix}pagination-active-color: var(--#{$zui-prefix}primary-color);
+    --#{$prefix}pagination-active-bg: var(--#{$prefix}primary);
+    --#{$prefix}pagination-active-border-color: var(--#{$prefix}primary);
+    // Sass does not evaluate `$variables` inside a custom property value — it
+    // emits them verbatim — so every part of this has to be interpolated or a
+    // `var()`. Reuses the focus-ring token set on `[data-zui-primary]` above.
+    --#{$prefix}pagination-focus-box-shadow: 0 0 #{$focus-ring-blur} #{$focus-ring-width} var(--#{$prefix}focus-ring-color);
+  }
+
+  .progress,
+  .progress-stacked {
+    --#{$prefix}progress-bar-color: var(--#{$zui-prefix}primary-color);
+    --#{$prefix}progress-bar-bg: var(--#{$prefix}primary);
+  }
+
+  .list-group {
+    --#{$prefix}list-group-active-color: var(--#{$zui-prefix}primary-color);
+    --#{$prefix}list-group-active-bg: var(--#{$prefix}primary);
+    --#{$prefix}list-group-active-border-color: var(--#{$prefix}primary);
+  }
+
+  // The open-state chevron is a data URI in Bootstrap's blue; the closed one is
+  // body-coloured and rotates just the same
+  .accordion {
+    --#{$prefix}accordion-btn-active-icon: var(--#{$prefix}accordion-btn-icon);
+  }
+
+  // Forms
+  .form-control:focus,
+  .form-select:focus {
+    border-color: var(--#{$prefix}primary);
+    box-shadow: var(--#{$prefix}box-shadow-inset), 0 0 0 $input-btn-focus-width rgba(var(--#{$prefix}primary-rgb), #{$focus-ring-opacity});
+  }
+
+  .form-check-input:focus {
+    border-color: var(--#{$prefix}primary);
+    box-shadow: 0 0 0 $input-btn-focus-width rgba(var(--#{$prefix}primary-rgb), #{$focus-ring-opacity});
+  }
+
+  .form-check-input:checked,
+  .form-check-input[type="checkbox"]:indeterminate {
+    background-color: var(--#{$prefix}primary);
+    border-color: var(--#{$prefix}primary);
+  }
+
+  // Focus paints a blue knob into a data URI; keep the resting one instead
+  .form-switch .form-check-input:focus:not(:checked) {
+    --#{$prefix}form-switch-bg: #{escape-svg($form-switch-bg-image)};
+  }
+
+  .form-range {
+    &::-webkit-slider-thumb {
+      background-color: var(--#{$prefix}primary);
+    }
+
+    &::-moz-range-thumb {
+      background-color: var(--#{$prefix}primary);
+    }
+  }
+
+  // ZapUI's own primary hooks
+  .card-primary,
+  .bg-primary,
+  .text-bg-primary {
+    --#{$zui-prefix}card-variant-bg: var(--#{$prefix}primary);
+    --#{$zui-prefix}card-variant-bg-rgb: var(--#{$prefix}primary-rgb);
+    --#{$zui-prefix}card-variant-color: var(--#{$zui-prefix}primary-color);
+    --#{$zui-prefix}card-variant-color-rgb: var(--#{$zui-prefix}primary-color-rgb);
+  }
+
+  .direct-chat-primary {
+    --#{$zui-prefix}direct-chat-color: var(--#{$zui-prefix}primary-color);
+    --#{$zui-prefix}direct-chat-bg: var(--#{$prefix}primary);
+  }
+
+  .toast-primary {
+    --#{$prefix}toast-header-color: var(--#{$zui-prefix}primary-color);
+    --#{$prefix}toast-header-bg: var(--#{$prefix}primary);
+    --#{$prefix}toast-header-border-color: var(--#{$prefix}primary);
+    --#{$prefix}toast-border-color: var(--#{$prefix}primary);
+  }
+}

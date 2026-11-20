@@ -1,0 +1,26 @@
+{% extends 'layout/default.twig' %}
+
+{% block content %}
+{{ include('partials/_breadcrumb.twig') }}
+<div class="container">
+    <div class="row">
+        {{ include('partials/_sidebar.twig') }}
+        <div class="col-sm-9">
+            <div class="content-wrap detail-wrap">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <article class="single-post">
+                            <header class="entry-header">
+                                <h1 class="entry-title">{{ node.title }}</h1>
+                            </header>
+                            <div class="entry-content">
+                                {{ node.content|raw }}
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

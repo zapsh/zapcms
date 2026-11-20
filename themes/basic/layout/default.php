@@ -1,0 +1,161 @@
+<?php
+defined('IN_ZAPCMS') or die('No permission to access');
+
+$state = pageState();
+// 导航 / 页脚数据源：惰性取数（Nav 服务，请求级缓存），主题显示时才计算
+$catalogMenu = nav_menu('top');
+$footerCatalogMenu = nav_menu('footer');
+
+// ── SEO 兜底 ──────────────────────────────────────────────
+// 控制器默认不设置 pageTitle，这里统一补全，保证每个页面都有
+// <title>/keywords/description，而不是整段 meta 都不输出。
+$siteTitle  = trim((string)option('website.title', 'ZAP CMS')) ?: 'ZAP CMS';
+$siteSlogan = trim((string)option('website.slogan', ''));
+$node       = $state['node'] ?? [];
+$nodeTitle  = trim((string)($node['title'] ?? ''));
+
+if (trim((string)$state['pageTitle']) === '') {
+    if (!empty($state['is404'])) {
+        $pageTitle = __t('front.title_not_found', '页面未找到') . ' - ' . $siteTitle;
+    } elseif (!empty($state['isSearch'])) {
+        $pageTitle = __t('front.title_search_result', '搜索结果') . ' - ' . $siteTitle;
+    } elseif ($nodeTitle !== '' && $nodeTitle !== $siteTitle) {
+        $pageTitle = $nodeTitle . ' - ' . $siteTitle;
+    } elseif ($siteSlogan !== '') {
+        $pageTitle = $siteTitle . ' - ' . $siteSlogan;
+    } else {
+        $pageTitle = $siteTitle;
+    }
+    $state['pageTitle'] = $pageTitle;
+}
+
+if (trim((string)$state['pageKeywords']) === '') {
+    $state['pageKeywords'] = trim((string)($node['keywords'] ?? ''))
+        ?: (string)option('website.keywords', '');
+}
+
+if (trim((string)$state['pageDescription']) === '') {
+    $description = trim((string)($node['description'] ?? ''));
+    if ($description === '') {
+        $description = trim(strip_tags((string)($node['excerpt'] ?? '')));
+    }
+    if ($description === '') {
+        $description = (string)option('website.description', '');
+    }
+    $state['pageDescription'] = $description;
+}
+?>
+<!DOCTYPE html>
+<html lang="<?php echo \zapcms\services\Locale::htmlLang(); ?>">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <?php echo $state->printMeta(); ?>
+    <link href="<?php echo theme_url('css/bootstrap.min.css'); ?>" rel="stylesheet">
+    <link href="<?php echo theme_url('css/font-awesome.min.css'); ?>" rel="stylesheet">
+    <link href="<?php echo theme_url('css/style.css'); ?>" rel="stylesheet">
+    <?php if ($state->isHome): ?>
+    <link href="<?php echo base_url('/assets/plugins/blazeslider/blaze-slider.css'); ?>" rel="stylesheet">
+    <script src="<?php echo base_url('/assets/plugins/blazeslider/blaze-slider.min.js'); ?>"></script>
+    <?php endif; ?>
+    <link href="<?php echo theme_url('css/page-styles.css'); ?>" rel="stylesheet">
+
+    <?php echo option('website.head_script'); ?>
+    <?php print_styles(); ?>
+    <script>window.LANG = <?php echo front_lang_json(); ?>;</script>
+</head>
+<body>
+
+<header class="site-header">
+    <form action="<?php echo append_url_suffix(locale_site_url('/search')); ?>">
+    <div class="top d-none d-md-block">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-6">
+                    <?php echo render_language_switcher('list-inline mb-0 small'); ?>
+                </div>
+                <div class="col-sm-6">
+                    <ul class="list-inline float-end">
+                        <li class="list-inline-item">
+                            <input autocomplete="off" type="text" name="q" value="" placeholder="<?php echo __t('front.site_search', '站内搜索'); ?>" />
+                            <input type="submit" value="<?php echo __t('front.search', '搜索'); ?>" />
+                        </li>
+                        <li class="list-inline-item">
+                            <a href="tel:<?php echo htmlspecialchars(option('website.tel')); ?>">
+                                <i class="fa fa-phone"></i> <?php echo htmlspecialchars(option('website.tel')); ?>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    </form>
+
+    <?php echo $this->partial('partials/_navbar', ['catalogMenu' => $catalogMenu]); ?>
+</header>
+
+<?php echo $this->block('content'); ?>
+
+<?php echo $this->partial('partials/_footer', ['footerCatalogMenu' => $footerCatalogMenu]); ?>
+
+
+<script src="<?php echo theme_url('js/bootstrap.bundle.min.js'); ?>"></script>
+
+<?php
+print_scripts(ASSETS_BODY);
+print_scripts(ASSETS_BODY_TEXT);
+?>
+
+<?php echo option('website.foot_script'); ?>
+
+<div class="back-to-top">
+    <i class="fa fa-chevron-up"></i>
+</div>
+
+<script>
+(function () {
+    // 移动端多级菜单：点击展开 / 收起（桌面端由 CSS hover 负责）
+    document.querySelectorAll('.main-navbar-nav .dropdown-toggle').forEach(function (toggler) {
+        toggler.addEventListener('click', function (e) {
+            if (window.innerWidth < 992) {
+                e.preventDefault();
+                e.stopPropagation();
+                var item = toggler.closest('.dropdown');
+                if (!item) return;
+                var willShow = !item.classList.contains('show');
+                // 展开当前项时收起同级其他子菜单，避免手机端菜单过长
+                var siblings = item.parentNode ? item.parentNode.children : [];
+                Array.prototype.forEach.call(siblings, function (sib) {
+                    if (sib !== item) sib.classList.remove('show');
+                });
+                item.classList.toggle('show', willShow);
+            }
+        });
+    });
+
+    // 回到桌面端时清理遗留的展开态
+    window.addEventListener('resize', function () {
+        if (window.innerWidth >= 992) {
+            document.querySelectorAll('.main-navbar-nav .dropdown.show').forEach(function (item) {
+                item.classList.remove('show');
+            });
+        }
+    });
+
+    // 返回顶部
+    var btn = document.querySelector('.back-to-top');
+    if (btn) {
+        btn.classList.toggle('show', window.scrollY > 300);
+        window.addEventListener('scroll', function () {
+            btn.classList.toggle('show', window.scrollY > 300);
+        });
+        btn.addEventListener('click', function () {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+})();
+</script>
+
+</body>
+</html>

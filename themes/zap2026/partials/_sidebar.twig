@@ -1,0 +1,30 @@
+{% set state = pageState %}
+{% set node = node|default({}) %}
+{% set nodeId = nodeId|default(state.nodeId ?? 0) %}
+{# 侧栏栏目导航：模板显示时才按需取数（Nav 服务，请求级缓存），无需 controller 预取 #}
+{% set catalogs = subCatalogList|default(category_nav()) %}
+
+<aside class="sidebar col-sm-3">
+    {# 主题小工具区域：sidebar（后台「外观 > 小工具」配置，未配置时输出空） #}
+    {{ widget('sidebar') }}
+
+    {% if catalogs is not empty %}
+        {% set catalogPaths = catalog_path() %}
+        {% set firstCatalog = catalogPaths[0] ?? null %}
+        {% set firstCatalogTitle = firstCatalog.title ?? '' %}
+        {% set lastCatalog = catalogPaths is not empty ? catalogPaths|last : null %}
+        {% set lastCatalogId = lastCatalog.id ?? 0 %}
+        {# 分支根项（父级）已作为标题显示，列表只渲染其子级（当前层级），避免重复；无子级时回退渲染根项 #}
+        {% set rootBranch = catalogs[0] ?? {} %}
+        {% set sidebarItems = rootBranch.children is defined and rootBranch.children is not empty ? rootBranch.children : catalogs %}
+        <div class="widget">
+            <h4>{{ firstCatalogTitle ? firstCatalogTitle : (node.title ?? '') }}</h4>
+            <ul>
+                {{ include('partials/_sidebar_items.twig', {
+                    items: sidebarItems,
+                    lastCatalogId: lastCatalogId,
+                }) }}
+            </ul>
+        </div>
+    {% endif %}
+</aside>

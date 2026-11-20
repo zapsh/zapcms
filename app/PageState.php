@@ -1,0 +1,603 @@
+<?php
+namespace app;
+
+use ArrayObject;
+use zapcms\models\Node;
+use zapcms\services\Catalog;
+use zapcms\services\Locale;
+use zapcms\services\Menu;
+use zapcms\services\MenuItem;
+use zapcms\services\Translator;
+use zap\facades\Cache;
+
+defined('IN_ZAPCMS') or die('No permission to access');
+
+/**
+ * PageState - 页面状态对象
+ *
+ * 封装当前页面渲染所需的所有状态数据，统一从控制器传递到视图。
+ * 通过 pageState() 全局函数访问单例。
+ * 
+ * @property bool         $isHome          是否首页
+ * @property bool         $isSearch        是否搜索页
+ * @property bool         $isCatalog       是否栏目页
+ * @property bool         $isNode          是否节点页
+ * @property bool         $is404           是否 404 页面
+ * @property bool         $isDesignMode    是否设计模式
+ * @property bool         $isAdmin         是否后台管理页面
+ * @property bool         $isMobile        是否移动端访问
+ * @property bool         $isAjax          是否 Ajax 请求
+ * @property bool         $isPost          是否 POST 请求
+ * @property bool         $isGet           是否 GET 请求
+ * @property bool         $isPjax          是否 PJAX 请求
+ * @property bool         $isPreview       是否预览模式
+ * @property bool         $isPreviewMode   是否预览模式（同上）
+ * @property bool         $isPreviewAdmin  是否后台预览模式
+ * @property bool         $isPreviewFront  是否前台预览模式
+ * @property bool         $isPreviewNode   是否节点预览模式
+ * @property bool         $isPreviewCatalog 是否栏目预览模式
+ * @property bool         $isPreviewSearch 是否搜索预览模式
+ * @property bool         $isPreview404    是否 404 预览模式
+ * @property bool         $isPreviewAjax   是否 Ajax 预览模式
+ * @property bool         $isPreviewPjax   是否 PJAX 预览模式
+ * @property bool         $isPreviewPost   是否 POST 预览模式
+ * @property bool         $isPreviewGet    是否 GET 预览模式
+ * @property bool         $isPreviewMobile 是否移动端预览模式
+ * @property string       $pageTitle       页面标题（SEO title）
+ * @property string       $pageKeywords    页面关键词（SEO keywords）
+ * @property string       $pageDescription 页面描述（SEO description）
+ * @property int          $catalogId       当前栏目 ID
+ * @property int          $nodeId          当前节点 ID
+ * @property string       $nodeType        当前节点类型
+ * @property string       $nodeTypeLabel   节点类型中文标签，如「新闻」「产品」
+ * @property array        $node            当前节点完整数据
+ * @property string|null  $image           节点封面图
+ * @property array[]      $catalogList     栏目列表
+ * @property array[]      $subCatalogList  子栏目列表
+ * @property array[]      $parentIds       父级 ID 列表（用于面包屑）
+ * @property array[]      $latestNews      最新动态列表
+ * @property string       $latestNewsUrl   最新动态栏目链接
+ * @property string       $latestNewsName  最新动态栏目名称
+ * @property bool         $designMode      是否处于设计模式
+ * @property string       $theme           当前主题名称
+ * @property array        $setting         当前主题配置
+ * @property string       $canonicalUrl    当前页面的规范化 URL
+ * @property array        $localeUrls      各语言的页面地址（locale => url，用于 hreflang）
+ * @property array        $catalogPaths    当前栏目路径数组（用于面包屑）
+ * @property string       $nodeMimeType    当前节点的 MIME 类型（如 article、product、page 等）
+ * @property string       $nodeMimeTypeLabel 当前节点的 MIME 类型中文标签
+ * @property string       $nodeSlug        当前节点的 slug（用于生成 URL）
+ * @property string       $nodeUrl         当前节点的 URL
+ * @property string       $nodeTitle       当前节点的标题
+ * @property string       $nodeDescription 当前节点的描述
+ * @property string       $nodeKeywords    当前节点的关键词
+ * @property string       $nodeImage       当前节点的封面图
+ * @property string       $nodeContent     当前节点的内容
+ * @property string       $nodeCreatedAt   当前节点的创建时间
+ * @property string       $nodeUpdatedAt   当前节点的更新时间
+ * @property string       $nodePublishedAt 当前节点的发布时间
+ * @property string       $nodeAuthor      当前节点的作者
+ * @property string       $nodeStatus      当前节点的状态
+ * @property string       $nodeViews       当前节点的浏览量
+ * @property array        $catalog         当前节点所属的栏目数据
+ * @property array|string|bool $tags       当前节点的标签（数组或字符串）
+ * @property array|string|bool $tag        当前节点的单个标签（数组或字符串）
+ *
+ * @method static PageState instance() 获取单例
+ */
+class PageState extends ArrayObject
+{
+    private static ?PageState $instance = null;
+
+    public function __construct()
+    {
+        parent::__construct([], ArrayObject::STD_PROP_LIST | ArrayObject::ARRAY_AS_PROPS, 'ArrayIterator');
+    }
+
+    /**
+     * 重写 offsetGet：键不存在时返回 null，避免 PHP 8 下
+     * ArrayObject::offsetGet 触发 "Undefined array key" 警告。
+     */
+    public function offsetGet(mixed $key): mixed
+    {
+        return $this->offsetExists($key) ? parent::offsetGet($key) : null;
+    }
+
+    /**
+     * 获取单例实例（自动创建）
+     */
+    public static function instance(): self
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    /**
+     * 重置单例（用于测试或重新初始化）
+     */
+    public static function reset(): void
+    {
+        self::$instance = null;
+    }
+
+    // ─── 便捷访问方法 ───────────────────────────────────────
+
+    /**
+     * 获取主题配置项
+     *
+     * @param string $key     配置键，如 'basic_home.slide'
+     * @param mixed  $default 默认值
+     * @return mixed
+     */
+    public function themeSetting(string $key, $default = null)
+    {
+        return $this->setting[$key] ?? $default;
+    }
+
+    /**
+     * 判断是否有设置项
+     */
+    public function hasThemeSetting(string $key): bool
+    {
+        return isset($this->setting[$key]) && !empty($this->setting[$key]);
+    }
+
+    /**
+     * 是否有子栏目
+     */
+    public function hasSubCatalogs(): bool
+    {
+        return !empty($this['subCatalogList']);
+    }
+
+    /**
+     * 是否有最新动态
+     */
+    public function hasLatestNews(): bool
+    {
+        return !empty($this['latestNews']);
+    }
+
+    /**
+     * 获取最新动态列表（带缓存）
+     *
+     * @param int $limit 条数
+     * @return array|null
+     */
+    public function getLatestNews(int $limit = 4): ?array
+    {
+        if (empty($this['latestNews'])) {
+            $this['latestNews'] = Cache::get('home_latest_news', function () use ($limit) {
+                return Node::where('status', Node::STATUS_PUBLISH)
+                    ->where('node_type', 'article')
+                    ->limit($limit)
+                    ->get(FETCH_ASSOC);
+            }, 300);
+        }
+        return $this['latestNews'];
+    }
+
+    /**
+     * 取菜单导航树（供主题导航/页脚使用）
+     *
+     * 唯一数据源：后台「外观 > 菜单」构建的 menu_items。
+     * 支持两种入参：
+     *   - 位置 key（top / left / footer / 自定义）：取该位置当前分配的菜单；
+     *   - 菜单 id（int 或数字字符串）：直接按 zap_menus.id 取对应菜单。
+     * 译文在每次请求时叠加，避免跨语言污染缓存。
+     *
+     * @param int|string $key 菜单 id 或位置 key
+     */
+    public function getNavMenu(int|string $key): array
+    {
+        $tree = $this->resolveMenuTree($key);
+        $tree = $this->applyMenuTranslation($tree) ?: [];
+        return $this->markActivePath($tree);
+    }
+
+    /** 按菜单 id 或位置 key 读取原始菜单树 */
+    protected function resolveMenuTree(int|string $key): array
+    {
+        $items = MenuItem::instance();
+        if (is_int($key) || ctype_digit((string) $key)) {
+            $id = (int) $key;
+            return Menu::instance()->get($id) ? $items->tree($id) : [];
+        }
+        return $items->getPositionMenu($key);
+    }
+
+    /**
+     * 给导航树中「当前激活节点及其全部祖先」打 active 标记
+     *
+     * 子菜单选中时父级（及其上级链路）也应高亮（类似 WordPress 的
+     * current-menu-ancestor）。模板只需判断 item.active。
+     */
+    protected function markActivePath(array $tree): array
+    {
+        // 当前页面可能命中的 id 集合：
+        //  - nodeId：栏目页 / 内容页的节点 id（菜单项指向该内容时精确命中）
+        //  - catalogId + catalogPaths：内容页时 nodeId 是内容 id，菜单树里是栏目 id，
+        //    需用「所属栏目及其路径」匹配，父级才能跟随子项高亮
+        $ids = [];
+        $nodeId = $this['nodeId'] ?? null;
+        $exactIds = []; // 仅精确命中（不含栏目路径）：顶部导航等只按菜单结构高亮的场景
+        if ($nodeId !== null && $nodeId !== '') {
+            $ids[(string) $nodeId] = true;
+            $exactIds[(string) $nodeId] = true;
+        }
+        $catalogId = (int) ($this['catalogId'] ?? 0);
+        if ($catalogId > 0) {
+            $ids[(string) $catalogId] = true;
+        }
+        foreach (($this['catalogPaths'] ?? []) as $p) {
+            $pid = (int) ($p['id'] ?? 0);
+            if ($pid > 0) {
+                $ids[(string) $pid] = true;
+            }
+        }
+        if ($ids === []) {
+            return $tree;
+        }
+
+        // 注意：必须让递归返回修改后的数组再回填，否则按值传递会因写时分离
+        // 导致所有 active 标记停留在内部副本上，最终 return 的原树一个标记都没有
+        $walk = function (array $items) use (&$walk, $ids, $exactIds): array {
+            foreach ($items as $key => $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+                $childActive = false;
+                $childExact = false;
+                if (!empty($item['children'])) {
+                    $item['children'] = $walk($item['children']);
+                    foreach ($item['children'] as $child) {
+                        if (!empty($child['active'])) {
+                            $childActive = true;
+                        }
+                        if (!empty($child['exact'])) {
+                            $childExact = true;
+                        }
+                    }
+                }
+                // active：精确命中 + 栏目路径命中 + 子项链路（侧栏分支选择依赖栏目路径命中）
+                if ($childActive || isset($ids[(string) ($item['id'] ?? '')])) {
+                    $item['active'] = true;
+                }
+                // exact：仅菜单结构内精确命中及其子项链路（顶部导航高亮用，
+                // 不受「内容属于某栏目」影响，避免所属栏目分支跟着亮）
+                if ($childExact || isset($exactIds[(string) ($item['id'] ?? '')])) {
+                    $item['exact'] = true;
+                }
+                $items[$key] = $item;
+            }
+            return $items;
+        };
+
+        return $walk($tree);
+    }
+
+    /**
+     * 取侧边栏目录树：从该位置的 menu_items 菜单中，返回包含当前页面的顶级分支
+     *
+     * 命中分支有子级时返回该分支（模板渲染其子级，即当前层级）；
+     * 分支是叶子（如顶级单页栏目、无子分类的顶级栏目）或未命中时，
+     * 回退为整棵菜单树（全部顶级栏目），保证侧栏始终有导航内容。
+     *
+     * @param string $position 菜单位置 key（如 left）
+     */
+    public function getSidebarMenu(string $position = 'left'): array
+    {
+        $branches = $this->getNavMenu($position);
+        if ($branches === []) {
+            return [];
+        }
+
+        // 1) 优先：精确包含当前内容节点 id 的分支（栏目页时 nodeId 即栏目节点 id，同样命中）
+        $nodeId = $this['nodeId'] ?? null;
+        if ($nodeId !== null && $nodeId !== '') {
+            foreach ($branches as $branch) {
+                if (is_array($branch) && $this->branchContainsId($branch, (string) $nodeId)) {
+                    return $this->pickSidebarBranch($branch, $branches);
+                }
+            }
+        }
+
+        // 2) 兜底：第一个祖先链路命中的分支（内容详情页等菜单树里没有内容 id 的场景）
+        foreach ($branches as $branch) {
+            if (is_array($branch) && !empty($branch['active'])) {
+                return $this->pickSidebarBranch($branch, $branches);
+            }
+        }
+        return $branches; // 3) 未命中：展示整棵菜单树
+        // 3) 未命中：展示整棵菜单树
+        // return $this->wrapFullTree($branches);
+    }
+
+    /**
+     * 命中分支选择：叶子分支（无子级）单独展示没有导航意义，回退为整棵菜单树
+     */
+    protected function pickSidebarBranch(array $branch, array $branches): array
+    {
+        if (!empty($branch['children'])) {
+            return [$branch];
+        }
+        return $this->wrapFullTree($branches);
+    }
+
+    /**
+     * 包装整棵菜单树为单个虚拟根分支：
+     * 模板取 rootBranch.children 渲染，即全部顶级栏目，无需感知「单分支 / 全树」差异
+     */
+    protected function wrapFullTree(array $branches): array
+    {
+        return [['title' => '', 'children' => array_values($branches)]];
+    }
+
+    /**
+     * 递归判断分支内是否存在指定 id 的菜单项
+     */
+    protected function branchContainsId(array $items, string $id): bool
+    {
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            if ((string) ($item['id'] ?? '') === $id) {
+                return true;
+            }
+            if (!empty($item['children']) && $this->branchContainsId($item['children'], $id)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 给栏目菜单树叠加当前语言的译文（递归 children）
+     *
+     * 先一次性取出整棵树用到的译文，避免逐条查询。
+     * 栏目策略为 hide 时，未翻译的栏目（连同子树）从树里剔除。
+     *
+     * @param mixed $rows
+     * @return mixed
+     */
+    protected function applyMenuTranslation($rows)
+    {
+        if (!is_array($rows) || $rows === []) {
+            return $rows;
+        }
+
+        $locale = Locale::current();
+        if ($locale === Locale::defaultLocale()) {
+            return $rows;
+        }
+
+        $ids = [];
+        $this->collectTranslationIds($rows, $ids);
+        if ($ids === []) {
+            return $rows;
+        }
+
+        $hide = Translator::hideMissing($locale, 'catalog');
+
+        $map = Translator::getMap(Translator::TYPE_NODE, array_values($ids), $locale);
+        if ($map === [] && !$hide) {
+            return $rows;
+        }
+
+        return $this->translateTreeRows($rows, $map, $locale, $hide);
+    }
+
+    /**
+     * 递归收集树里的节点 ID
+     */
+    protected function collectTranslationIds(array $rows, array &$ids): void
+    {
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $id = (int) ($row['id'] ?? 0);
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+            if (!empty($row['children']) && is_array($row['children'])) {
+                $this->collectTranslationIds($row['children'], $ids);
+            }
+        }
+    }
+
+    /**
+     * 按预取的译文映射递归改写树
+     *
+     * @param bool $hide 栏目策略为 hide 时，未翻译的栏目整支剔除（子孙随父级隐藏）
+     */
+    protected function translateTreeRows(array $rows, array $map, string $locale, bool $hide = false): array
+    {
+        $result = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                $result[] = $row;
+                continue;
+            }
+            $translation = $map[(int) ($row['id'] ?? 0)] ?? null;
+            if ($translation !== null) {
+                $row = Translator::applyWith($row, $translation, $locale);
+            }
+            // 自定义链接（无节点 id）不参与剔除；未翻译的栏目在 hide 下整支丢弃
+            if ($hide && (int) ($row['id'] ?? 0) > 0 && empty($row['_translated'])) {
+                continue;
+            }
+            if (!empty($row['children']) && is_array($row['children'])) {
+                $row['children'] = $this->translateTreeRows($row['children'], $map, $locale, $hide);
+            }
+            $result[] = $row;
+        }
+
+        return $result;
+    }
+
+    /**
+     * 获取当前栏目详情
+     */
+    public function getCatalog($key = null)
+    {
+        if (!$this['catalog'] && in_array($this['nodeType'], ['catalog', 'category', 'tag'], true)) {
+            $this['catalog'] = Catalog::instance()->get($this['nodeId']);
+        }
+        return $key ? ($this['catalog'][$key] ?? null) : $this['catalog'];
+    }
+
+    /**
+     * 侧边栏「栏目相关菜单」：按当前栏目 id 直接查询其直接子栏目，
+     * 叶子栏目回退为父栏目的子栏目（同级导航）。
+     */
+    public function getCatalogSidebarMenu(): array
+    {
+        $catalog = \zapcms\services\Catalog::instance();
+
+        // 栏目路径改由 Nav 惰性解析：内容详情页原先直接从 pageState 读 catalogPaths，
+        // 而 controller 已不再预取该字段，导致取不到当前栏目、侧栏错误回退到 left 菜单。
+        $nodeType = (string) ($this['node']['node_type'] ?? '');
+        $isTerm   = in_array($nodeType, ['category', 'tag'], true);
+        $paths    = \zapcms\services\Nav::catalogPaths();
+
+        if ($isTerm) {
+            $currentId = (int) ($this['nodeId'] ?? 0);
+            $current   = is_array($this['node'] ?? null) ? $this['node'] : [];
+        } else {
+            $last      = $paths === [] ? null : end($paths);
+            $currentId = (int) ($last['id'] ?? 0);
+            $current   = is_array($last) ? $last : [];
+        }
+        if ($currentId <= 0) {
+            return [];
+        }
+
+        // 仅查当前栏目的直接子栏目：node_type='category' AND parent_id=当前栏目 id
+        $children = $catalog->getChildren($currentId);
+
+        // 叶子栏目兜底：改查父栏目的子栏目（同级导航），仍只是一次定向查询，不加载整棵树
+        if ($children === []) {
+            $parentId = 0;
+            // 栏目页：node 行自带 parent_id；内容页：祖先链倒数第二项
+            if ($isTerm) {
+                $parentId = (int) ($this['node']['parent_id'] ?? 0);
+            } elseif (count($paths) >= 2) {
+                $parentId = (int) ($paths[count($paths) - 2]['id'] ?? 0);
+            }
+            if ($parentId > 0) {
+                $children = $catalog->getChildren($parentId);
+            }
+        }
+        if ($children === []) {
+            return [];
+        }
+
+        // 内容页用当前栏目名做侧栏标题，而不是内容标题
+        $title = (string) ($current['title'] ?? '');
+        if ($title === '') {
+            $title = (string) ($this['node']['title'] ?? '');
+        }
+        return [['title' => $title, 'children' => $children]];
+    }
+
+    public function getSearchSidebarMenu(): array
+    {
+        return $this->getNavMenu('left');
+    }
+
+    /**
+     * 第一个子栏目（用于侧边栏标题）
+     */
+    public function firstSubCatalog(): ?array
+    {
+        if (!$this->hasSubCatalogs()) {
+            return null;
+        }
+        $list = $this['subCatalogList'];
+        return reset($list) ?: null;
+    }
+
+    /**
+     * 智能节点链接（根据类型自动选择规则）
+     */
+    public function nodeUrl(array $node): string
+    {
+        return smart_node_url($node);
+    }
+
+    public function setPageTitle(string $title): void
+    {
+        $this['pageTitle'] = $title;
+    }
+
+    // ─── SEO 输出 ──────────────────────────────────────────
+
+    /**
+     * 输出 SEO meta 标签 HTML
+     */
+    public function printMeta(): string
+    {
+        $html = '';
+        if (!empty($this['pageTitle'])) {
+            $html .= '<title>' . htmlspecialchars($this['pageTitle']) . '</title>' . "\n";
+        }
+        if (!empty($this['pageKeywords'])) {
+            $html .= '<meta name="keywords" content="' . htmlspecialchars($this['pageKeywords']) . '">' . "\n";
+        }
+        if (!empty($this['pageDescription'])) {
+            $html .= '<meta name="description" content="' . htmlspecialchars($this['pageDescription']) . '">' . "\n";
+        }
+        if (!empty($this['canonicalUrl'])) {
+            $html .= '<link rel="canonical" href="' . htmlspecialchars($this['canonicalUrl']) . '">' . "\n";
+        }
+        $html .= $this->printAlternateLinks();
+        return $html;
+    }
+
+    /**
+     * 输出多语言 hreflang 备用链接
+     *
+     * @return string
+     */
+    public function printAlternateLinks(): string
+    {
+        $urls = $this['localeUrls'];
+        if (empty($urls) || !is_array($urls) || !Locale::enabled()) {
+            return '';
+        }
+
+        $html = '';
+        foreach ($urls as $locale => $url) {
+            if ($url === '' || $url === null) {
+                continue;
+            }
+            $html .= '<link rel="alternate" hreflang="' . htmlspecialchars((string) $locale, ENT_QUOTES) . '"'
+                . ' href="' . htmlspecialchars((string) $url, ENT_QUOTES) . '">' . "\n";
+        }
+
+        // 未匹配到语言时指向的兜底地址
+        $default = Locale::defaultLocale();
+        if (isset($urls[$default])) {
+            $html .= '<link rel="alternate" hreflang="x-default"'
+                . ' href="' . htmlspecialchars((string) $urls[$default], ENT_QUOTES) . '">' . "\n";
+        }
+
+        return $html;
+    }
+}
+
+if (!function_exists('pageState')) {
+    /**
+     * 获取 PageState 单例
+     *
+     * @return PageState
+     */
+    function pageState(): PageState
+    {
+        return PageState::instance();
+    }
+}

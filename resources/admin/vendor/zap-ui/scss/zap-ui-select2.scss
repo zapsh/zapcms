@@ -1,0 +1,26 @@
+/*!
+ *   ZapUI 1.0 - ZAP CMS admin UI base styles (zap-ui-select2.scss)
+ *   Author: ZAP.CN
+ *   Website: https://zap.cn
+ *   License: MIT
+ */
+
+// Bootstrap Configuration
+// ---------------------------------------------------
+@import "bootstrap/scss/functions";
+@import "bootstrap-overrides";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+
+// ZapUI Configuration
+// ---------------------------------------------------
+// `mixins` is deliberately not imported: it emits ZapUI's @keyframes, and
+// this sheet only uses Bootstrap's own mixins.
+@import "variables";
+@import "variables-dark";
+
+// Select2 compatibility styles
+// ---------------------------------------------------
+@import "compat/select2";

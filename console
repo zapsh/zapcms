@@ -1,0 +1,21 @@
+#!/usr/bin/env php
+<?php
+
+if (!in_array(PHP_SAPI, ['cli', 'phpdbg', 'embed'], true)) {
+    echo 'Warning: The console scripts only support running in cli mode, not the '.PHP_SAPI.' SAPI'.PHP_EOL;
+    exit(1);
+}
+set_time_limit(0);
+
+define("ROOT_PATH", realpath(dirname(__FILE__) . '/'));
+
+if (!defined('APP_ROOT')) {
+    define('APP_ROOT', rtrim(ROOT_PATH, '/\\'));
+}
+require ROOT_PATH . '/vendor/autoload.php';
+
+$console = new \zap\console\Console(ROOT_PATH);
+$console->addCommand('app/zapcms/commands','zapcms');
+$console->addCommand('app/commands','app');
+$code = $console->execute();
+exit($code);
