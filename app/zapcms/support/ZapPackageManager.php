@@ -623,6 +623,90 @@ class ZapPackageManager
         return ['success' => true, 'message' => '插件安装成功'];
     }
 
+    // ==================== 主题操作 ====================
+
+    /**
+     * 安装主题（从远程下载并解压到 themes/ 目录）
+     *
+     * 主题不需要登记数据表：Theme::getAllThemesInfo() 直接扫描 themes/ 下的 theme.json。
+     *
+     * @param string $packageName 主题包名（市场标识，vendor/name）
+     * @param string $downloadUrl 下载地址
+     * @param string $version     版本号（包内 theme.json 优先）
+     * @return array
+     */
+    public function installTheme(string $packageName, string $downloadUrl, string $version = '1.0.0'): array
+    {
+        $themesDir = APP_ROOT . '/themes';
+
+        // 1. 下载
+        $zipFile = $this->download($downloadUrl, 'theme_' . md5($packageName) . '_' . $version . '.zip');
+        if (!$zipFile) {
+            return ['success' => false, 'message' => '主题下载失败，请检查网络连接'];
+        }
+
+        // 2. 读取 theme.json（根目录或单层子目录）
+        $info = $this->readThemeInfoFromZip($zipFile);
+        if (empty($info['name'])) {
+            @unlink($zipFile);
+            return ['success' => false, 'message' => '主题包缺少 theme.json 或 name 字段'];
+        }
+
+        $name     = $this->sanitizePluginName((string) $info['name']);
+        $themeDir = $themesDir . '/' . $name;
+
+        if (is_dir($themeDir)) {
+            @unlink($zipFile);
+            return ['success' => false, 'message' => '主题已存在：' . $name];
+        }
+
+        // 3. 解压（stripRoot 自动去掉包内的单层根目录）
+        $ok = $this->extract($zipFile, $themeDir);
+        @unlink($zipFile);
+
+        if (!$ok) {
+            $this->deleteDirectory($themeDir);
+            return ['success' => false, 'message' => '解压主题失败'];
+        }
+
+        // 4. 结构校验：解压后根目录必须有 theme.json，否则视为坏包并回滚
+        if (!is_file($themeDir . '/theme.json')) {
+            $this->deleteDirectory($themeDir);
+            return ['success' => false, 'message' => '主题包结构不正确（根目录缺少 theme.json）'];
+        }
+
+        $this->clearCache();
+
+        return [
+            'success' => true,
+            'message' => '主题安装成功',
+            'data'    => [
+                'name'    => $name,
+                'title'   => (string) ($info['title'] ?? $info['label'] ?? $name),
+                'version' => (string) ($info['version'] ?? $version),
+            ],
+        ];
+    }
+
+    /**
+     * 从ZIP包读取主题信息（theme.json）
+     */
+    protected function readThemeInfoFromZip(string $zipFile): array
+    {
+        $info = [];
+        if (class_exists('ZipArchive')) {
+            $zip = new \ZipArchive();
+            if ($zip->open($zipFile) === true) {
+                $jsonStr = $this->readJsonFromZip($zip, ['theme.json']);
+                if ($jsonStr !== false) {
+                    $info = json_decode($jsonStr, true) ?: [];
+                }
+                $zip->close();
+            }
+        }
+        return $info;
+    }
+
     /**
      * 卸载（或注销）插件
      *

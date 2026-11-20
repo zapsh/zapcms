@@ -27,8 +27,15 @@ $currentTheme = $website_options['website.theme'] ?? '';
             </div>
             <div class="px-2 pt-2 d-flex flex-column flex-fill">
                 <h5 class="fs-6 fw-bold mb-1 text-truncate" title="<?php echo e($theme['title'] ?? ''); ?>"><?php echo e($theme['title'] ?? ''); ?></h5>
+                <?php
+                // 优先展示 theme.json 的 content（介绍正文），回落到 description
+                $intro = trim((string) ($theme['content'] ?? ''));
+                if ($intro === '') {
+                    $intro = (string) ($theme['description'] ?? '');
+                }
+                ?>
                 <p class="text-muted small mb-1" style="line-height:1.3;">
-                    <?php echo \zap\util\Str::truncate($theme['description'] ?? '', 60); ?>
+                    <?php echo e(\zap\util\Str::truncate(strip_tags($intro), 60)); ?>
                 </p>
                 <small class="text-muted mt-auto mb-2">v<?php echo e($theme['version'] ?? ''); ?></small>
             </div>
@@ -45,6 +52,13 @@ $currentTheme = $website_options['website.theme'] ?? '';
                        href="<?php echo base_url('/') . '?preview_theme=' . rawurlencode($theme['dirname']); ?>">
                         <i class="fa fa-eye me-1"></i>预览
                     </a>
+                    <?php if (!empty($theme['preview_url'])): ?>
+                    <a class="btn btn-outline-primary btn-sm flex-fill"
+                       target="_blank" rel="noopener"
+                       href="<?php echo e($theme['preview_url']); ?>" title="主题作者提供的在线演示">
+                        <i class="fa fa-globe me-1"></i>演示
+                    </a>
+                    <?php endif; ?>
                     <button class="btn btn-outline-success btn-sm flex-fill"
                             onclick="activationTheme('<?php echo e($theme['dirname']); ?>')" type="button">
                         <i class="fa fa-check me-1"></i>启用

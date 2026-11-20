@@ -5,6 +5,7 @@ namespace zapcms\controllers;
 use zapcms\controllers\AdminController;
 use zapcms\models\AdminLog;
 use zapcms\support\IOUtils;
+use zapcms\support\ZapUpdate;
 use zapcms\services\Option;
 use zapcms\services\Theme;
 use zap\facades\Cache;
@@ -24,6 +25,81 @@ class ThemeController extends AdminController
         $themes = Theme::instance()->getAllThemesInfo();
         $website_options = Option::getArray('website','REGEXP');
         view('theme.index',['themes'=>$themes,'website_options'=>$website_options]);
+    }
+
+    /**
+     * 主题市场
+     *
+     * 数据源：packagemgr 的 V1 市场接口（type=theme），
+     * 需在「基础设置 > 服务器」或更新设置里配置 website.market_api。
+     */
+    public function market()
+    {
+        $this->requirePerm('view');
+
+        $page     = max(1, (int) req()->get('page', 1));
+        $search   = trim((string) req()->get('search', ''));
+        $category = trim((string) req()->get('category', ''));
+        $perPage  = 12;
+
+        $updater = new ZapUpdate();
+        $result  = $updater->getMarketThemes($page, $perPage, $search, $category);
+
+        // 已安装主题以目录名为准（theme.json 的 name 与目录名可能不同）
+        $installed = array_keys(Theme::instance()->getAllThemesInfo());
+
+        view('theme.market', [
+            'result'    => $result,
+            'page'      => $page,
+            'search'    => $search,
+            'category'  => $category,
+            'installed' => $installed,
+        ]);
+    }
+
+    /**
+     * AJAX: 重新拉取主题市场列表
+     */
+    public function ajaxMarketList()
+    {
+        $this->requirePerm('view');
+
+        $page    = max(1, (int) req()->get('page', 1));
+        $search  = trim((string) req()->get('search', ''));
+        $result  = (new ZapUpdate())->getMarketThemes($page, 12, $search);
+
+        Response::json([
+            'code' => $result ? 0 : 1,
+            'data' => $result,
+        ]);
+    }
+
+    /**
+     * 从市场安装主题（下载 zip → 解压到 themes/{name}）
+     */
+    public function installMarket()
+    {
+        $this->requirePerm('edit');
+
+        if (!Request::isPost()) {
+            Response::json(['code' => 1, 'msg' => '无效请求']);
+        }
+
+        $packageName = trim((string) req()->post('package', ''));
+        if ($packageName === '') {
+            Response::json(['code' => 1, 'msg' => '请输入主题包名']);
+        }
+
+        $result = (new ZapUpdate())->installMarketTheme($packageName);
+
+        if (!empty($result['success'])) {
+            AdminLog::info(AdminLog::CATEGORY_SYSTEM, '安装主题', '包名：' . $packageName);
+        }
+
+        Response::json([
+            'code' => !empty($result['success']) ? 0 : 1,
+            'msg'  => $result['message'] ?? ($result['success'] ? '安装成功' : '安装失败'),
+        ]);
     }
 
 

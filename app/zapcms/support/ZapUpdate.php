@@ -446,15 +446,39 @@ class ZapUpdate
      */
     public function getMarketPlugins(int $page = 1, int $perPage = 12, string $search = '', string $category = ''): ?array
     {
+        return $this->getMarketPackages('plugin', $page, $perPage, $search, $category);
+    }
+
+    /**
+     * 从远程获取主题市场列表（packagemgr V1 的 type=theme）
+     *
+     * @return array|null
+     */
+    public function getMarketThemes(int $page = 1, int $perPage = 12, string $search = '', string $category = ''): ?array
+    {
+        return $this->getMarketPackages('theme', $page, $perPage, $search, $category);
+    }
+
+    /**
+     * 市场包列表（插件 / 主题共用）
+     *
+     * @param string $type plugin | theme
+     */
+    public function getMarketPackages(string $type, int $page = 1, int $perPage = 12, string $search = '', string $category = ''): ?array
+    {
         $base = $this->marketApiBase();
         if ($base !== '') {
-            $url  = $base . '/packages?' . http_build_query([
+            $params = [
                 'page'     => $page,
                 'per_page' => $perPage,
                 'q'        => $search,
                 'category' => $category,
                 'version'  => ZAP_CMS_VERSION,
-            ]);
+            ];
+            if ($type !== '') {
+                $params['type'] = $type;
+            }
+            $url = $base . '/packages?' . http_build_query($params);
             if (($cached = $this->marketCacheGet($url)) !== null) {
                 return $cached;
             }
@@ -464,6 +488,11 @@ class ZapUpdate
                 $this->marketCacheSet($url, $result);
             }
             return $result;
+        }
+
+        // 旧版接口只提供插件市场，主题市场必须走 V1（website.market_api）
+        if ($type === 'theme') {
+            return null;
         }
 
         return $this->pm->apiGet('plugin/list', [
@@ -520,6 +549,30 @@ class ZapUpdate
             $detail['package_name'] ?? $packageName,
             $detail['download_url'],
             $detail['version'] ?? '1.0.0'
+        );
+    }
+
+    /**
+     * 安装市场主题（下载 zip 并解压到 themes/）
+     *
+     * 详情接口与插件共用（/package?package=xxx），差异只在安装落盘位置。
+     */
+    public function installMarketTheme(string $packageName): array
+    {
+        $detail = $this->getMarketPluginDetail($packageName);
+
+        if (!$detail) {
+            return ['success' => false, 'message' => '获取主题信息失败'];
+        }
+
+        if (empty($detail['download_url'])) {
+            return ['success' => false, 'message' => '主题下载地址无效'];
+        }
+
+        return $this->pm->installTheme(
+            $detail['package_name'] ?? $packageName,
+            (string) $detail['download_url'],
+            (string) ($detail['version'] ?? '1.0.0')
         );
     }
 

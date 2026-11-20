@@ -10,10 +10,13 @@ $this->view->page_title = '主题管理';
 ?>
 
 <div class="row mb-3">
-    <div class="col-12">
+    <div class="col-12 d-flex justify-content-between align-items-center">
         <h2 class="fs-5 fw-bold mb-0">
             <i class="fa fa-paint-brush me-2 text-info"></i>主题管理
         </h2>
+        <a href="<?php echo url_action('Theme@market'); ?>" class="btn btn-primary btn-sm">
+            <i class="fa fa-store me-1"></i>主题市场
+        </a>
     </div>
 </div>
 
